@@ -52,7 +52,7 @@ export const OrgSidebar = () => {
       />
       <div className="space-y-1 w-full">
         <Button
-          variant="ghost"
+          variant={favourites ? "ghost" : "secondary"}
           asChild
           size="lg"
           className="font-normal justify-start px-2 w-full"
@@ -63,7 +63,7 @@ export const OrgSidebar = () => {
           </Link>
         </Button>
         <Button
-          variant="ghost"
+          variant={favourites ? "secondary" : "ghost"}
           asChild
           size="lg"
           className="font-normal justify-start px-2 w-full"
