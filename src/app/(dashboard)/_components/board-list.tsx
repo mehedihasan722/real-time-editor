@@ -1,5 +1,8 @@
 "use client";
 import React from "react";
+import EmptySearch from "./empty-search";
+import EmptyFavourites from "./empty-favourites";
+import EmptyBoard from "./empty-board";
 
 interface BoardListProps {
   orgId: string;
@@ -9,15 +12,15 @@ const BoardList = ({ orgId, query }: BoardListProps) => {
   const data = []; // TODO: Change to API call
 
   if (!data?.length && query.search) {
-    return <div>Try searching for something else</div>;
+    return <EmptySearch />;
   }
 
   if (!data?.length && query.favourites) {
-    return <div>No favourites</div>;
+    return <EmptyFavourites />;
   }
 
   if (!data?.length) {
-    return <div>No Boards at all</div>;
+    return <EmptyBoard />;
   }
 
   return <div>{JSON.stringify(query)}</div>;
