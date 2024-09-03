@@ -13,6 +13,7 @@ interface BoardListProps {
   orgId: string;
   query: { search?: string; favourites?: string };
 }
+
 const BoardList = ({ orgId, query }: BoardListProps) => {
   const data = useQuery(api.boards.get, { orgId });
 
@@ -61,7 +62,7 @@ const BoardList = ({ orgId, query }: BoardListProps) => {
             authorName={board.authorName}
             createdAt={board._creationTime}
             orgId={board.orgId}
-            isFavourite={false}
+            isFavourite={board.isFavourite}
           />
         ))}
       </div>
