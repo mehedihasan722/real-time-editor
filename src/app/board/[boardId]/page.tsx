@@ -1,7 +1,7 @@
 import React from "react";
 import Canvas from "./_components/canvas";
 import Room from "@/components/room";
-import CanvasLoading from "./_components/loading";
+import CanvasLoading from "./loading";
 
 interface BoardIdPageProps {
   params: {
