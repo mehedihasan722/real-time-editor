@@ -1,6 +1,13 @@
-import { createClient } from "@liveblocks/client";
-import { createRoomContext } from "@liveblocks/react";
-const client = createClient({
+import { Layer } from "@/types/canvas";
+import {
+  createClient,
+  LiveList,
+  LiveMap,
+  LiveObject,
+} from "@liveblocks/client";
+
+export const client = createClient({
+  throttle: 16,
   authEndpoint: "/api/liveblocks-auth",
 });
 // Define Liveblocks types for your application
@@ -10,11 +17,14 @@ declare global {
     // Each user's Presence, for useMyPresence, useOthers, etc.
     Presence: {
       // Example, real-time cursor coordinates
-      cursor: { x: number; y: number };
+      cursor: { x: number; y: number } | null;
+      selection: string[];
     };
 
     // The Storage tree for the room, for useMutation, useStorage, etc.
     Storage: {
+      layers: LiveMap<string, LiveObject<Layer>>;
+      layerIds: LiveList<string> | [];
       // Example, a conflict-free list
       // animals: LiveList<string>;
     };
