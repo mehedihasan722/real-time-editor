@@ -142,13 +142,13 @@ const Canvas = ({ boardId }: CanvasProps) => {
         onPointerUp={onPointerUp}
       >
         <g style={{ transform: `translate(${camera.x}px, ${camera.y}px)` }}>
-          {layerIds?.map((layerId)=> (
+          {layerIds?.map((layerId) => (
             <LayerPreview
-            key = {layerId}
-            id= {layerId}
-            onLayerPointerDown = {()= {}}
-            selectionColor = "#000"
-              />
+              key={layerId}
+              id={layerId}
+              //onLayerPointerDown = {()= {}}
+              selectionColor="#000"
+            />
           ))}
           <CursorsPresence />
         </g>
