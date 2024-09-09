@@ -62,8 +62,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
         "layers"
       );
 
-      const liveLayerIds: LiveList<string> | string[] = storage.get("layerIds");
       if (liveLayers.size >= MAX_LAYERS) return;
+      const liveLayerIds: LiveList<string> | string[] = storage.get("layerIds");
 
       const layerId = nanoid();
 
