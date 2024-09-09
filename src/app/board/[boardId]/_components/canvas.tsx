@@ -24,6 +24,7 @@ import CursorsPresence from "./cursors-presence";
 import { pointerEventToCanvasPoint } from "@/lib/utils";
 import { nanoid } from "nanoid";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
+import LayerPreview from "./layer-preview";
 
 const MAX_LAYERS = 100;
 interface CanvasProps {
@@ -107,6 +108,20 @@ const Canvas = ({ boardId }: CanvasProps) => {
     setMyPresence({ cursor: { x: 0, y: 0 } });
   }, []);
 
+  const onPointerUp = useMutation(
+    ({}, e) => {
+      const point = pointerEventToCanvasPoint(e, camera);
+
+      if (canvasState.mode === CanvasMode.Inserting) {
+        insertLayer(canvasState.layerType, point);
+      } else {
+        setCanvasState({ mode: CanvasMode.None });
+      }
+
+      history.resume();
+    },
+    [camera, canvasState, history, insertLayer]
+  );
   return (
     <main className="h-full w-full relative bg-neutral-100 touch-none">
       <Info boardId={boardId} />
@@ -124,8 +139,17 @@ const Canvas = ({ boardId }: CanvasProps) => {
         onWheel={onWheel}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
+        onPointerUp={onPointerUp}
       >
         <g style={{ transform: `translate(${camera.x}px, ${camera.y}px)` }}>
+          {layerIds?.map((layerId)=> (
+            <LayerPreview
+            key = {layerId}
+            id= {layerId}
+            onLayerPointerDown = {()= {}}
+            selectionColor = "#000"
+              />
+          ))}
           <CursorsPresence />
         </g>
       </svg>
