@@ -12,6 +12,7 @@ import { createRoomContext } from "@liveblocks/react";
 });*/
 
 const client = createClient({
+  throttle: 16,
   authEndpoint: "/api/liveblocks-auth",
 });
 
@@ -27,7 +28,7 @@ interface RoomProps {
 const Room = ({ children, roomId, fallback }: RoomProps) => {
   return (
     <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
-      <RoomProvider id={roomId} initialPresence={{}}>
+      <RoomProvider id={roomId} initialPresence={{ cursor: { x: 0, y: 0 } }}>
         <ClientSideSuspense fallback={fallback}>
           {/* You can add more logic inside here */}
           {() => children}
