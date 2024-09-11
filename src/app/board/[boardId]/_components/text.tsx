@@ -2,7 +2,7 @@ import { cn, colorToCss } from "@/lib/utils";
 import { TextLayer } from "@/types/canvas";
 import { useMutation } from "@liveblocks/react";
 import { Kalam } from "next/font/google";
-import React from "react";
+import React, { useState } from "react";
 import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
 
 const font = Kalam({
@@ -28,10 +28,14 @@ interface TextProps {
 
 const Text = ({ layer, onPointerDown, id, selectionColor }: TextProps) => {
   const { x, y, width, height, fill, value } = layer;
+  const newValue = value ?? "Text";
+
+  //const [defaultValue, setDefaultValue] = useState("Text")
 
   const updateValue = useMutation(({ storage }, newValue: string) => {
     const liveLayers = storage.get("layers");
 
+    console.log("🚀 ~ updateValue ~ newValue:", newValue);
     liveLayers.get(id)?.set("value", newValue);
   }, []);
 
@@ -51,6 +55,7 @@ const Text = ({ layer, onPointerDown, id, selectionColor }: TextProps) => {
       }}
     >
       <ContentEditable
+        onFocus={(e) => console.log(e.target)}
         html={value || "Text"}
         onChange={handleContentChange}
         className={cn(

@@ -72,7 +72,7 @@ const SelectionTools = memo(
     useEffect(() => {
       async function getFill() {
         const colors = await Promise.all(
-          selection.map((id) => storage?.get(id)?.fill)
+          selection!.map((id) => storage?.get(id)?.fill)
         );
         const filteredColors = colors.filter((color) => isValidColor(color));
         if (filteredColors.length > 0) {
