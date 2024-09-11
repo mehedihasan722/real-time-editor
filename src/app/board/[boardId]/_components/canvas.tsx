@@ -38,6 +38,7 @@ import LayerPreview from "./layer-preview";
 import { useSelf } from "@liveblocks/react";
 import useDeleteLayers from "@/hooks/use-delete-layers";
 import SelectionTools from "./selection-tools";
+import Path from "./path";
 
 const MAX_LAYERS = 100;
 interface CanvasProps {
