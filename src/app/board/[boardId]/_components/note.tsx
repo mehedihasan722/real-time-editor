@@ -2,7 +2,7 @@ import { NoteLayer } from "@/types/canvas";
 import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
 import { useMutation } from "@liveblocks/react";
 import { Kalam } from "next/font/google";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { cn, colorToCss, getContrastingTextColor } from "@/lib/utils";
 
 const font = Kalam({
@@ -28,16 +28,35 @@ interface NoteProps {
 
 const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) => {
   const { x, y, width, height, fill, value } = layer;
+  const [newValue, setNewValue] = useState("Text");
+
+  const [hasModified, setHasModified] = useState(false);
 
   const updateValue = useMutation(({ storage }, newValue: string) => {
     const liveLayers = storage.get("layers");
 
+    setNewValue(newValue);
     liveLayers.get(id)?.set("value", newValue);
   }, []);
 
   const handleContentChange = (e: ContentEditableEvent) => {
-    updateValue(e.target.value);
+    const updatedValue = e.target.value;
+
+    setHasModified(true);
+    updateValue(updatedValue);
   };
+
+  const handleFocus = () => {
+    if (!hasModified && newValue === "Text") {
+      setNewValue(""); //
+    }
+  };
+
+  useEffect(() => {
+    if (value) {
+      setNewValue(value);
+    }
+  }, [value]);
 
   return (
     <foreignObject
@@ -53,8 +72,9 @@ const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) => {
       className="shadow-md drop-shadow-xl"
     >
       <ContentEditable
-        html={value || "Text"}
+        html={newValue}
         onChange={handleContentChange}
+        onFocus={handleFocus}
         className={cn(
           "h-full w-full flex items-center justify-center text-center outline-none",
           font.className
