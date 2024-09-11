@@ -32,6 +32,7 @@
     "query-string": "^9.1.0",
     "react": "^18",
     "react-dom": "^18",
+    "react-pick-color": "^2.0.0",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",

@@ -10,6 +10,7 @@ export const client = createClient({
   throttle: 16,
   authEndpoint: "/api/liveblocks-auth",
 });
+
 // Define Liveblocks types for your application
 // https://liveblocks.io/docs/api-reference/liveblocks-react#Typing-your-data
 declare global {
@@ -26,7 +27,7 @@ declare global {
     // The Storage tree for the room, for useMutation, useStorage, etc.
     Storage: {
       layers: LiveMap<string, LiveObject<Layer>>;
-      layerIds: LiveList<string> ;
+      layerIds: LiveList<string>;
       // Example, a conflict-free list
       // animals: LiveList<string>;
     };

@@ -104,3 +104,10 @@ export enum CanvasMode {
   Resizing,
   Pencil,
 }
+
+export type Position = {
+  top: string;
+  left: string;
+  right: string;
+  bottom: string;
+};

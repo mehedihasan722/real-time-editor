@@ -36,6 +36,8 @@ import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import SelectionBox from "./selection-box";
 import LayerPreview from "./layer-preview";
 import { useSelf } from "@liveblocks/react";
+import useDeleteLayers from "@/hooks/use-delete-layers";
+import SelectionTools from "./selection-tools";
 
 const MAX_LAYERS = 100;
 interface CanvasProps {
@@ -446,6 +448,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
         undo={history.undo}
         redo={history.redo}
       />
+      <SelectionTools camera={camera} setLastUsedColor={setLastUsedColor} />
       <svg
         className="h-[100vh] w-[100vw]"
         onWheel={onWheel}
@@ -454,8 +457,12 @@ const Canvas = ({ boardId }: CanvasProps) => {
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
       >
-        <g style={{ transform: `translate(${camera.x}px, ${camera.y}px)` }}>
-          {layerIds?.map((layerId) => (
+        <g
+          style={{
+            transform: `translate(${camera.x}px, ${camera.y}px)`,
+          }}
+        >
+          {layerIds.map((layerId) => (
             <LayerPreview
               key={layerId}
               id={layerId}
@@ -464,7 +471,25 @@ const Canvas = ({ boardId }: CanvasProps) => {
             />
           ))}
           <SelectionBox onResizeHandlePointerDown={onResizeHandlePointerDown} />
+          {canvasState.mode === CanvasMode.SelectionNet &&
+            canvasState.current != null && (
+              <rect
+                className="fill-blue-500/5 stroke-blue-500 stroke-1"
+                x={Math.min(canvasState.origin.x, canvasState.current.x)}
+                y={Math.min(canvasState.origin.y, canvasState.current.y)}
+                width={Math.abs(canvasState.origin.x - canvasState.current.x)}
+                height={Math.abs(canvasState.origin.y - canvasState.current.y)}
+              />
+            )}
           <CursorsPresence />
+          {pencilDraft != null && pencilDraft.length > 0 && (
+            <Path
+              points={pencilDraft}
+              fill={colorToCss(lastUsedColor)}
+              x={0}
+              y={0}
+            />
+          )}
         </g>
       </svg>
     </main>
