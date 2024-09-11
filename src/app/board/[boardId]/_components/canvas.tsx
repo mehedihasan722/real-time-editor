@@ -27,6 +27,7 @@ import { nanoid } from "nanoid";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import SelectionBox from "./selection-box";
 import LayerPreview from "./layer-preview";
+import { useOther, useOthers } from "@liveblocks/react";
 
 const MAX_LAYERS = 100;
 interface CanvasProps {
@@ -125,7 +126,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
     [camera, canvasState, history, insertLayer]
   );
 
-  const selections = useOthersMapped((other) => console.log("other", other));
+  const selections = useOthersMapped((other) => other.presence.selection);
+  console.log("🚀 ~ Canvas ~ selections:", selections);
 
   const onLayerPointerDown = useMutation(
     ({ self, setMyPresence }, e: React.PointerEvent, layerId: string) => {

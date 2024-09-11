@@ -24,18 +24,21 @@ interface RoomProps {
 // https://cosmic-shrimp-7.accounts.dev/
 const Room = ({ children, roomId, fallback }: RoomProps) => {
   return (
-    <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
+    <LiveblocksProvider throttle={16} authEndpoint="/api/liveblocks-auth">
       <RoomProvider
         id={roomId}
-        initialPresence={{ cursor: null, selection: [] }}
+        initialPresence={{
+          cursor: null,
+          selection: [],
+          pencilDraft: null,
+          penColor: null,
+        }}
         initialStorage={{
           layers: new LiveMap<string, LiveObject<Layer>>(),
           layerIds: new LiveList([]),
         }}
       >
-        <ClientSideSuspense fallback={fallback}>
-          {() => children}
-        </ClientSideSuspense>
+        <ClientSideSuspense fallback={fallback}> {children}</ClientSideSuspense>
       </RoomProvider>
     </LiveblocksProvider>
   );
