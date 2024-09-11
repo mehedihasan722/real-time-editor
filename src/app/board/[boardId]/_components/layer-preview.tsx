@@ -1,13 +1,13 @@
 "use client";
 import { LayerType } from "@/types/canvas";
-import { useStorage } from "@liveblocks/react";
+import { useStorage } from "@liveblocks/react/suspense";
 import React, { memo } from "react";
 import Rectangle from "./rectangle";
 
 interface LayerPreviewProps {
   id: string;
   onLayerPointerDown: (e: React.PointerEvent, layerId: string) => void;
-  selectionColor?: string;
+  selectionColor: string;
 }
 
 const LayerPreview = memo(
@@ -24,7 +24,7 @@ const LayerPreview = memo(
               id={id}
               layer={layer}
               onPointerDown={onLayerPointerDown}
-              selectionColor={selectionColor as string}
+              selectionColor={selectionColor}
             />
           </div>
         );
@@ -36,5 +36,4 @@ const LayerPreview = memo(
 );
 
 LayerPreview.displayName = "LayerPreview";
-
 export default LayerPreview;

@@ -1,4 +1,4 @@
-import { Layer } from "@/types/canvas";
+import { Color, Layer } from "@/types/canvas";
 import {
   createClient,
   LiveList,
@@ -19,12 +19,14 @@ declare global {
       // Example, real-time cursor coordinates
       cursor: { x: number; y: number } | null;
       selection: string[];
+      pencilDraft: [x: number, y: number, pressure: number][] | null;
+      penColor: Color | null;
     };
 
     // The Storage tree for the room, for useMutation, useStorage, etc.
     Storage: {
       layers: LiveMap<string, LiveObject<Layer>>;
-      layerIds: LiveList<string> | [];
+      layerIds: LiveList<string> ;
       // Example, a conflict-free list
       // animals: LiveList<string>;
     };

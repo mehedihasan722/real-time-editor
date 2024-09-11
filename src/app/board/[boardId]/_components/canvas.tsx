@@ -20,11 +20,12 @@ import {
   useMutation,
   useStorage,
   useOthersMapped,
-} from "@liveblocks/react";
+} from "@liveblocks/react/suspense";
 import CursorsPresence from "./cursors-presence";
 import { connectionIdToColor, pointerEventToCanvasPoint } from "@/lib/utils";
 import { nanoid } from "nanoid";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
+import SelectionBox from "./selection-box";
 import LayerPreview from "./layer-preview";
 
 const MAX_LAYERS = 100;
@@ -40,9 +41,9 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0 });
   const [lastUsedColor, setLastUsedColor] = useState<Color>({
-    r: 0,
-    g: 0,
-    b: 0,
+    r: 252,
+    g: 142,
+    b: 42,
   });
 
   const history = useHistory();
@@ -64,7 +65,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       );
 
       if (liveLayers.size >= MAX_LAYERS) return;
-      const liveLayerIds: LiveList<string> | string[] = storage.get("layerIds");
+      const liveLayerIds: LiveList<string> = storage.get("layerIds");
 
       const layerId = nanoid();
 
@@ -106,7 +107,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
   );
 
   const onPointerLeave = useMutation(({ setMyPresence }) => {
-    setMyPresence({ cursor: { x: 0, y: 0 } });
+    setMyPresence({ cursor: null });
   }, []);
 
   const onPointerUp = useMutation(
@@ -124,7 +125,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
     [camera, canvasState, history, insertLayer]
   );
 
-  const selections = useOthersMapped((other) => other.presence.selection);
+  const selections = useOthersMapped((other) => console.log("other", other));
 
   const onLayerPointerDown = useMutation(
     ({ self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
@@ -151,7 +152,6 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const layerIdsToColorSelection = useMemo(() => {
     const layerIdsToColorSelection: Record<string, string> = {};
-
     for (const user of selections) {
       const [connectionId, selection] = user;
 
@@ -162,6 +162,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
     return layerIdsToColorSelection;
   }, [selections]);
+
   return (
     <main className="h-full w-full relative bg-neutral-100 touch-none">
       <Info boardId={boardId} />
@@ -190,6 +191,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
               selectionColor={layerIdsToColorSelection[layerId]}
             />
           ))}
+          <SelectionBox onResizeHandlePointerDown={() => {}} />
           <CursorsPresence />
         </g>
       </svg>
