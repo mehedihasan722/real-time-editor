@@ -1,4 +1,4 @@
-export type Color = { r: number; g: number; b: number };
+export type Color = { r: number; g: number; b: number; a: number };
 
 export type Camera = { x: number; y: number };
 
