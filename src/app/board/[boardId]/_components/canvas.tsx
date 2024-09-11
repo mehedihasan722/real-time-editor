@@ -25,6 +25,7 @@ import {
 } from "@liveblocks/react/suspense";
 import CursorsPresence from "./cursors-presence";
 import {
+  colorToCss,
   connectionIdToColor,
   findIntersectingLayersWithRectangle,
   penPointsToPathLayer,

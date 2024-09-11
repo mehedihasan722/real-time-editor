@@ -32,7 +32,7 @@ const SelectionTools = memo(
         const arr = liveLayerIds.toImmutable();
 
         for (let i = 0; i < arr.length; i++) {
-          if (selection.includes(arr[i])) {
+          if (selection?.includes(arr[i])) {
             indices.push(i);
           }
         }
@@ -55,7 +55,7 @@ const SelectionTools = memo(
         const arr = liveLayerIds.toImmutable();
 
         for (let i = 0; i < arr.length; i++) {
-          if (selection.includes(arr[i])) {
+          if (selection?.includes(arr[i])) {
             indices.push(i);
           }
         }
@@ -72,7 +72,7 @@ const SelectionTools = memo(
     useEffect(() => {
       async function getFill() {
         const colors = await Promise.all(
-          selection.map((id) => storage.get(id)?.fill)
+          selection.map((id) => storage?.get(id)?.fill)
         );
         const filteredColors = colors.filter((color) => isValidColor(color));
         if (filteredColors.length > 0) {
@@ -99,7 +99,7 @@ const SelectionTools = memo(
       ({ storage }, fill: Color) => {
         const liveLayers = storage.get("layers");
         setLastUsedColor(fill);
-        selection.forEach((id) => {
+        selection?.forEach((id) => {
           liveLayers.get(id)?.set("fill", fill);
         });
       },
