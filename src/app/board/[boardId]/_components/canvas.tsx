@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Info from "./info";
 import Participants from "./participants";
 import Toolbar from "./toolbar";
@@ -35,7 +35,7 @@ import { nanoid } from "nanoid";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import SelectionBox from "./selection-box";
 import LayerPreview from "./layer-preview";
-import { useOther, useOthers } from "@liveblocks/react";
+import { useSelf } from "@liveblocks/react";
 
 const MAX_LAYERS = 100;
 interface CanvasProps {
@@ -44,15 +44,19 @@ interface CanvasProps {
 const Canvas = ({ boardId }: CanvasProps) => {
   const layerIds = useStorage((root) => root.layerIds);
 
+  const pencilDraft = useSelf((me) => me.presence.pencilDraft);
+
+  const info = useSelf((me) => me.info);
+
   const [canvasState, setCanvasState] = useState<CanvasState>({
     mode: CanvasMode.None,
   });
 
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0 });
   const [lastUsedColor, setLastUsedColor] = useState<Color>({
-    r: 252,
-    g: 142,
-    b: 42,
+    r: 0,
+    g: 0,
+    b: 0,
     a: 1,
   });
 
@@ -70,12 +74,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
         | LayerType.Note,
       position: Point
     ) => {
-      const liveLayers: LiveMap<string, LiveObject<Layer>> = storage.get(
-        "layers"
-      );
+      const liveLayers = storage.get("layers");
 
       if (liveLayers.size >= MAX_LAYERS) return;
-      const liveLayerIds: LiveList<string> = storage.get("layerIds");
+
+      const liveLayerIds = storage.get("layerIds");
 
       const layerId = nanoid();
 
@@ -97,6 +100,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
     },
     [lastUsedColor]
   );
+
   const unselectLayers = useMutation(({ self, setMyPresence }) => {
     if (self.presence.selection.length > 0) {
       setMyPresence({ selection: [] }, { addToHistory: true });
@@ -384,6 +388,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const layerIdsToColorSelection = useMemo(() => {
     const layerIdsToColorSelection: Record<string, string> = {};
+
     for (const user of selections) {
       const [connectionId, selection] = user;
 
@@ -394,6 +399,40 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
     return layerIdsToColorSelection;
   }, [selections]);
+
+  const deleteLayers = useDeleteLayers();
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      switch (e.key) {
+        case "z": {
+          if (e.ctrlKey || e.metaKey) {
+            if (e.shiftKey) {
+              history.redo();
+            } else {
+              history.undo();
+            }
+            break;
+          }
+        }
+        case "y": {
+          if (e.ctrlKey || e.metaKey) {
+            if (e.shiftKey) {
+              history.undo();
+            } else {
+              history.redo();
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [deleteLayers, history]);
 
   return (
     <main className="h-full w-full relative bg-neutral-100 touch-none">

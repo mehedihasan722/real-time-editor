@@ -62,12 +62,13 @@ export function pointerEventToCanvasPoint(
     y: Math.round(e.clientY) - camera.y,
   };
 }
-
+/*
 export function colorToCss(color: Color) {
   return `#${color.r.toString(16).padStart(2, "0")}${color.g.toString(16).padStart(2, "0")}${color.b.toString(16).padStart(2, "0")}`;
 }
+*/
 
-/*export function colorToCss(color: Color) {
+export function colorToCss(color: Color) {
   // Convert each component to its hexadecimal representation
   const rHex = color.r.toString(16).padStart(2, "0");
   const gHex = color.g.toString(16).padStart(2, "0");
@@ -79,7 +80,6 @@ export function colorToCss(color: Color) {
   // Construct the CSS string for RGBA color
   return `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`;
 }
-*/
 
 export function resizeBounds(bounds: XYWH, corner: Side, point: Point): XYWH {
   const result = {
