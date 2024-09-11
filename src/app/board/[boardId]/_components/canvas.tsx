@@ -217,6 +217,16 @@ const Canvas = ({ boardId }: CanvasProps) => {
     [lastUsedColor]
   );
 
+  const startDrawing = useMutation(
+    ({ setMyPresence }, point: Point, pressure: number) => {
+      setMyPresence({
+        pencilDraft: [[point.x, point.y, pressure]],
+        penColor: lastUsedColor,
+      });
+    },
+    [lastUsedColor]
+  );
+
   const resizeSelectedLayer = useMutation(
     ({ storage, self }, point: Point) => {
       if (canvasState.mode !== CanvasMode.Resizing) {
@@ -292,19 +302,59 @@ const Canvas = ({ boardId }: CanvasProps) => {
     setMyPresence({ cursor: null });
   }, []);
 
-  const onPointerUp = useMutation(
-    ({}, e) => {
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
       const point = pointerEventToCanvasPoint(e, camera);
 
       if (canvasState.mode === CanvasMode.Inserting) {
-        insertLayer(canvasState.layerType, point);
-      } else {
-        setCanvasState({ mode: CanvasMode.None });
+        return;
       }
 
+      if (canvasState.mode === CanvasMode.Pencil) {
+        startDrawing(point, e.pressure);
+        return;
+      }
+
+      setCanvasState({ origin: point, mode: CanvasMode.Pressing });
+    },
+    [camera, canvasState.mode, setCanvasState, startDrawing]
+  );
+
+  const onPointerUp = useMutation(
+    ({}, e) => {
+      const point = pointerEventToCanvasPoint(e, camera);
+      console.log({
+        point,
+        mode: canvasState,
+      });
+      if (
+        canvasState.mode === CanvasMode.None ||
+        canvasState.mode === CanvasMode.Pressing
+      ) {
+        unselectLayers();
+        setCanvasState({
+          mode: CanvasMode.None,
+        });
+      } else if (canvasState.mode === CanvasMode.Pencil) {
+        insertPath();
+      } else if (canvasState.mode === CanvasMode.Inserting) {
+        insertLayer(canvasState.layerType, point);
+      } else {
+        setCanvasState({
+          mode: CanvasMode.None,
+        });
+      }
       history.resume();
     },
-    [camera, canvasState, history, insertLayer]
+    [
+      setCanvasState,
+      camera,
+      canvasState,
+      history,
+      insertLayer,
+      unselectLayers,
+      insertPath,
+    ]
   );
 
   const selections = useOthersMapped((other) => other.presence.selection);
@@ -362,6 +412,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
         onWheel={onWheel}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
+        onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
       >
         <g style={{ transform: `translate(${camera.x}px, ${camera.y}px)` }}>
