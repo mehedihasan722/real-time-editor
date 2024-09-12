@@ -15,6 +15,7 @@ import { api } from "../../convex/_generated/api";
 import ConfirmModal from "./confirm-modal";
 import { Button } from "./ui/button";
 import { useRenameModal } from "@/store/use-rename-modal";
+import { useRouter } from "next/navigation";
 
 interface ActionsProps {
   children: React.ReactNode;
@@ -25,6 +26,7 @@ interface ActionsProps {
 }
 
 const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
+  const router = useRouter();
   const { onOpen } = useRenameModal();
   const { mutate, pending } = useApiMutation(api.board.remove);
 
@@ -39,6 +41,7 @@ const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
     mutate({ id })
       .then(() => toast.success("Board deleted"))
       .catch(() => toast.error("Failt to delete board"));
+    router.push("/");
   };
 
   return (
@@ -51,7 +54,8 @@ const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
         className="w-60"
       >
         <DropdownMenuItem onClick={onCopyLink} className="p-3 cursor-pointer">
-          <Link2 className="h-4 w-4 mr-2" /> Copy board link
+          <Link2 className="h-4 w-4 mr-2" />
+          Copy board link
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => onOpen(id, title)}
@@ -62,7 +66,7 @@ const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
         </DropdownMenuItem>
         <ConfirmModal
           header="Delete board?"
-          description="This will delete the board and all of its contets."
+          description="This will delete the board and all of its contents."
           disabled={pending}
           onConfirm={onDelete}
         >
@@ -70,7 +74,8 @@ const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
             variant="ghost"
             className="p-3 cursor-pointer text-sm w-full justify-start font-normal"
           >
-            <Trash2 className="h-4 w-4 mr-2" /> Delete
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
           </Button>
         </ConfirmModal>
       </DropdownMenuContent>

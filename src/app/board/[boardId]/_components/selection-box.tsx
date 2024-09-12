@@ -24,6 +24,7 @@ const SelectionBox = memo(
     const bounds = useSelectionBounds();
 
     if (!bounds) return null;
+
     return (
       <>
         <rect

@@ -1,5 +1,4 @@
 import { useMutation, useSelf } from "@liveblocks/react";
-import React from "react";
 
 const useDeleteLayers = () => {
   const selection = useSelf((me) => me.presence.selection);

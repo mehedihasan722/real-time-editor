@@ -110,7 +110,6 @@ const SelectionTools = memo(
     const selectionBounds = useSelectionBounds();
 
     useEffect(() => {
-      // Toggle color picker visibility when a new selection is made
       setColorPickerVisible(false);
     }, [selection]);
 

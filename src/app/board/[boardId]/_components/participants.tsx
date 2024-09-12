@@ -1,4 +1,5 @@
 "use client";
+
 import React from "react";
 import { useOthers, useSelf } from "@liveblocks/react/suspense";
 import UserAvatar from "./user-avatar";

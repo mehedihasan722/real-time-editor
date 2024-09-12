@@ -10,6 +10,7 @@ interface FooterProps {
   onClick: () => void;
   disabled: boolean;
 }
+
 const Footer = ({
   title,
   authorLabel,

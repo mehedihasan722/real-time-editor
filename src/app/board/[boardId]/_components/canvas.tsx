@@ -40,6 +40,7 @@ import { useSelf } from "@liveblocks/react";
 import useDeleteLayers from "@/hooks/use-delete-layers";
 import SelectionTools from "./selection-tools";
 import Path from "./path";
+import useDisableScrollBounce from "@/hooks/use-disable-scroll-bounce";
 
 const MAX_LAYERS = 100;
 interface CanvasProps {
@@ -64,6 +65,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
     a: 1,
   });
 
+  useDisableScrollBounce();
+  
   const history = useHistory();
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();

@@ -7,14 +7,8 @@ import { createRoomContext } from "@liveblocks/react";
 import { Layer } from "@/types/canvas";
 import { client } from "../../liveblocks.config";
 
-// Create Liveblocks client
-/*const client = createClient({
-  publicApiKey:
-    "pk_dev_Rdrmb8kwkIaaXOKdSw14PrzvREhVjaocAv4bYrQNP59lCZ73i6is1E8fF90hIxys",
-});*/
-
 // Create the room context
-const { RoomProvider, useMyPresence, useOthers } = createRoomContext(client);
+const { RoomProvider } = createRoomContext(client);
 
 interface RoomProps {
   children: ReactNode;
