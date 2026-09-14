@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/nextjs": "^5.3.3",
+    "@clerk/nextjs": "^6.39.6",
     "@liveblocks/client": "^2.6.0",
     "@liveblocks/node": "^2.6.0",
     "@liveblocks/react": "^2.6.0",
@@ -28,7 +28,7 @@
     "date-fns": "^3.6.0",
     "lucide-react": "^0.435.0",
     "nanoid": "^5.0.7",
-    "next": "14.2.6",
+    "next": "^14.2.35",
     "next-themes": "^0.3.0",
     "perfect-freehand": "^1.2.2",
     "query-string": "^9.1.0",
