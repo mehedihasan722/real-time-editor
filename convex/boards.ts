@@ -1,5 +1,4 @@
 import { v } from "convex/values";
-import { getAllOrThrow } from "convex-helpers/server/relationships";
 import { query } from "./_generated/server";
 
 export const get = query({
@@ -26,9 +25,13 @@ export const get = query({
 
       const ids = favouritedBoards.map((b) => b.boardId);
 
-      const boards = await getAllOrThrow(ctx.db, ids);
+      const boards = await Promise.all(ids.map((id) => ctx.db.get(id)));
 
-      return boards.map((board) => ({ ...board, isFavourite: true }));
+      return boards
+        .filter((board): board is NonNullable<typeof board> =>
+          board !== null && board.orgId === args.orgId
+        )
+        .map((board) => ({ ...board, isFavourite: true }));
     }
 
     const title = args.search as string;

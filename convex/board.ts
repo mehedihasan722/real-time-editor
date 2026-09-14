@@ -50,18 +50,13 @@ export const remove = mutation({
     if (!identity) {
       throw new Error("Unauthorized");
     }
-    // TODO: Later check to delete favourite relation as well
-    const userId = identity.subject;
-
-    const existingFavourite = await ctx.db
+    const favourites = await ctx.db
       .query("userFavourites")
-      .withIndex("by_user_board", (q) =>
-        q.eq("userId", userId).eq("boardId", args.id)
-      )
-      .unique();
+      .withIndex("by_board", (q) => q.eq("boardId", args.id))
+      .collect();
 
-    if (existingFavourite) {
-      await ctx.db.delete(existingFavourite._id);
+    for (const favourite of favourites) {
+      await ctx.db.delete(favourite._id);
     }
 
     await ctx.db.delete(args.id);
@@ -99,7 +94,10 @@ export const favourite = mutation({
 
     const board = await ctx.db.get(args.id);
     if (!board) {
-      throw new Error("Board no found");
+      throw new Error("Board not found");
+    }
+    if (board.orgId !== args.orgId) {
+      throw new Error("Board does not belong to this organization");
     }
 
     const userId = identity.subject;
@@ -136,7 +134,7 @@ export const unfavourite = mutation({
 
     const board = await ctx.db.get(args.id);
     if (!board) {
-      throw new Error("Board no found");
+      throw new Error("Board not found");
     }
 
     const userId = identity.subject;
