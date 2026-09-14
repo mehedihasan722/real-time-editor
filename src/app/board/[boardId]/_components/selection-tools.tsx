@@ -67,21 +67,13 @@ const SelectionTools = memo(
       [selection]
     );
 
-    const defaultColor: Color = { r: 0, g: 0, b: 0, a: 1 };
     const storage = useStorage((root) => root.layers);
     useEffect(() => {
-      async function getFill() {
-        const colors = await Promise.all(
-          selection!.map((id) => storage?.get(id)?.fill)
-        );
-        const filteredColors = colors.filter((color) => isValidColor(color));
-        if (filteredColors.length > 0) {
-          setSelectionColor(filteredColors[0] || defaultColor);
-        }
-      }
-
-      getFill();
-    }, [selection]);
+      const firstColor = selection
+        ?.map((id) => storage?.get(id)?.fill)
+        .find(isValidColor);
+      setSelectionColor(firstColor ?? { r: 0, g: 0, b: 0, a: 1 });
+    }, [selection, storage]);
 
     // Function to validate color format
     function isValidColor(color: any) {

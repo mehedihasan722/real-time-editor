@@ -15,7 +15,16 @@ const DashboardPage = ({ searchParams }: DashBoardPageProps) => {
       {!organization ? (
         <EmptyOrg />
       ) : (
-        <BoardList orgId={organization.id} query={searchParams} />
+        <div>
+          {!searchParams.favourites && !searchParams.search && <section className="future-hero">
+            <div><span className="future-hero__eyebrow">YOUR CREATIVE SPACE</span>
+              <h1>Ideas without limits.</h1>
+              <p>Think together, map what matters, and turn your next big idea into a shared board.</p>
+            </div>
+            <div className="future-hero__art" aria-hidden="true"><i /><i /><i /></div>
+          </section>}
+          <BoardList orgId={organization.id} query={searchParams} />
+        </div>
       )}
     </div>
   );

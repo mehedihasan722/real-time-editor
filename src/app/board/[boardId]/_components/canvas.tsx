@@ -447,7 +447,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
   }, [deleteLayers, history]);
 
   return (
-    <main className="h-full w-full relative board-canvas touch-none">
+    <main className="h-full w-full relative board-canvas future-board touch-none">
       <Info boardId={boardId} />
       <Participants />
       <Toolbar

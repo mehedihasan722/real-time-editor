@@ -8,7 +8,7 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
-    <main className="h-full">
+    <main className="h-full future-dashboard">
       <Sidebar />
       <div className="h-full pl-[60px]">
         <div className="flex gap-x-3 h-full">

@@ -1,18 +1,4 @@
-import Image from "next/image";
-import React from "react";
-
-const Loading = () => {
-  return (
-    <div className="h-full w-full flex flex-col justify-center items-center">
-      <Image
-        src="/logo.svg"
-        alt="Logo"
-        width={120}
-        height={120}
-        className="animate-pulse duration-700"
-      />
-    </div>
-  );
-};
-
-export default Loading;
+import BoardLoadingAnimation from "@/components/board-loading-animation";
+export default function Loading() {
+  return <main className="future-loading-screen"><BoardLoadingAnimation label="Bringing your ideas together" /></main>;
+}

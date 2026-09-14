@@ -160,8 +160,8 @@ export const unfavourite = mutation({
 export const get = query({
   args: { id: v.id("boards") },
   handler: async (ctx, args) => {
-    const board = ctx.db.get(args.id);
-
-    return board;
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+    return ctx.db.get(args.id);
   },
 });
