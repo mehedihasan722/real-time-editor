@@ -1,14 +1,9 @@
 import { cn, colorToCss } from "@/lib/utils";
 import { TextLayer } from "@/types/canvas";
 import { useMutation } from "@liveblocks/react";
-import { Kalam } from "next/font/google";
 import React, { useEffect, useState } from "react";
 import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
 
-const font = Kalam({
-  subsets: ["latin"],
-  weight: ["400"],
-});
 
 const calculateFontSize = (width: number, height: number) => {
   const maxFontSize = 96;
@@ -74,7 +69,7 @@ const Text = ({ layer, onPointerDown, id, selectionColor }: TextProps) => {
         onFocus={handleFocus}
         className={cn(
           "h-full w-full flex items-center justify-center text-center drop-shadow-md outline-none",
-          font.className
+          "font-hand"
         )}
         style={{
           fontSize: calculateFontSize(width, height),

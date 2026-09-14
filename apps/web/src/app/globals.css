@@ -127,3 +127,14 @@ body,
 .future-hero__art i:nth-child(2) { top:4px; left:79px; transform:rotate(5deg); background:linear-gradient(140deg,#bdb4ff,#8a83f4); }
 .future-hero__art i:nth-child(3) { top:22px; left:143px; transform:rotate(19deg); background:linear-gradient(140deg,#b5f5ed,#6bd3d6); }
 @media(max-width:700px) { .future-hero { padding:26px; } .future-hero__art { display:none; } }
+.admin-panel { background:#ffffffd9; border:1px solid #dbe4fa; border-radius:16px; padding:22px; box-shadow:0 10px 30px #283d7910; backdrop-filter:blur(10px); }
+.admin-panel h2 { font-size:16px; font-weight:700; color:#253054; }
+.admin-subtitle { margin-top:4px; font-size:12px; color:#6c7898; }
+.admin-chart { height:200px; display:flex; align-items:end; gap:16px; padding:24px 12px 0; border-bottom:1px solid #d8e1f4; }
+.admin-chart__column { flex:1; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:6px; color:#647292; font-size:12px; }
+.admin-chart__column strong { font-size:11px; }
+.admin-chart__column>div { width:min(45px,100%); min-height:4px; border-radius:7px 7px 0 0; background:linear-gradient(180deg,#9a8eff,#5376f8); box-shadow:0 0 18px #6d82fa33; }
+.admin-chart__column span { position:relative; top:23px; }
+body { font-family:Inter,"Segoe UI",Arial,sans-serif; }
+.font-display { font-family:"Segoe UI",Inter,Arial,sans-serif; letter-spacing:-.035em; }
+.font-hand { font-family:"Segoe Print","Comic Sans MS",cursive; }

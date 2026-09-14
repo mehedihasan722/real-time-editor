@@ -7,11 +7,13 @@ import {
 import React from "react";
 import SearchInput from "./search-input";
 import InviteButton from "./invite-button";
+import MobileNav from "./mobile-nav";
 
 export const Navbar = () => {
   const { organization } = useOrganization();
   return (
-    <div className="flex items-center gap-x-4 p-5 ">
+    <div className="flex items-center gap-x-3 p-4 md:p-5 min-w-0">
+      <MobileNav />
       <div className="hidden lg:flex lg:flex-1">
         {/* TODO: Add Search  */}
         <SearchInput />
@@ -40,7 +42,7 @@ export const Navbar = () => {
           }}
         />
       </div>
-      {organization && <InviteButton />}
+      {organization && <div className="hidden sm:block"><InviteButton /></div>}
       <UserButton />
     </div>
   );

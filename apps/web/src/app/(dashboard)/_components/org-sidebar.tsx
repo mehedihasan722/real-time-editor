@@ -2,21 +2,17 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { OrganizationSwitcher } from "@clerk/nextjs";
-import { LayoutDashboard, Star } from "lucide-react";
-import { Poppins } from "next/font/google";
+import { OrganizationSwitcher, useAuth } from "@clerk/nextjs";
+import { LayoutDashboard, Star, Shield, BookOpen, Shapes } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import React from "react";
 
-const font = Poppins({
-  subsets: ["latin"],
-  weight: ["600"],
-});
 
 export const OrgSidebar = () => {
   const searchParams = useSearchParams();
+  const { orgRole } = useAuth();
   const favourites = searchParams.get("favourites");
 
   return (
@@ -24,8 +20,8 @@ export const OrgSidebar = () => {
       <Link href="/">
         <div className="flex items-center  gap-x-2">
           <Image alt="logo" src="/logo.svg" height={60} width={60} />
-          <span className={cn("font-semibold text-2xl", font.className)}>
-            Board
+          <span className={cn("font-semibold text-2xl", "font-display")}>
+            Flowboard
           </span>
         </div>
       </Link>
@@ -78,6 +74,9 @@ export const OrgSidebar = () => {
             Favourite boards
           </Link>
         </Button>
+        <Button variant="ghost" asChild size="lg" className="font-normal justify-start px-2 w-full"><Link href="/templates"><Shapes className="h-4 w-4 mr-2" />Templates</Link></Button>
+        <Button variant="ghost" asChild size="lg" className="font-normal justify-start px-2 w-full"><Link href="/guide"><BookOpen className="h-4 w-4 mr-2" />Guide</Link></Button>
+        {orgRole === "org:admin" && <Button variant="ghost" asChild size="lg" className="font-normal justify-start px-2 w-full"><Link href="/admin"><Shield className="h-4 w-4 mr-2" />Admin dashboard</Link></Button>}
       </div>
     </div>
   );

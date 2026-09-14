@@ -15,7 +15,7 @@ import { api } from "../../convex/_generated/api";
 import ConfirmModal from "./confirm-modal";
 import { Button } from "./ui/button";
 import { useRenameModal } from "@/store/use-rename-modal";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface ActionsProps {
   children: React.ReactNode;
@@ -27,6 +27,7 @@ interface ActionsProps {
 
 const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
   const router = useRouter();
+  const pathname = usePathname();
   const { onOpen } = useRenameModal();
   const { mutate, pending } = useApiMutation(api.board.remove);
 
@@ -34,14 +35,17 @@ const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
     navigator.clipboard
       .writeText(`${window.location.origin}/board/${id}`)
       .then(() => toast.success("Link copied"))
-      .catch(() => toast.error("Failt to copy link"));
+      .catch(() => toast.error("Failed to copy link"));
   };
 
   const onDelete = () => {
     mutate({ id })
-      .then(() => toast.success("Board deleted"))
-      .catch(() => toast.error("Failt to delete board"));
-    router.push("/");
+      .then(() => {
+        toast.success("Board deleted");
+        if (pathname.startsWith("/board/")) router.push("/");
+        else router.refresh();
+      })
+      .catch(() => toast.error("Failed to delete board"));
   };
 
   return (

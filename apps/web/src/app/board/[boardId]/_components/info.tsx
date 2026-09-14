@@ -3,7 +3,6 @@ import { useQuery } from "convex/react";
 import React from "react";
 import { api } from "../../../../../convex/_generated/api";
 import { Id } from "../../../../../convex/_generated/dataModel";
-import { Poppins } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -17,10 +16,6 @@ interface InfoProps {
   boardId: string;
 }
 
-const font = Poppins({
-  subsets: ["latin"],
-  weight: ["600"],
-});
 
 const TabSepartor = () => {
   return <div className="text-neutral-300 px-1.5">|</div>;
@@ -36,11 +31,11 @@ const Info = ({ boardId }: InfoProps) => {
       <Hint label="Go to boards" side="bottom" sideOffset={10}>
         <Button className="px-2" variant="board" asChild>
           <Link href="/">
-            <Image src="/logo.svg" alt="Board Logo" height={60} width={60} />
+            <Image src="/logo.svg" alt="Flowboard Logo" height={60} width={60} />
             <span
               className={cn(
                 "font-semibold text-xl ml-2 text-black",
-                font.className
+                "font-display"
               )}
             >
               Board

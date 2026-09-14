@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "@/providers/convex-client-provider";
 import { Toaster } from "sonner";
 import ModalProvider from "@/providers/modal-provider";
 import { Suspense } from "react";
 import Loading from "@/components/auth/loading";
+import PwaRegister from "@/components/pwa-register";
 
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Miro Clone | The Visual Workspace for Innovations.",
+  title: "Flowboard | Visual collaboration workspace",
   description:
-    "Miro clone is a visual workspace for innovation where teams manage projects, design products, and build the future together.",
+    "Create and collaborate on visual boards with your team.",
+  applicationName: "Flowboard",
+  appleWebApp: { capable: true, title: "Flowboard", statusBarStyle: "black-translucent" },
+  icons: { apple: "/icon-192.png", icon: "/icon-192.png" },
 };
 
 export default function RootLayout({
@@ -22,7 +24,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body>
+        <PwaRegister />
         <Suspense fallback={<Loading />}>
           <ConvexClientProvider>
             <Toaster />

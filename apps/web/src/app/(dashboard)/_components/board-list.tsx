@@ -28,7 +28,7 @@ const BoardList = ({ orgId, query }: BoardListProps) => {
     {!query.favourites && <TemplateGallery orgId={orgId} />}
     <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
       <h2 className="text-2xl font-semibold text-[#252936]">{query.favourites ? "Starred boards" : "Boards in this team"}</h2>
-      <div className="w-[170px]"><NewBoardButton orgId={orgId} compact /></div>
+      <div className="flex items-center gap-2"><Link href="/templates" className="h-9 px-3 rounded-md border border-slate-200 bg-white flex items-center text-sm font-semibold hover:border-[#4262ff]">Explore templates</Link><div className="w-[170px]"><NewBoardButton orgId={orgId} compact /></div></div>
     </div>
     <div className="flex items-center gap-3 mb-5 text-sm text-slate-500">
       <span>Sort by</span>

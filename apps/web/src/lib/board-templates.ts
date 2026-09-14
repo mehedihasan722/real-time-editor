@@ -13,6 +13,9 @@ const content: Record<string, { heading: string; notes: string[] }> = {
   Flowchart: { heading: "Process flow", notes: ["Start", "Decision", "Outcome"] },
   "To-do planning": { heading: "To-do planning", notes: ["To do", "In progress", "Done"] },
   Roadmap: { heading: "Product roadmap", notes: ["Now", "Next", "Later"] },
+  "Weekly update": { heading: "Weekly update", notes: ["Highlights", "Priorities", "Blockers"] },
+  Prototype: { heading: "Prototype", notes: ["User need", "Screen ideas", "Feedback"] },
+  "Product requirements": { heading: "Product requirements", notes: ["Problem", "Requirements", "Success criteria"] },
 };
 
 export function getTemplateLayers(template?: string): [string, Layer][] {
