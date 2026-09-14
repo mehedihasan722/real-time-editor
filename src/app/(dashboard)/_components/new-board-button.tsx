@@ -10,8 +10,9 @@ import { useRouter } from "next/navigation";
 interface NewBoardButtonProps {
   orgId: string;
   disabled?: boolean;
+  compact?: boolean;
 }
-const NewBoardButton = ({ orgId, disabled }: NewBoardButtonProps) => {
+const NewBoardButton = ({ orgId, disabled, compact = false }: NewBoardButtonProps) => {
   const router = useRouter();
 
   const { mutate, pending } = useApiMutation(api.board.create);
@@ -32,14 +33,14 @@ const NewBoardButton = ({ orgId, disabled }: NewBoardButtonProps) => {
       disabled={pending || disabled}
       onClick={onClick}
       className={cn(
-        "col-span-1 aspect-[100/127] bg-blue-600 rounded-lg hover:bg-blue-800 flex flex-col items-center justify-center py-6",
+        compact ? "w-full h-9 rounded-md bg-[#4262ff] hover:bg-[#3451df] text-white flex items-center justify-center gap-2 font-semibold text-sm" : "col-span-1 aspect-[4/3] bg-[#fff4c5] border-2 border-dashed border-[#e6cf74] rounded-xl hover:bg-[#ffed9b] flex flex-col items-center justify-center py-6 transition-colors",
         (pending || disabled) &&
-          "opacity-75 hover:bg-blue-600 cursor-not-allowed"
+          "opacity-75 cursor-not-allowed"
       )}
     >
       <div />
-      <Plus className="h-12 w-12 text-white stroke-1" />
-      <p className="text-sm text-white font-light">New Board</p>
+      <Plus className={compact ? "h-4 w-4" : "h-10 w-10 text-[#1c1c1c] stroke-1"} />
+      <p className={compact ? "" : "text-sm text-[#1c1c1c] font-semibold mt-2"}>{compact ? "Create new" : "New Board"}</p>
     </button>
   );
 };

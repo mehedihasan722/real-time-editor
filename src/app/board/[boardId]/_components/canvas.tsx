@@ -334,10 +334,6 @@ const Canvas = ({ boardId }: CanvasProps) => {
   const onPointerUp = useMutation(
     ({}, e) => {
       const point = pointerEventToCanvasPoint(e, camera);
-      console.log({
-        point,
-        mode: canvasState,
-      });
       if (
         canvasState.mode === CanvasMode.None ||
         canvasState.mode === CanvasMode.Pressing
@@ -410,7 +406,16 @@ const Canvas = ({ boardId }: CanvasProps) => {
   const deleteLayers = useDeleteLayers();
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("input, textarea, [contenteditable=true]")) return;
+
       switch (e.key) {
+        case "Delete":
+        case "Backspace": {
+          e.preventDefault();
+          deleteLayers();
+          break;
+        }
         case "z": {
           if (e.ctrlKey || e.metaKey) {
             if (e.shiftKey) {
@@ -442,7 +447,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
   }, [deleteLayers, history]);
 
   return (
-    <main className="h-full w-full relative bg-neutral-100 touch-none">
+    <main className="h-full w-full relative board-canvas touch-none">
       <Info boardId={boardId} />
       <Participants />
       <Toolbar

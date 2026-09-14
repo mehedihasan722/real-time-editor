@@ -72,3 +72,12 @@ body,
     @apply bg-background text-foreground;
   }
 }
+
+/* Board workspace surfaces */
+.board-canvas {
+  background-color: #f8f9fb;
+  background-image: radial-gradient(#d5d9e0 0.8px, transparent 0.8px);
+  background-size: 20px 20px;
+}
+.board-canvas svg { cursor: crosshair; }
+.board-canvas button { cursor: pointer; }

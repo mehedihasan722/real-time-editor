@@ -7,10 +7,11 @@ interface BoardIdPageProps {
   params: {
     boardId: string;
   };
+  searchParams: { template?: string };
 }
-const BoardIdPage = ({ params }: BoardIdPageProps) => {
+const BoardIdPage = ({ params, searchParams }: BoardIdPageProps) => {
   return (
-    <Room roomId={params.boardId} fallback={<CanvasLoading />}>
+    <Room roomId={params.boardId} template={searchParams.template} fallback={<CanvasLoading />}>
       <Canvas boardId={params.boardId} />
     </Room>
   );

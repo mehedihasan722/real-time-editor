@@ -15,6 +15,7 @@ import { Button } from "../ui/button";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
+import { boardTitleSchema } from "@/lib/board-validation";
 
 const RenameModal = () => {
   const { mutate, pending } = useApiMutation(api.board.update);
@@ -30,9 +31,12 @@ const RenameModal = () => {
   const onSubmit: FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
 
+    const parsed = boardTitleSchema.safeParse(title);
+    if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
+
     mutate({
       id: initialValues.id,
-      title,
+      title: parsed.data,
     })
       .then(() => {
         toast.success("Board renamed"), onClose();
@@ -45,7 +49,7 @@ const RenameModal = () => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit board title</DialogTitle>
-          <DialogDescription>Enter a new tile for this board</DialogDescription>
+          <DialogDescription>Enter a new title for this board</DialogDescription>
           <form onSubmit={onSubmit} className="space-y-4">
             <Input
               disabled={pending}
