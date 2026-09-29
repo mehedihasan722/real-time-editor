@@ -2,7 +2,12 @@
 
 import { ClerkProvider, useAuth } from "@clerk/nextjs";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
-import { AuthLoading, Authenticated, ConvexReactClient } from "convex/react";
+import {
+  AuthLoading,
+  Authenticated,
+  ConvexReactClient,
+  Unauthenticated,
+} from "convex/react";
 import Loading from "@/components/auth/loading";
 import { publicEnv, setupMessage } from "@/lib/public-env";
 
@@ -32,6 +37,7 @@ export const ConvexClientProvider = ({
     <ClerkProvider publishableKey={publicEnv.data.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <Authenticated>{children}</Authenticated>
+        <Unauthenticated>{children}</Unauthenticated>
         <AuthLoading>
           <Loading />
         </AuthLoading>
