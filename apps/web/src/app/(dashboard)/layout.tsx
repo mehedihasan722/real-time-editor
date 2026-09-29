@@ -1,3 +1,4 @@
+import { DashboardFooter } from "./_components/dashboard-footer";
 import { Navbar } from "./_components/navbar";
 import { OrgSidebar } from "./_components/org-sidebar";
 import Sidebar from "./_components/sidebar";
@@ -8,15 +9,15 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
-    <main className="h-full future-dashboard">
+    <main className="min-h-screen future-dashboard">
       <Sidebar />
-      <div className="h-full pl-[60px]">
-        <div className="flex gap-x-3 h-full">
+      <div className="min-h-screen pl-[60px]">
+        <div className="flex min-h-screen gap-x-3">
           <OrgSidebar />
-          <div className="h-full flex-1">
-            {/* Add Navbar  */}
+          <div className="flex min-h-screen min-w-0 flex-1 flex-col">
             <Navbar />
-            {children}
+            <div className="flex-1">{children}</div>
+            <DashboardFooter />
           </div>
         </div>
       </div>
