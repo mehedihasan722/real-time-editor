@@ -46,3 +46,23 @@ Organization admins can open /admin to inspect board records and manage boards. 
 ## Installation
 
 On supported Chrome or Edge desktop browsers, use the browser Install app control. On Android, use Install app or Add to Home screen. On iOS, use Safari's Share menu and Add to Home Screen. The app shell is installable, but boards require a connection to Convex and Liveblocks.
+
+## Fix: No address provided to ConvexReactClient
+
+Next.js runs in apps/web, so a root .env.local alone does not configure local development. Missing or invalid public configuration now shows a setup screen; protected routes and APIs return HTTP 503 until configured.
+
+From the repository root in PowerShell, create the local file only if it does not already exist:
+
+~~~powershell
+if (!(Test-Path apps/web/.env.local)) { Copy-Item .env.example apps/web/.env.local }
+cd apps/web
+npx convex dev
+~~~
+
+Select your existing Convex project. The CLI writes CONVEX_DEPLOYMENT and NEXT_PUBLIC_CONVEX_URL to apps/web/.env.local. Use the deployment URL (normally ending in .convex.cloud), not the .convex.site HTTP actions URL. Add your Clerk publishable/secret keys and Liveblocks secret to the same file. Keep secrets local; never commit them.
+
+Restart npm run dev from the repository root after changing configuration. For Docker, populate the root .env.local as well and recreate the service with docker compose up --build --force-recreate. For hosted deployments, set these variables in the hosting environment before rebuilding; Next.js public variables are embedded at build time.
+
+Reference: [Convex Next.js setup](https://docs.convex.dev/quickstart/nextjs).
+
+Regression checks: run npm run typecheck, npm run lint, npm run build, and node --test apps/web/tests/public-env.test.cjs. With service variables unset, the dashboard and admin routes return the setup page and /api/liveblocks-auth returns JSON with HTTP 503. Live service connectivity still requires real credentials.
