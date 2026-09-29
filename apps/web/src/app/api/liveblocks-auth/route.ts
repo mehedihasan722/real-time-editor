@@ -16,7 +16,13 @@ export async function POST(request: Request) {
   if (typeof room !== "string" || !room) {
     return new Response("Invalid room", { status: 400 });
   }
-  const token = await authorization.getToken({ template: "convex" });
+  const audience = authorization.sessionClaims?.aud;
+  const usesConvexSession =
+    audience === "convex" ||
+    (Array.isArray(audience) && audience.includes("convex"));
+  const token = usesConvexSession
+    ? await authorization.getToken()
+    : await authorization.getToken({ template: "convex" });
   if (!token) return new Response("Unauthorized", { status: 403 });
 
   const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);

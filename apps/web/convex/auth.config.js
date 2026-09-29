@@ -1,7 +1,7 @@
 export default {
   providers: [
     {
-      domain: "https://legible-goat-7303.clerk.accounts.dev",
+      domain: process.env.CLERK_FRONTEND_API_URL,
       applicationID: "convex",
     },
   ],
