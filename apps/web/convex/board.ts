@@ -14,11 +14,33 @@ const images = [
   "/placeholders/9.svg",
   "/placeholders/10.svg",
 ];
+
+const boardValidator = v.object({
+  _id: v.id("boards"),
+  _creationTime: v.number(),
+  title: v.string(),
+  orgId: v.string(),
+  authorId: v.string(),
+  authorName: v.string(),
+  imageUrl: v.string(),
+});
+
+const displayName = (identity: {
+  name?: string;
+  nickname?: string;
+  email?: string;
+}) =>
+  identity.name?.trim() ||
+  identity.nickname?.trim() ||
+  identity.email?.split("@")[0]?.trim() ||
+  "Flowboard member";
+
 export const create = mutation({
   args: {
     orgId: v.string(),
     title: v.string(),
   },
+  returns: v.id("boards"),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
 
@@ -33,7 +55,7 @@ export const create = mutation({
       title,
       orgId: args.orgId,
       authorId: identity.subject,
-      authorName: identity.name!,
+      authorName: displayName(identity),
       imageUrl: randomImage,
     });
 
@@ -43,6 +65,7 @@ export const create = mutation({
 
 export const remove = mutation({
   args: { id: v.id("boards") },
+  returns: v.null(),
 
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -60,11 +83,13 @@ export const remove = mutation({
     }
 
     await ctx.db.delete(args.id);
+    return null;
   },
 });
 
 export const update = mutation({
   args: { id: v.id("boards"), title: v.string() },
+  returns: v.null(),
 
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -74,16 +99,17 @@ export const update = mutation({
     }
     const title = boardTitleSchema.parse(args.title);
 
-    const board = await ctx.db.patch(args.id, {
+    await ctx.db.patch(args.id, {
       title,
     });
 
-    return board;
+    return null;
   },
 });
 
 export const favourite = mutation({
   args: { id: v.id("boards"), orgId: v.string() },
+  returns: boardValidator,
 
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -124,6 +150,7 @@ export const favourite = mutation({
 
 export const unfavourite = mutation({
   args: { id: v.id("boards") },
+  returns: boardValidator,
 
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -159,6 +186,7 @@ export const unfavourite = mutation({
 
 export const get = query({
   args: { id: v.id("boards") },
+  returns: v.union(boardValidator, v.null()),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
