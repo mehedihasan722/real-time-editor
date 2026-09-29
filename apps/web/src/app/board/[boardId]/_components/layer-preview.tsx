@@ -8,6 +8,7 @@ import { colorToCss } from "@/lib/utils";
 import Note from "./note";
 import Text from "./text";
 import Ellipse from "./ellipse";
+import DiagramShape from "./diagram-shape";
 
 interface LayerPreviewProps {
   id: string;
@@ -24,6 +25,8 @@ const LayerPreview = memo(
     }
 
     switch (layer.type) {
+      case LayerType.Shape:
+        return <DiagramShape id={id} layer={layer} onPointerDown={onLayerPointerDown} selectionColor={selectionColor} />;
       case LayerType.Path:
         return (
           <Path

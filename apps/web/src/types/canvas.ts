@@ -8,14 +8,47 @@ export enum LayerType {
   Path,
   Text,
   Note,
+  Shape,
 }
+
+export type DiagramShapeKind =
+  | "rectangle"
+  | "rounded"
+  | "circle"
+  | "triangle"
+  | "diamond"
+  | "star"
+  | "arrow-right"
+  | "arrow-left"
+  | "hexagon"
+  | "database"
+  | "cloud"
+  | "plus"
+  | "document"
+  | "parallelogram"
+  | "terminator"
+  | "actor"
+  | "server"
+  | "callout";
 
 export type Layer =
   | RectangleLayer
   | EllipseLayer
   | PathLayer
   | TextLayer
-  | NoteLayer;
+  | NoteLayer
+  | ShapeLayer;
+
+export type ShapeLayer = {
+  type: LayerType.Shape;
+  shape: DiagramShapeKind;
+  x: number;
+  y: number;
+  height: number;
+  width: number;
+  fill: Color;
+  value?: string;
+};
 
 export type RectangleLayer = {
   type: LayerType.Rectangle;

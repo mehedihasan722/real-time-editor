@@ -44,6 +44,8 @@ import useDisableScrollBounce from "@/hooks/use-disable-scroll-bounce";
 import { BoardStarter } from "./board-starter";
 import { BoardControls } from "./board-controls";
 import { getTemplateLayers } from "@/lib/board-templates";
+import { createDiagramShapeLayer } from "@/lib/diagram-shapes";
+import { DiagramShapeKind } from "@/types/canvas";
 
 const MAX_LAYERS = 100;
 interface CanvasProps {
@@ -139,6 +141,23 @@ const Canvas = ({ boardId }: CanvasProps) => {
       setCanvasState({ mode: CanvasMode.None });
     },
     [lastUsedColor]
+  );
+
+  const insertDiagramShape = useMutation(
+    ({ storage, setMyPresence }, kind: DiagramShapeKind) => {
+      const liveLayers = storage.get("layers");
+      if (liveLayers.size >= MAX_LAYERS) return;
+      const id = nanoid();
+      const position = {
+        x: (window.innerWidth / 2 - camera.x) / zoom,
+        y: (window.innerHeight / 2 - camera.y) / zoom,
+      };
+      liveLayers.set(id, new LiveObject(createDiagramShapeLayer(kind, position)));
+      storage.get("layerIds").push(id);
+      setMyPresence({ selection: [id] }, { addToHistory: true });
+      setCanvasState({ mode: CanvasMode.None });
+    },
+    [camera, zoom]
   );
 
   const unselectLayers = useMutation(({ self, setMyPresence }) => {
@@ -538,6 +557,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
         undo={history.undo}
         redo={history.redo}
         onOpenStarter={() => setStarterOpen(true)}
+        onInsertTemplate={applyStarter}
+        onInsertShape={insertDiagramShape}
       />
       <SelectionTools camera={camera} zoom={zoom} setLastUsedColor={setLastUsedColor} />
       {starterOpen && (

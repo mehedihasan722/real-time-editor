@@ -15,6 +15,15 @@ const content: Record<string, { heading: string; notes: string[] }> = {
   Roadmap: { heading: "Product roadmap", notes: ["Now", "Next", "Later"] },
   "Weekly update": { heading: "Weekly update", notes: ["Highlights", "Priorities", "Blockers"] },
   Prototype: { heading: "Prototype", notes: ["User need", "Screen ideas", "Feedback"] },
+  Diagram: { heading: "Diagram", notes: ["Starting point", "Decision", "Outcome"] },
+  Table: { heading: "Team table", notes: ["Items and owners", "Status and due dates", "Notes and decisions"] },
+  Timeline: { heading: "Project timeline", notes: ["Now", "Up next", "Later"] },
+  Kanban: { heading: "Kanban board", notes: ["To do", "In progress", "Done"] },
+  Doc: { heading: "Collaborative document", notes: ["Context", "Key details", "Next steps"] },
+  Slides: { heading: "Story deck", notes: ["Opening", "Core message", "Call to action"] },
+  "Engage activities": { heading: "Team activity", notes: ["Warm-up", "Collaborate", "Reflect"] },
+  Talktrack: { heading: "Talktrack", notes: ["Introduction", "Demo moments", "Wrap-up"] },
+  Flows: { heading: "Connected flow", notes: ["Trigger", "Process", "Result"] },
   "Product requirements": { heading: "Product requirements", notes: ["Problem", "Requirements", "Success criteria"] },
 };
 
