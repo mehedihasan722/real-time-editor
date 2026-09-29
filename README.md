@@ -61,6 +61,8 @@ npx convex dev
 
 Select your existing Convex project. The CLI writes CONVEX_DEPLOYMENT and NEXT_PUBLIC_CONVEX_URL to apps/web/.env.local. Use the deployment URL (normally ending in .convex.cloud), not the .convex.site HTTP actions URL. Add your Clerk publishable/secret keys and Liveblocks secret to the same file. Keep secrets local; never commit them.
 
+The Clerk redirect variables from `.env.example` configure the built-in `/sign-in` and `/sign-up` routes. Copy them unchanged into `apps/web/.env.local` when adding credentials.
+
 Restart npm run dev from the repository root after changing configuration. For Docker, populate the root .env.local as well and recreate the service with docker compose up --build --force-recreate. For hosted deployments, set these variables in the hosting environment before rebuilding; Next.js public variables are embedded at build time.
 
 Reference: [Convex Next.js setup](https://docs.convex.dev/quickstart/nextjs).
