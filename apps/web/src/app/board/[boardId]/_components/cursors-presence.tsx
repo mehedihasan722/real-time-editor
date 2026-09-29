@@ -26,6 +26,8 @@ const Drafts = () => {
     (other) => ({
       pencilDraft: other.presence.pencilDraft,
       penColor: other.presence.penColor,
+      penWidth: other.presence.penWidth,
+      penTool: other.presence.penTool,
     }),
     shallow
   );
@@ -43,6 +45,8 @@ const Drafts = () => {
               fill={
                 other.penColor ? colorToCss(other.penColor) : "rgba(0,0,0,1)"
               }
+              strokeWidth={other.penWidth}
+              drawingTool={other.penTool === "eraser" ? "pen" : other.penTool}
             />
           );
         }

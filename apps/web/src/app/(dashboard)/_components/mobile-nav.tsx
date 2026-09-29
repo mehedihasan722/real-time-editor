@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { Menu, LayoutDashboard, Shapes, BookOpen, Shield } from "lucide-react";
+import { Menu, LayoutDashboard, Shapes, BookOpen, Shield, Settings } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 export default function MobileNav() {
   const { orgRole } = useAuth();
@@ -10,6 +10,7 @@ export default function MobileNav() {
       <DropdownMenuItem asChild><Link href="/"><LayoutDashboard className="h-4 w-4 mr-2" />Boards</Link></DropdownMenuItem>
       <DropdownMenuItem asChild><Link href="/templates"><Shapes className="h-4 w-4 mr-2" />Templates</Link></DropdownMenuItem>
       <DropdownMenuItem asChild><Link href="/guide"><BookOpen className="h-4 w-4 mr-2" />Guide</Link></DropdownMenuItem>
+      <DropdownMenuItem asChild><Link href="/settings"><Settings className="h-4 w-4 mr-2" />Settings</Link></DropdownMenuItem>
       {orgRole === "org:admin" && <DropdownMenuItem asChild><Link href="/admin"><Shield className="h-4 w-4 mr-2" />Admin</Link></DropdownMenuItem>}
     </DropdownMenuContent>
   </DropdownMenu>;

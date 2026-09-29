@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Hint from "@/components/hint";
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const MAX_SHOWN_USERS = 2;
 const Participants = () => {
@@ -25,7 +26,7 @@ const Participants = () => {
   };
 
   return (
-    <div className="absolute z-20 h-12 top-2 right-2 bg-white rounded-xl p-1.5 pl-3 flex items-center gap-2 shadow-md border border-slate-200/70">
+    <div className="board-top-panel absolute z-20 h-12 top-2 right-2 bg-white rounded-xl p-1.5 pl-3 flex items-center gap-2 shadow-md border border-slate-200/70">
       <div className="flex gap-x-2">
         {users.slice(0, MAX_SHOWN_USERS).map(({ connectionId, info }) => {
           return (
@@ -54,6 +55,7 @@ const Participants = () => {
           />
         )}
       </div>
+      <ThemeToggle />
       <Hint label="Copy board link" side="bottom">
         <Button className="h-9 gap-2 bg-indigo-600 px-3 text-white hover:bg-indigo-500" onClick={shareBoard}>
           <Share2 className="size-4" /> <span className="hidden sm:inline">Share</span>

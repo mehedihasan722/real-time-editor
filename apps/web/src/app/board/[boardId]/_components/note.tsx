@@ -2,16 +2,11 @@ import { NoteLayer } from "@/types/canvas";
 import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
 import { useMutation } from "@liveblocks/react";
 import React, { useEffect, useState } from "react";
-import { cn, colorToCss, getContrastingTextColor } from "@/lib/utils";
+import { colorToCss, getContrastingTextColor } from "@/lib/utils";
 
 
 const calculateFontSize = (width: number, height: number) => {
-  const maxFontSize = 96;
-  const scaleFactor = 0.15;
-  const fontSizeBasedOnHeight = height * scaleFactor;
-  const fontSizeBasedOnWidth = width * scaleFactor;
-
-  return Math.min(fontSizeBasedOnHeight, fontSizeBasedOnWidth, maxFontSize);
+  return Math.max(14, Math.min(width, height) * 0.075, Math.min(32, height * 0.12));
 };
 
 interface NoteProps {
@@ -22,10 +17,8 @@ interface NoteProps {
 }
 
 const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) => {
-  const { x, y, width, height, fill, value } = layer;
-  const [newValue, setNewValue] = useState("Text");
-
-  const [hasModified, setHasModified] = useState(false);
+  const { x, y, width, height, fill, value, author, fontFamily = "sans", fontSize = "small", bold, strike, list, link } = layer;
+  const [newValue, setNewValue] = useState(value ?? "");
 
   const updateValue = useMutation(({ storage }, newValue: string) => {
     const liveLayers = storage.get("layers");
@@ -37,21 +30,16 @@ const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) => {
   const handleContentChange = (e: ContentEditableEvent) => {
     const updatedValue = e.target.value;
 
-    setHasModified(true);
     updateValue(updatedValue);
   };
 
-  const handleFocus = () => {
-    if (!hasModified && newValue === "Text") {
-      setNewValue(""); //
-    }
-  };
-
   useEffect(() => {
-    if (value) {
-      setNewValue(value);
-    }
+    setNewValue(value ?? "");
   }, [value]);
+
+  const backgroundColor = fill ? colorToCss(fill) : "rgb(177, 239, 188)";
+  const textColor = fill ? getContrastingTextColor(fill) : "rgb(42, 64, 52)";
+  const sizeMultiplier = fontSize === "large" ? 1.42 : fontSize === "medium" ? 1.2 : 1;
 
   return (
     <foreignObject
@@ -61,24 +49,36 @@ const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) => {
       height={height}
       onPointerDown={(e) => onPointerDown(e, id)}
       style={{
-        outline: selectionColor ? `1px solid ${selectionColor}` : "none",
-        backgroundColor: fill ? colorToCss(fill) : "rgba(0,0,0,1)",
+        overflow: "visible",
       }}
-      className="shadow-md drop-shadow-xl"
+      className="figjam-note-object"
     >
-      <ContentEditable
-        html={newValue}
-        onChange={handleContentChange}
-        onFocus={handleFocus}
-        className={cn(
-          "h-full w-full flex items-center justify-center text-center outline-none",
-          "font-hand"
-        )}
+      <div
+        className="figjam-note"
+        data-selected={selectionColor ? "true" : "false"}
         style={{
-          fontSize: calculateFontSize(width, height),
-          color: fill ? getContrastingTextColor(fill) : "rgba(0,0,0,1)",
+          backgroundColor,
+          color: textColor,
+          outlineColor: selectionColor,
         }}
-      />
+      >
+        <ContentEditable
+          html={newValue}
+          onChange={handleContentChange}
+          aria-label="Sticky note text"
+          data-placeholder="Type anything, @mention anyone"
+          className={`figjam-note__content ${fontFamily === "hand" ? "font-hand" : ""}`}
+          style={{
+            fontSize: calculateFontSize(width, height) * sizeMultiplier,
+            fontWeight: bold ? 800 : 500,
+            textDecoration: strike ? "line-through" : "none",
+            display: list ? "list-item" : "block",
+            listStylePosition: "inside",
+          }}
+        />
+        <span className="figjam-note__author">{author || "Team note"}</span>
+        {link && <a className="figjam-note__link" href={link} target="_blank" rel="noreferrer" onPointerDown={(event) => event.stopPropagation()}>Link</a>}
+      </div>
     </foreignObject>
   );
 };

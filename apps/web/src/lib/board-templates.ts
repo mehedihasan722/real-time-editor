@@ -1,4 +1,7 @@
 import { Layer, LayerType } from "@/types/canvas";
+import { z } from "zod";
+
+export const assistPromptSchema = z.string().trim().min(3, "Describe what you want to create.").max(280, "Keep the prompt under 280 characters.");
 
 const palette = [
   { r: 255, g: 229, b: 114, a: 1 },
@@ -27,10 +30,30 @@ const content: Record<string, { heading: string; notes: string[] }> = {
   "Product requirements": { heading: "Product requirements", notes: ["Problem", "Requirements", "Success criteria"] },
 };
 
-export function getTemplateLayers(template?: string): [string, Layer][] {
+const escapeMarkup = (value: string) => value
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll('"', "&quot;")
+  .replaceAll("'", "&#039;");
+
+export function getTemplateLayers(template?: string, prompt?: string, author = "Flowboard Assist"): [string, Layer][] {
   const selected = template && content[template];
   if (!selected) return [];
-  const heading: Layer = { type: LayerType.Text, x: 190, y: 110, width: 600, height: 80, fill: { r: 30, g: 41, b: 59, a: 1 }, value: selected.heading };
-  const notes: [string, Layer][] = selected.notes.map((value, index) => [`template-note-${index}`, { type: LayerType.Note, x: 190 + index * 250, y: 240, width: 210, height: 180, fill: palette[index], value }]);
+  const parsedPrompt = prompt ? assistPromptSchema.safeParse(prompt) : null;
+  const request = parsedPrompt?.success ? parsedPrompt.data : "";
+  const safeRequest = escapeMarkup(request);
+  const headingValue = request
+    ? escapeMarkup(request.length > 68 ? `${request.slice(0, 65)}…` : request)
+    : selected.heading;
+  const generatedNotes = safeRequest
+    ? [
+        `Goal: ${safeRequest}`,
+        selected.notes[1] || "Key ideas and decisions",
+        selected.notes[2] || "Owners and next actions",
+      ]
+    : selected.notes;
+  const heading: Layer = { type: LayerType.Text, x: 190, y: 110, width: 720, height: 80, fill: { r: 30, g: 41, b: 59, a: 1 }, value: headingValue };
+  const notes: [string, Layer][] = generatedNotes.map((value, index) => [`template-note-${index}`, { type: LayerType.Note, x: 190 + index * 250, y: 240, width: 210, height: 180, fill: palette[index], value, author }]);
   return [["template-heading", heading], ...notes];
 }

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { OrganizationSwitcher, useAuth } from "@clerk/nextjs";
-import { LayoutDashboard, Star, Shield, BookOpen, Shapes } from "lucide-react";
+import { LayoutDashboard, Star, Shield, BookOpen, Shapes, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -76,6 +76,7 @@ export const OrgSidebar = () => {
         </Button>
         <Button variant="ghost" asChild size="lg" className="font-normal justify-start px-2 w-full"><Link href="/templates"><Shapes className="h-4 w-4 mr-2" />Templates</Link></Button>
         <Button variant="ghost" asChild size="lg" className="font-normal justify-start px-2 w-full"><Link href="/guide"><BookOpen className="h-4 w-4 mr-2" />Guide</Link></Button>
+        <Button variant="ghost" asChild size="lg" className="font-normal justify-start px-2 w-full"><Link href="/settings"><Settings className="h-4 w-4 mr-2" />Settings</Link></Button>
         {orgRole === "org:admin" && <Button variant="ghost" asChild size="lg" className="font-normal justify-start px-2 w-full"><Link href="/admin"><Shield className="h-4 w-4 mr-2" />Admin dashboard</Link></Button>}
       </div>
     </div>

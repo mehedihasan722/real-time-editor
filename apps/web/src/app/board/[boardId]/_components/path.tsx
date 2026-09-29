@@ -9,19 +9,21 @@ interface PathProps {
   fill: string;
   onPointerDown?: (e: React.PointerEvent) => void;
   stroke?: string;
+  strokeWidth?: number;
+  drawingTool?: "pen" | "marker" | "style";
 }
 
-const Path = ({ x, y, points, fill, onPointerDown, stroke }: PathProps) => {
+const Path = ({ x, y, points, fill, onPointerDown, stroke, strokeWidth = 8, drawingTool = "pen" }: PathProps) => {
   return (
     <path
       className="drop-shadow-md"
       onPointerDown={onPointerDown}
       d={getSvgPathFromStroke(
         getStroke(points, {
-          size: 16,
-          thinning: 0.5,
-          smoothing: 0.5,
-          streamline: 0.5,
+          size: drawingTool === "marker" ? strokeWidth * 1.8 : strokeWidth,
+          thinning: drawingTool === "marker" ? 0 : drawingTool === "style" ? -0.35 : 0.5,
+          smoothing: drawingTool === "style" ? 0.72 : 0.5,
+          streamline: drawingTool === "style" ? 0.72 : 0.5,
         })
       )}
       style={{
@@ -32,6 +34,7 @@ const Path = ({ x, y, points, fill, onPointerDown, stroke }: PathProps) => {
       fill={fill}
       stroke={stroke}
       strokeWidth={1}
+      opacity={drawingTool === "marker" ? 0.58 : 1}
     />
   );
 };

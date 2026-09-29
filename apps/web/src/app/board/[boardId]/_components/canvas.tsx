@@ -79,10 +79,10 @@ const Canvas = ({ boardId }: CanvasProps) => {
   const canRedo = useCanRedo();
 
   const applyStarter = useMutation(
-    ({ storage, setMyPresence }, template: string) => {
+    ({ storage, setMyPresence }, template: string, prompt?: string) => {
       const liveLayers = storage.get("layers");
       const liveLayerIds = storage.get("layerIds");
-      const templateLayers = getTemplateLayers(template);
+      const templateLayers = getTemplateLayers(template, prompt, info?.name || "Flowboard Assist");
       const centerX = (window.innerWidth / 2 - camera.x) / zoom;
       const centerY = (window.innerHeight / 2 - camera.y) / zoom;
       const offsetX = centerX - 570;
@@ -103,7 +103,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       setMyPresence({ selection: insertedIds });
       setStarterOpen(false);
     },
-    [camera, zoom]
+    [camera, info?.name, zoom]
   );
 
   const insertLayer = useMutation(
@@ -124,23 +124,18 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
       const layerId = nanoid();
 
-      const layer = new LiveObject({
-        type: layerType,
-        x: position.x,
-        y: position.y,
-        height: 100,
-        width: 100,
-        fill: lastUsedColor,
-      });
+      const layer: Layer = layerType === LayerType.Note
+        ? { type: LayerType.Note, x: position.x, y: position.y, height: 180, width: 180, fill: lastUsedColor, author: info?.name || "Workspace member" }
+        : { type: layerType, x: position.x, y: position.y, height: 100, width: 100, fill: lastUsedColor };
 
       liveLayerIds.push(layerId);
-      liveLayers.set(layerId, layer);
+      liveLayers.set(layerId, new LiveObject<Layer>(layer));
 
       setMyPresence({ selection: [layerId] }, { addToHistory: true });
 
       setCanvasState({ mode: CanvasMode.None });
     },
-    [lastUsedColor]
+    [info?.name, lastUsedColor]
   );
 
   const insertDiagramShape = useMutation(
@@ -153,6 +148,36 @@ const Canvas = ({ boardId }: CanvasProps) => {
         y: (window.innerHeight / 2 - camera.y) / zoom,
       };
       liveLayers.set(id, new LiveObject(createDiagramShapeLayer(kind, position)));
+      storage.get("layerIds").push(id);
+      setMyPresence({ selection: [id] }, { addToHistory: true });
+      setCanvasState({ mode: CanvasMode.None });
+    },
+    [camera, zoom]
+  );
+
+  const insertFrame = useMutation(
+    ({ storage, setMyPresence }, width: number, height: number, label: string) => {
+      const liveLayers = storage.get("layers");
+      if (liveLayers.size >= MAX_LAYERS) return;
+      const id = nanoid();
+      const center = { x: (window.innerWidth / 2 - camera.x) / zoom, y: (window.innerHeight / 2 - camera.y) / zoom };
+      const layer: Layer = { type: LayerType.Shape, shape: "rectangle", x: center.x - width / 2, y: center.y - height / 2, width, height, fill: { r: 255, g: 255, b: 255, a: 0.12 }, value: label };
+      liveLayers.set(id, new LiveObject<Layer>(layer));
+      storage.get("layerIds").push(id);
+      setMyPresence({ selection: [id] }, { addToHistory: true });
+      setCanvasState({ mode: CanvasMode.None });
+    },
+    [camera, zoom]
+  );
+
+  const insertSticker = useMutation(
+    ({ storage, setMyPresence }, value: string) => {
+      const liveLayers = storage.get("layers");
+      if (liveLayers.size >= MAX_LAYERS) return;
+      const id = nanoid();
+      const center = { x: (window.innerWidth / 2 - camera.x) / zoom, y: (window.innerHeight / 2 - camera.y) / zoom };
+      const layer: Layer = { type: LayerType.Sticker, x: center.x - 55, y: center.y - 55, width: 110, height: 110, fill: { r: 255, g: 255, b: 255, a: 0 }, value };
+      liveLayers.set(id, new LiveObject<Layer>(layer));
       storage.get("layerIds").push(id);
       setMyPresence({ selection: [id] }, { addToHistory: true });
       setCanvasState({ mode: CanvasMode.None });
@@ -268,26 +293,40 @@ const Canvas = ({ boardId }: CanvasProps) => {
       const id = nanoid();
       liveLayers.set(
         id,
-        new LiveObject(penPointsToPathLayer(pencilDraft, lastUsedColor))
+        new LiveObject(
+          penPointsToPathLayer(
+            pencilDraft,
+            lastUsedColor,
+            canvasState.mode === CanvasMode.Pencil ? canvasState.width : 8,
+            canvasState.mode === CanvasMode.Pencil && canvasState.tool !== "eraser"
+              ? canvasState.tool
+              : "pen"
+          )
+        )
       );
 
       const liveLayerIds = storage.get("layerIds");
       liveLayerIds.push(id);
 
       setMyPresence({ pencilDraft: null });
-      setCanvasState({ mode: CanvasMode.Pencil });
+      if (canvasState.mode !== CanvasMode.Pencil) {
+        setCanvasState({ mode: CanvasMode.Pencil, tool: "pen", width: 8 });
+      }
     },
-    [lastUsedColor]
+    [canvasState, lastUsedColor]
   );
 
   const startDrawing = useMutation(
     ({ setMyPresence }, point: Point, pressure: number) => {
+      if (canvasState.mode !== CanvasMode.Pencil || canvasState.tool === "eraser") return;
       setMyPresence({
         pencilDraft: [[point.x, point.y, pressure]],
         penColor: lastUsedColor,
+        penWidth: canvasState.width,
+        penTool: canvasState.tool,
       });
     },
-    [lastUsedColor]
+    [canvasState, lastUsedColor]
   );
 
   const resizeSelectedLayer = useMutation(
@@ -447,7 +486,18 @@ const Canvas = ({ boardId }: CanvasProps) => {
   const selections = useOthersMapped((other) => other.presence.selection);
 
   const onLayerPointerDown = useMutation(
-    ({ self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
+    ({ storage, self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
+      if (canvasState.mode === CanvasMode.Pencil && canvasState.tool === "eraser") {
+        e.stopPropagation();
+        const liveLayers = storage.get("layers");
+        if (liveLayers.get(layerId)?.get("type") === LayerType.Path) {
+          const liveLayerIds = storage.get("layerIds");
+          const index = liveLayerIds.toImmutable().indexOf(layerId);
+          if (index !== -1) liveLayerIds.delete(index);
+          liveLayers.delete(layerId);
+        }
+        return;
+      }
       if (
         canvasState.mode === CanvasMode.Pencil ||
         canvasState.mode === CanvasMode.Inserting
@@ -466,7 +516,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
       setCanvasState({ mode: CanvasMode.Translating, current: point });
     },
-    [setCanvasState, camera, zoom, history, canvasState.mode]
+    [setCanvasState, camera, zoom, history, canvasState]
   );
 
   const layerIdsToColorSelection = useMemo(() => {
@@ -559,6 +609,10 @@ const Canvas = ({ boardId }: CanvasProps) => {
         onOpenStarter={() => setStarterOpen(true)}
         onInsertTemplate={applyStarter}
         onInsertShape={insertDiagramShape}
+        drawingColor={lastUsedColor}
+        onDrawingColorChange={setLastUsedColor}
+        onInsertFrame={insertFrame}
+        onInsertSticker={insertSticker}
       />
       <SelectionTools camera={camera} zoom={zoom} setLastUsedColor={setLastUsedColor} />
       {starterOpen && (
@@ -614,6 +668,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
               fill={colorToCss(lastUsedColor)}
               x={0}
               y={0}
+              strokeWidth={canvasState.mode === CanvasMode.Pencil ? canvasState.width : 8}
+              drawingTool={canvasState.mode === CanvasMode.Pencil && canvasState.tool !== "eraser" ? canvasState.tool : "pen"}
             />
           )}
         </g>

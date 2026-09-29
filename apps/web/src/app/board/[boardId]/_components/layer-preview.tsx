@@ -9,6 +9,7 @@ import Note from "./note";
 import Text from "./text";
 import Ellipse from "./ellipse";
 import DiagramShape from "./diagram-shape";
+import StickerLayerView from "./sticker-layer";
 
 interface LayerPreviewProps {
   id: string;
@@ -25,6 +26,8 @@ const LayerPreview = memo(
     }
 
     switch (layer.type) {
+      case LayerType.Sticker:
+        return <StickerLayerView id={id} layer={layer} onPointerDown={onLayerPointerDown} selectionColor={selectionColor} />;
       case LayerType.Shape:
         return <DiagramShape id={id} layer={layer} onPointerDown={onLayerPointerDown} selectionColor={selectionColor} />;
       case LayerType.Path:
@@ -37,6 +40,8 @@ const LayerPreview = memo(
             y={layer.y}
             fill={layer.fill ? colorToCss(layer.fill) : "rgba(0,0,0,1)"}
             stroke={selectionColor}
+            strokeWidth={layer.strokeWidth}
+            drawingTool={layer.drawingTool}
           />
         );
       case LayerType.Note:

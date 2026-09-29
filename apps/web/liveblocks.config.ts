@@ -1,4 +1,4 @@
-import { Color, Layer } from "@/types/canvas";
+import { Color, DrawingTool, Layer } from "@/types/canvas";
 import {
   createClient,
   LiveList,
@@ -22,6 +22,8 @@ declare global {
       selection: string[];
       pencilDraft: [x: number, y: number, pressure: number][] | null;
       penColor: Color | null;
+      penWidth: number;
+      penTool: DrawingTool;
     };
 
     // The Storage tree for the room, for useMutation, useStorage, etc.

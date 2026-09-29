@@ -24,6 +24,11 @@ const DiagramShape = ({ id, layer, onPointerDown, selectionColor }: DiagramShape
 
   const content = (() => {
     switch (shape) {
+      case "line": return <line x1={4} y1={h / 2} x2={w - 4} y2={h / 2} fill="none" stroke={stroke} strokeWidth={3} vectorEffect="non-scaling-stroke" />;
+      case "divider": return <line x1={4} y1={h / 2} x2={w - 4} y2={h / 2} fill="none" stroke={stroke} strokeWidth={2} strokeDasharray="8 5" vectorEffect="non-scaling-stroke" />;
+      case "arrow": return <><line x1={4} y1={h / 2} x2={w - 16} y2={h / 2} fill="none" stroke={stroke} strokeWidth={3} vectorEffect="non-scaling-stroke" /><path d={`M${w - 22} ${h / 2 - 8} L${w - 5} ${h / 2} L${w - 22} ${h / 2 + 8}`} fill="none" stroke={stroke} strokeWidth={3} /></>;
+      case "elbow-arrow": return <><path d={`M4 ${h - 6} V${h * .3} H${w - 16}`} fill="none" stroke={stroke} strokeWidth={3} vectorEffect="non-scaling-stroke" /><path d={`M${w - 22} ${h * .3 - 8} L${w - 5} ${h * .3} L${w - 22} ${h * .3 + 8}`} fill="none" stroke={stroke} strokeWidth={3} /></>;
+      case "block-arrow": return <polygon points={`3,${h * .35} ${w * .64},${h * .35} ${w * .64},${h * .15} ${w - 3},${h / 2} ${w * .64},${h * .85} ${w * .64},${h * .65} 3,${h * .65}`} {...common} />;
       case "circle": return <ellipse cx={w / 2} cy={h / 2} rx={w / 2 - 3} ry={h / 2 - 3} {...common} />;
       case "triangle": return <polygon points={`${w / 2},3 ${w - 3},${h - 3} 3,${h - 3}`} {...common} />;
       case "diamond": return <polygon points={`${w / 2},3 ${w - 3},${h / 2} ${w / 2},${h - 3} 3,${h / 2}`} {...common} />;
@@ -45,7 +50,7 @@ const DiagramShape = ({ id, layer, onPointerDown, selectionColor }: DiagramShape
     }
   })();
 
-  return <g transform={`translate(${layer.x} ${layer.y})`} onPointerDown={(event) => onPointerDown(event, id)} className="drop-shadow-sm">{content}</g>;
+  return <g transform={`translate(${layer.x} ${layer.y})`} onPointerDown={(event) => onPointerDown(event, id)} className="drop-shadow-sm">{layer.value && <text x={4} y={-7} fill={stroke} fontSize={12} fontWeight={700}>{layer.value}</text>}{content}</g>;
 };
 
 export default DiagramShape;

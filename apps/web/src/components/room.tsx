@@ -29,6 +29,8 @@ const Room = ({ children, roomId, template, fallback }: RoomProps) => {
           selection: [],
           pencilDraft: null,
           penColor: null,
+          penWidth: 8,
+          penTool: "pen",
         }}
         initialStorage={{
           layers: new LiveMap<string, LiveObject<Layer>>(templateLayers.map(([id, layer]) => [id, new LiveObject(layer)])),

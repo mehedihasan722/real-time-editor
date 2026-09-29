@@ -5,12 +5,13 @@ const footerLinks = [
   { href: "/", label: "Boards" },
   { href: "/templates", label: "Templates" },
   { href: "/guide", label: "Guide" },
+  { href: "/settings", label: "Settings" },
   { href: "/admin", label: "Admin" },
 ];
 
 export const DashboardFooter = () => {
   return (
-    <footer className="relative mx-4 mb-4 mt-10 overflow-hidden rounded-2xl border border-indigo-100/80 bg-white/75 px-5 py-5 shadow-[0_18px_50px_rgba(45,62,130,0.10)] backdrop-blur-xl sm:px-7">
+    <footer className="relative mx-4 mb-4 mt-10 overflow-hidden rounded-2xl border border-indigo-100/80 bg-white/75 px-5 py-5 shadow-[0_18px_50px_rgba(45,62,130,0.10)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/80 sm:px-7">
       <div
         className="pointer-events-none absolute -right-16 -top-24 h-44 w-44 rounded-full bg-indigo-300/25 blur-3xl"
         aria-hidden="true"
@@ -21,12 +22,12 @@ export const DashboardFooter = () => {
             <Orbit className="size-5" aria-hidden="true" />
           </span>
           <div>
-            <p className="font-display text-base font-bold text-slate-900">Flowboard</p>
-            <p className="text-xs text-slate-500">Realtime space for ideas without limits.</p>
+            <p className="font-display text-base font-bold text-slate-900 dark:text-slate-100">Flowboard</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Realtime space for ideas without limits.</p>
           </div>
         </div>
 
-        <nav aria-label="Footer navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-slate-600">
+        <nav aria-label="Footer navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-slate-600 dark:text-slate-300">
           {footerLinks.map((link) => (
             <Link key={link.href} href={link.href} className="transition-colors hover:text-indigo-600">
               {link.label}
@@ -43,7 +44,7 @@ export const DashboardFooter = () => {
           </a>
         </nav>
 
-        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-semibold text-emerald-700">
             <span className="size-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(34,197,94,0.65)]" />
             Realtime ready

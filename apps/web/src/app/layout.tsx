@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ConvexClientProvider } from "@/providers/convex-client-provider";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import ModalProvider from "@/providers/modal-provider";
 import { Suspense } from "react";
 import Loading from "@/components/auth/loading";
 import PwaRegister from "@/components/pwa-register";
+import { ThemeProvider } from "@/providers/theme-provider";
+import { WorkspacePreferencesProvider } from "@/providers/workspace-preferences-provider";
 
 
 export const metadata: Metadata = {
@@ -23,16 +25,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <PwaRegister />
-        <Suspense fallback={<Loading />}>
-          <ConvexClientProvider>
-            <Toaster />
-            <ModalProvider />
-            {children}
-          </ConvexClientProvider>
-        </Suspense>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <WorkspacePreferencesProvider>
+            <PwaRegister />
+            <Suspense fallback={<Loading />}>
+              <ConvexClientProvider>
+                <Toaster />
+                <ModalProvider />
+                {children}
+              </ConvexClientProvider>
+            </Suspense>
+          </WorkspacePreferencesProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

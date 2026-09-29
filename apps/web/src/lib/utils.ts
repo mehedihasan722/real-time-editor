@@ -158,7 +158,9 @@ export function getContrastingTextColor(color: Color) {
 
 export function penPointsToPathLayer(
   points: number[][],
-  color: Color
+  color: Color,
+  strokeWidth = 8,
+  drawingTool: PathLayer["drawingTool"] = "pen"
 ): PathLayer {
   if (points.length < 2) {
     throw new Error("Cannot transform points with less than 2 points");
@@ -197,6 +199,8 @@ export function penPointsToPathLayer(
     height: bottom - top,
     fill: color,
     points: points.map(([x, y, pressure]) => [x - left, y - top, pressure]),
+    strokeWidth,
+    drawingTool,
   };
 }
 

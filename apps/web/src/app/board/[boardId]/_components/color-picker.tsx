@@ -4,6 +4,7 @@ import Hint from "@/components/hint";
 import { Color, Position } from "@/types/canvas";
 import { ColorPicker as ReactColorPicker, themes } from "react-pick-color";
 import React, { useEffect, useState } from "react";
+import { colorToCss } from "@/lib/utils";
 
 interface ColorPickerProps {
   onChange: (color: Color) => void;
@@ -40,11 +41,10 @@ const ColorPicker = ({
     <div className="flex flex-wrap gap-2 items-center max-w-[164px] pr-2 mr-2 border-r border-neutral-200 relative">
       <Hint label="Color Picker">
         <button
-          className=" w-8 h-8 rounded-full border border-gray-400 flex items-center justify-center relative"
+          className="selection-color-button w-8 h-8 rounded-full border flex items-center justify-center relative"
           onClick={toggleColorPicker}
           style={{
-            background:
-              "conic-gradient(#ff0000, #ff0000 60deg, #00ff00 60deg, #00ff00 120deg, #0000ff 120deg, #0000ff 180deg, #ffff00 180deg, #ffff00 240deg, #800080 240deg, #800080 300deg, #00ffff 300deg, #00ffff)",
+            background: colorToCss(selectedColor),
           }}
         />
       </Hint>

@@ -186,10 +186,27 @@ export const unfavourite = mutation({
 
 export const get = query({
   args: { id: v.id("boards") },
-  returns: v.union(boardValidator, v.null()),
+  returns: v.union(v.object({
+    _id: v.id("boards"),
+    _creationTime: v.number(),
+    title: v.string(),
+    orgId: v.string(),
+    authorId: v.string(),
+    authorName: v.string(),
+    imageUrl: v.string(),
+    isFavourite: v.boolean(),
+  }), v.null()),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
-    return ctx.db.get(args.id);
+    const board = await ctx.db.get(args.id);
+    if (!board) return null;
+    const favourite = await ctx.db
+      .query("userFavourites")
+      .withIndex("by_user_board", (q) =>
+        q.eq("userId", identity.subject).eq("boardId", board._id)
+      )
+      .unique();
+    return { ...board, isFavourite: Boolean(favourite) };
   },
 });

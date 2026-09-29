@@ -8,6 +8,7 @@ import React from "react";
 import SearchInput from "./search-input";
 import InviteButton from "./invite-button";
 import MobileNav from "./mobile-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Navbar = () => {
   const { organization } = useOrganization();
@@ -43,6 +44,7 @@ export const Navbar = () => {
         />
       </div>
       {organization && <div className="hidden sm:block"><InviteButton /></div>}
+      <ThemeToggle />
       <UserButton />
     </div>
   );

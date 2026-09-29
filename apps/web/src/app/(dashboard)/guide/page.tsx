@@ -1,12 +1,13 @@
 import Link from "next/link";
 const sections = [
   { title: "1. Set up your workspace", body: "Sign in, create or join an organization, and choose it from the left sidebar. The organization keeps your team's boards together." },
-  { title: "2. Create a board", body: "Choose Blank board or a starter template. On an empty board, Flowboard Assist can turn a prompt or quick suggestion into a collaborative set of editable notes and headings." },
-  { title: "3. Use the canvas", body: "Select items to move or resize them. Use the left toolbar for text, notes, drawing, Flowboard Assist, and Diagram & Shapes. The plus button opens Formats & Flows. Manage shapes controls Basic, Flowchart, Connector, Callout, UML, ERD, and AWS packs. Scroll to pan; use Ctrl/Cmd plus the wheel or the lower-right controls to zoom and reset the view." },
-  { title: "4. Edit and organize", body: "Click a board title to rename it. Use the board menu to copy a link or delete the board. Select an item and press Delete or Backspace to remove it; Ctrl/Cmd+Z undoes a change." },
+  { title: "2. Create a board", body: "Choose Blank board or a starter template. On an empty board, describe a goal in Flowboard Assist or use a quick suggestion. The validated prompt becomes a collaborative heading plus editable goal, planning, and action notes." },
+  { title: "3. Use the canvas", body: "Select items to move or resize them. Sticky notes use a spacious FigJam-inspired layout with author, typeface, size, bold, strike, link, and list controls. The drawing palette provides pen, marker, styled strokes, eraser, widths, and colors. Shapes & Lines, Frames, and Stickers each open a focused insertion sidebar." },
+  { title: "4. Edit and organize", body: "Click a board title to rename it. Use the star in the board header to add or remove it from Favourite boards. The board menu copies links or deletes boards. Select an item and press Delete or Backspace to remove it; Ctrl/Cmd+Z undoes a change." },
   { title: "5. Collaborate live", body: "Use Share on the board to copy its link for an organization teammate. When they open the same board, their cursors, selections, edits, and starter content appear live. A network connection and organization access are required." },
   { title: "6. Manage the organization", body: "Organization admins can open the Admin dashboard to review board creation, ownership, and board controls. Counts reflect current board records; they are not user-session analytics." },
   { title: "7. Install the app", body: "On a supported mobile or desktop browser, use Install app or Add to Home Screen from the browser menu. Boards still need an internet connection." },
+  { title: "8. Personalize Flowboard", body: "Open Settings to choose Light, Dark, or System appearance. Canvas preferences control the grid, contrast, and motion. The plus button opens a searchable Tools and Marketplace catalog. In Diagram & Shapes, click a +N shapes control to reveal exactly N insertable shapes from that pack." },
 ];
 export default function GuidePage() {
   return <div className="px-6 pb-10 max-w-[1050px]">

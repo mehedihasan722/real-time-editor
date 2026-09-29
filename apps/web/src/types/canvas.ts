@@ -1,4 +1,5 @@
 export type Color = { r: number; g: number; b: number; a: number };
+export type DrawingTool = "pen" | "marker" | "style" | "eraser";
 
 export type Camera = { x: number; y: number };
 
@@ -9,9 +10,15 @@ export enum LayerType {
   Text,
   Note,
   Shape,
+  Sticker,
 }
 
 export type DiagramShapeKind =
+  | "line"
+  | "arrow"
+  | "elbow-arrow"
+  | "block-arrow"
+  | "divider"
   | "rectangle"
   | "rounded"
   | "circle"
@@ -37,7 +44,18 @@ export type Layer =
   | PathLayer
   | TextLayer
   | NoteLayer
-  | ShapeLayer;
+  | ShapeLayer
+  | StickerLayer;
+
+export type StickerLayer = {
+  type: LayerType.Sticker;
+  x: number;
+  y: number;
+  height: number;
+  width: number;
+  fill: Color;
+  value: string;
+};
 
 export type ShapeLayer = {
   type: LayerType.Shape;
@@ -78,6 +96,8 @@ export type PathLayer = {
   width: number;
   fill: Color;
   points: number[][];
+  strokeWidth?: number;
+  drawingTool?: Exclude<DrawingTool, "eraser">;
   value?: string;
 };
 
@@ -99,6 +119,13 @@ export type NoteLayer = {
   width: number;
   fill: Color;
   value?: string;
+  author?: string;
+  fontFamily?: "sans" | "hand";
+  fontSize?: "small" | "medium" | "large";
+  bold?: boolean;
+  strike?: boolean;
+  list?: boolean;
+  link?: string;
 };
 
 export type Point = { x: number; y: number };
@@ -126,7 +153,7 @@ export type CanvasState =
         | LayerType.Note;
     }
   | { mode: CanvasMode.Resizing; initialBounds: XYWH; corner: Side }
-  | { mode: CanvasMode.Pencil };
+  | { mode: CanvasMode.Pencil; tool: DrawingTool; width: number };
 
 export enum CanvasMode {
   None,

@@ -10,6 +10,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
+import { assistPromptSchema } from "@/lib/board-templates";
 
 const suggestions = [
   { label: "Brainstorm ideas", template: "AI Playground" },
@@ -21,15 +22,22 @@ const suggestions = [
 interface BoardStarterProps {
   name?: string;
   onClose: () => void;
-  onStart: (template: string) => void;
+  onStart: (template: string, prompt?: string) => void;
 }
 
 export const BoardStarter = ({ name, onClose, onStart }: BoardStarterProps) => {
   const [prompt, setPrompt] = useState("");
+  const [error, setError] = useState("");
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const value = prompt.toLowerCase();
+    const parsed = assistPromptSchema.safeParse(prompt);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message || "Enter a board prompt.");
+      return;
+    }
+    setError("");
+    const value = parsed.data.toLowerCase();
     const template = value.includes("roadmap")
       ? "Roadmap"
       : value.includes("flow") || value.includes("journey")
@@ -37,7 +45,7 @@ export const BoardStarter = ({ name, onClose, onStart }: BoardStarterProps) => {
         : value.includes("research") || value.includes("requirement")
           ? "Product requirements"
           : "AI Playground";
-    onStart(template);
+    onStart(template, parsed.data);
   };
 
   return (
@@ -55,7 +63,7 @@ export const BoardStarter = ({ name, onClose, onStart }: BoardStarterProps) => {
       <form className="board-starter__composer" onSubmit={submit}>
         <textarea
           value={prompt}
-          onChange={(event) => setPrompt(event.target.value)}
+          onChange={(event) => { setPrompt(event.target.value); if (error) setError(""); }}
           placeholder="Describe what you want to create..."
           aria-label="Describe your board"
         />
@@ -66,9 +74,10 @@ export const BoardStarter = ({ name, onClose, onStart }: BoardStarterProps) => {
           </button>
         </div>
       </form>
+      {error && <p className="board-starter__error" role="alert">{error}</p>}
       <div className="board-starter__suggestions" aria-label="Starter suggestions">
         {suggestions.map((suggestion) => (
-          <button key={suggestion.label} onClick={() => onStart(suggestion.template)}>
+          <button key={suggestion.label} onClick={() => onStart(suggestion.template, suggestion.label)}>
             {suggestion.label}
           </button>
         ))}
