@@ -11,10 +11,11 @@ import ColorPicker from "./color-picker";
 
 interface SelectionToolsProps {
   camera: Camera;
+  zoom: number;
   setLastUsedColor: (color: Color) => void;
 }
 const SelectionTools = memo(
-  ({ camera, setLastUsedColor }: SelectionToolsProps) => {
+  ({ camera, zoom, setLastUsedColor }: SelectionToolsProps) => {
     const selection = useSelf((me) => me.presence.selection);
     const [selectionColor, setSelectionColor] = useState<Color>({
       a: 1,
@@ -109,8 +110,8 @@ const SelectionTools = memo(
       return null;
     }
 
-    const x = selectionBounds.width / 2 + selectionBounds.x + camera.x;
-    const y = selectionBounds.y + camera.y;
+    const x = (selectionBounds.width / 2 + selectionBounds.x) * zoom + camera.x;
+    const y = selectionBounds.y * zoom + camera.y;
     return (
       <div
         className="absolute p-3 rounded-xl bg-white shadow-sm border flex select-none"

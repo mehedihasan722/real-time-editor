@@ -27,7 +27,7 @@ const Info = ({ boardId }: InfoProps) => {
 
   if (!data) return <InfoSkeleton />;
   return (
-    <div className="absolute top-2 left-2 bg-white rounded-md px-1.5 h-12 flex items-center shadow-md">
+    <div className="absolute z-20 top-2 left-2 bg-white rounded-xl border border-slate-200/70 px-1.5 h-12 flex items-center shadow-md">
       <Hint label="Go to boards" side="bottom" sideOffset={10}>
         <Button className="px-2" variant="board" asChild>
           <Link href="/">
@@ -70,6 +70,6 @@ const Info = ({ boardId }: InfoProps) => {
 export default Info;
 export const InfoSkeleton = () => {
   return (
-    <div className="absolute top-2 left-2 bg-white rounded-md px-1.5 h-12 flex items-center shadow-md w-[300px] " />
+    <div className="board-skeleton absolute top-2 left-2 h-12 w-[320px] rounded-xl" />
   );
 };

@@ -41,6 +41,9 @@ import useDeleteLayers from "@/hooks/use-delete-layers";
 import SelectionTools from "./selection-tools";
 import Path from "./path";
 import useDisableScrollBounce from "@/hooks/use-disable-scroll-bounce";
+import { BoardStarter } from "./board-starter";
+import { BoardControls } from "./board-controls";
+import { getTemplateLayers } from "@/lib/board-templates";
 
 const MAX_LAYERS = 100;
 interface CanvasProps {
@@ -58,6 +61,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
   });
 
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [starterOpen, setStarterOpen] = useState(() => layerIds.length === 0);
   const [lastUsedColor, setLastUsedColor] = useState<Color>({
     r: 0,
     g: 0,
@@ -70,6 +75,34 @@ const Canvas = ({ boardId }: CanvasProps) => {
   const history = useHistory();
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
+
+  const applyStarter = useMutation(
+    ({ storage, setMyPresence }, template: string) => {
+      const liveLayers = storage.get("layers");
+      const liveLayerIds = storage.get("layerIds");
+      const templateLayers = getTemplateLayers(template);
+      const centerX = (window.innerWidth / 2 - camera.x) / zoom;
+      const centerY = (window.innerHeight / 2 - camera.y) / zoom;
+      const offsetX = centerX - 570;
+      const offsetY = centerY - 300;
+      const insertedIds: string[] = [];
+
+      templateLayers.forEach(([, layer]) => {
+        if (liveLayers.size >= MAX_LAYERS) return;
+        const id = nanoid();
+        liveLayers.set(
+          id,
+          new LiveObject({ ...layer, x: layer.x + offsetX, y: layer.y + offsetY })
+        );
+        liveLayerIds.push(id);
+        insertedIds.push(id);
+      });
+
+      setMyPresence({ selection: insertedIds });
+      setStarterOpen(false);
+    },
+    [camera, zoom]
+  );
 
   const insertLayer = useMutation(
     (
@@ -272,18 +305,44 @@ const Canvas = ({ boardId }: CanvasProps) => {
     [history]
   );
 
-  const onWheel = useCallback((e: React.WheelEvent) => {
-    setCamera((camera) => ({
-      x: camera.x - e.deltaX,
-      y: camera.y - e.deltaY,
+  const zoomTo = useCallback((nextZoom: number) => {
+    const clampedZoom = Math.min(2, Math.max(0.25, nextZoom));
+    const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    setCamera((current) => ({
+      x: center.x - ((center.x - current.x) * clampedZoom) / zoom,
+      y: center.y - ((center.y - current.y) * clampedZoom) / zoom,
     }));
+    setZoom(clampedZoom);
+  }, [zoom]);
+
+  const resetView = useCallback(() => {
+    setCamera({ x: 0, y: 0 });
+    setZoom(1);
   }, []);
+
+  const onWheel = useCallback((e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const nextZoom = Math.min(2, Math.max(0.25, zoom * Math.exp(-e.deltaY * 0.002)));
+      const point = { x: e.clientX, y: e.clientY };
+      setCamera((current) => ({
+        x: point.x - ((point.x - current.x) * nextZoom) / zoom,
+        y: point.y - ((point.y - current.y) * nextZoom) / zoom,
+      }));
+      setZoom(nextZoom);
+      return;
+    }
+    setCamera((current) => ({
+      x: current.x - e.deltaX,
+      y: current.y - e.deltaY,
+    }));
+  }, [zoom]);
 
   const onPointerMove = useMutation(
     ({ setMyPresence }, e: React.PointerEvent) => {
       e.preventDefault();
 
-      const current = pointerEventToCanvasPoint(e, camera);
+      const current = pointerEventToCanvasPoint(e, camera, zoom);
 
       if (canvasState.mode === CanvasMode.Pressing) {
         startMultiSelection(current, canvasState.origin);
@@ -301,6 +360,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
     [
       canvasState,
       camera,
+      zoom,
       translateSelectedLayers,
       resizeSelectedLayer,
       startMultiSelection,
@@ -315,7 +375,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
-      const point = pointerEventToCanvasPoint(e, camera);
+      const point = pointerEventToCanvasPoint(e, camera, zoom);
 
       if (canvasState.mode === CanvasMode.Inserting) {
         return;
@@ -328,12 +388,12 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
       setCanvasState({ origin: point, mode: CanvasMode.Pressing });
     },
-    [camera, canvasState.mode, setCanvasState, startDrawing]
+    [camera, zoom, canvasState.mode, setCanvasState, startDrawing]
   );
 
   const onPointerUp = useMutation(
     ({}, e) => {
-      const point = pointerEventToCanvasPoint(e, camera);
+      const point = pointerEventToCanvasPoint(e, camera, zoom);
       if (
         canvasState.mode === CanvasMode.None ||
         canvasState.mode === CanvasMode.Pressing
@@ -356,6 +416,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
     [
       setCanvasState,
       camera,
+      zoom,
       canvasState,
       history,
       insertLayer,
@@ -378,7 +439,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       history.pause();
       e.stopPropagation();
 
-      const point = pointerEventToCanvasPoint(e, camera);
+      const point = pointerEventToCanvasPoint(e, camera, zoom);
 
       if (!self.presence.selection.includes(layerId)) {
         setMyPresence({ selection: [layerId] }, { addToHistory: true });
@@ -386,7 +447,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
       setCanvasState({ mode: CanvasMode.Translating, current: point });
     },
-    [setCanvasState, camera, history, canvasState.mode]
+    [setCanvasState, camera, zoom, history, canvasState.mode]
   );
 
   const layerIdsToColorSelection = useMemo(() => {
@@ -423,8 +484,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
             } else {
               history.undo();
             }
-            break;
           }
+          break;
         }
         case "y": {
           if (e.ctrlKey || e.metaKey) {
@@ -435,6 +496,25 @@ const Canvas = ({ boardId }: CanvasProps) => {
             }
             break;
           }
+          break;
+        }
+        case "+":
+        case "=": {
+          e.preventDefault();
+          zoomTo(zoom + 0.1);
+          break;
+        }
+        case "-": {
+          e.preventDefault();
+          zoomTo(zoom - 0.1);
+          break;
+        }
+        case "0": {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            resetView();
+          }
+          break;
         }
       }
     }
@@ -444,7 +524,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
     return () => {
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [deleteLayers, history]);
+  }, [deleteLayers, history, resetView, zoom, zoomTo]);
 
   return (
     <main className="h-full w-full relative board-canvas future-board touch-none">
@@ -457,8 +537,22 @@ const Canvas = ({ boardId }: CanvasProps) => {
         canUndo={canUndo}
         undo={history.undo}
         redo={history.redo}
+        onOpenStarter={() => setStarterOpen(true)}
       />
-      <SelectionTools camera={camera} setLastUsedColor={setLastUsedColor} />
+      <SelectionTools camera={camera} zoom={zoom} setLastUsedColor={setLastUsedColor} />
+      {starterOpen && (
+        <BoardStarter
+          name={info?.name}
+          onClose={() => setStarterOpen(false)}
+          onStart={applyStarter}
+        />
+      )}
+      <BoardControls
+        zoom={zoom}
+        onZoomIn={() => zoomTo(zoom + 0.1)}
+        onZoomOut={() => zoomTo(zoom - 0.1)}
+        onReset={resetView}
+      />
       <svg
         className="h-[100vh] w-[100vw]"
         onWheel={onWheel}
@@ -469,7 +563,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
       >
         <g
           style={{
-            transform: `translate(${camera.x}px, ${camera.y}px)`,
+            transform: `translate(${camera.x}px, ${camera.y}px) scale(${zoom})`,
+            transformOrigin: "0 0",
           }}
         >
           {layerIds.map((layerId) => (

@@ -5,6 +5,7 @@ import {
   MousePointer2,
   Pencil,
   Redo2,
+  Sparkles,
   Square,
   StickyNote,
   Type,
@@ -19,6 +20,7 @@ interface ToolbarProps {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  onOpenStarter: () => void;
 }
 
 const Toolbar = ({
@@ -28,10 +30,17 @@ const Toolbar = ({
   redo,
   canUndo,
   canRedo,
+  onOpenStarter,
 }: ToolbarProps) => {
   return (
-    <div className="absolute top-[50%] -translate-y-[50%] left-2 flex flex-col gap-y-4">
-      <div className="bg-white rounded-md p-1.5 flex gap-y-1 flex-col items-center shadow-md">
+    <div className="absolute z-20 top-[50%] -translate-y-[50%] left-2 flex flex-col gap-y-3">
+      <div className="board-toolbar flex gap-y-1 flex-col items-center">
+        <ToolButton
+          label="Flowboard Assist"
+          icon={Sparkles}
+          onClick={onOpenStarter}
+        />
+        <div className="my-1 h-px w-7 bg-slate-200" />
         <ToolButton
           label="select"
           icon={MousePointer2}
@@ -107,7 +116,7 @@ const Toolbar = ({
           isActive={canvasState.mode === CanvasMode.Pencil}
         />
       </div>
-      <div className="bg-white rounded-md p-1.5 flex flex-col items-center shadow-md">
+      <div className="board-toolbar flex flex-col items-center">
         <ToolButton
           label="Undo"
           icon={Undo2}
@@ -128,6 +137,9 @@ const Toolbar = ({
 export default Toolbar;
 export const ToolbarSkeleton = () => {
   return (
-    <div className="absolute top-[50%] -translate-y-[50%] left-2 flex flex-col gap-y-4 bg-white h-[360px] w-[52px] shadow-md rounded-md" />
+    <div className="absolute top-[50%] -translate-y-[50%] left-2 flex flex-col gap-3">
+      <div className="board-skeleton h-[330px] w-[52px] rounded-xl" />
+      <div className="board-skeleton h-[92px] w-[52px] rounded-xl" />
+    </div>
   );
 };

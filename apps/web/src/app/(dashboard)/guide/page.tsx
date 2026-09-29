@@ -1,10 +1,10 @@
 import Link from "next/link";
 const sections = [
   { title: "1. Set up your workspace", body: "Sign in, create or join an organization, and choose it from the left sidebar. The organization keeps your team's boards together." },
-  { title: "2. Create a board", body: "Choose Blank board or a starter template. Templates add editable notes and a heading to a new board; you can change or remove everything." },
-  { title: "3. Use the canvas", body: "Select items to move or resize them. Use the toolbar for text, sticky notes, rectangles, ellipses, and the pen. Scroll to pan around the canvas." },
+  { title: "2. Create a board", body: "Choose Blank board or a starter template. On an empty board, Flowboard Assist can turn a prompt or quick suggestion into a collaborative set of editable notes and headings." },
+  { title: "3. Use the canvas", body: "Select items to move or resize them. Use the left toolbar for text, sticky notes, rectangles, ellipses, pen, and Flowboard Assist. Scroll to pan; use Ctrl/Cmd plus the wheel or the lower-right controls to zoom and reset the view." },
   { title: "4. Edit and organize", body: "Click a board title to rename it. Use the board menu to copy a link or delete the board. Select an item and press Delete or Backspace to remove it; Ctrl/Cmd+Z undoes a change." },
-  { title: "5. Collaborate live", body: "Invite teammates from the workspace header. When they open the same board, their cursors and selections appear on the canvas. A network connection is required." },
+  { title: "5. Collaborate live", body: "Use Share on the board to copy its link for an organization teammate. When they open the same board, their cursors, selections, edits, and starter content appear live. A network connection and organization access are required." },
   { title: "6. Manage the organization", body: "Organization admins can open the Admin dashboard to review board creation, ownership, and board controls. Counts reflect current board records; they are not user-session analytics." },
   { title: "7. Install the app", body: "On a supported mobile or desktop browser, use Install app or Add to Home Screen from the browser menu. Boards still need an internet connection." },
 ];
