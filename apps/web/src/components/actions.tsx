@@ -52,7 +52,7 @@ const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
       <DropdownMenuContent
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
         side={side}
         sideOffset={sideOffset}
         className="w-60"

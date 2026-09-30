@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Info from "./info";
 import Participants from "./participants";
 import Toolbar from "./toolbar";
@@ -31,6 +31,8 @@ import {
   penPointsToPathLayer,
   pointerEventToCanvasPoint,
   resizeBounds,
+  isPointNearPath,
+  erasePathPortion,
 } from "@/lib/utils";
 import { nanoid } from "nanoid";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
@@ -64,6 +66,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [isPanning, setIsPanning] = useState(false);
+  const panPointer = useRef<{ id: number; x: number; y: number } | null>(null);
   const [starterOpen, setStarterOpen] = useState(() => layerIds.length === 0);
   const [lastUsedColor, setLastUsedColor] = useState<Color>({
     r: 0,
@@ -298,7 +302,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
             pencilDraft,
             lastUsedColor,
             canvasState.mode === CanvasMode.Pencil ? canvasState.width : 8,
-            canvasState.mode === CanvasMode.Pencil && canvasState.tool !== "eraser"
+            canvasState.mode === CanvasMode.Pencil &&
+              (canvasState.tool === "pen" || canvasState.tool === "marker" || canvasState.tool === "style")
               ? canvasState.tool
               : "pen"
           )
@@ -318,7 +323,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const startDrawing = useMutation(
     ({ setMyPresence }, point: Point, pressure: number) => {
-      if (canvasState.mode !== CanvasMode.Pencil || canvasState.tool === "eraser") return;
+      if (canvasState.mode !== CanvasMode.Pencil || canvasState.tool.includes("eraser")) return;
       setMyPresence({
         pencilDraft: [[point.x, point.y, pressure]],
         penColor: lastUsedColor,
@@ -397,10 +402,56 @@ const Canvas = ({ boardId }: CanvasProps) => {
   }, [zoom]);
 
   const onPointerMove = useMutation(
-    ({ setMyPresence }, e: React.PointerEvent) => {
+    ({ setMyPresence, storage }, e: React.PointerEvent) => {
       e.preventDefault();
 
+      if (panPointer.current?.id === e.pointerId) {
+        const previous = panPointer.current;
+        setCamera((current) => ({
+          x: current.x + e.clientX - previous.x,
+          y: current.y + e.clientY - previous.y,
+        }));
+        panPointer.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+        return;
+      }
+
       const current = pointerEventToCanvasPoint(e, camera, zoom);
+
+      if (
+        canvasState.mode === CanvasMode.Pencil &&
+        canvasState.tool.includes("eraser") &&
+        (e.buttons & 1) === 1
+      ) {
+        const liveLayers = storage.get("layers");
+        const liveLayerIds = storage.get("layerIds");
+        const ids = liveLayerIds.toImmutable();
+        for (let index = ids.length - 1; index >= 0; index -= 1) {
+          const layer = liveLayers.get(ids[index]);
+          if (layer?.get("type") !== LayerType.Path) continue;
+          const path = layer.toImmutable() as Extract<Layer, { type: LayerType.Path }>;
+          const radius = Math.max(10, canvasState.width);
+          if (canvasState.tool === "eraser") {
+            if (!isPointNearPath(path, current, radius)) continue;
+            liveLayers.delete(ids[index]);
+            liveLayerIds.delete(index);
+            continue;
+          }
+
+          const segments = erasePathPortion(path, current, radius);
+          if (!segments) continue;
+          liveLayers.delete(ids[index]);
+          liveLayerIds.delete(index);
+          for (const segment of segments) {
+            if (liveLayers.size >= MAX_LAYERS) break;
+            const segmentId = nanoid();
+            const absolutePoints = segment.map(([x, y, pressure]) => [x + path.x, y + path.y, pressure]);
+            liveLayers.set(segmentId, new LiveObject<Layer>(penPointsToPathLayer(absolutePoints, path.fill, path.strokeWidth, path.drawingTool)));
+            liveLayerIds.push(segmentId);
+          }
+        }
+        setMyPresence({ cursor: current });
+        return;
+      }
 
       if (canvasState.mode === CanvasMode.Pressing) {
         startMultiSelection(current, canvasState.origin);
@@ -433,6 +484,14 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
+      if (e.button === 1) {
+        e.preventDefault();
+        panPointer.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+        e.currentTarget.setPointerCapture(e.pointerId);
+        setIsPanning(true);
+        return;
+      }
+
       const point = pointerEventToCanvasPoint(e, camera, zoom);
 
       if (canvasState.mode === CanvasMode.Inserting) {
@@ -451,6 +510,15 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const onPointerUp = useMutation(
     ({}, e) => {
+      if (panPointer.current?.id === e.pointerId) {
+        panPointer.current = null;
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+        setIsPanning(false);
+        return;
+      }
+
       const point = pointerEventToCanvasPoint(e, camera, zoom);
       if (
         canvasState.mode === CanvasMode.None ||
@@ -487,6 +555,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const onLayerPointerDown = useMutation(
     ({ storage, self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
+      if (e.button === 1) return;
+
       if (canvasState.mode === CanvasMode.Pencil && canvasState.tool === "eraser") {
         e.stopPropagation();
         const liveLayers = storage.get("layers");
@@ -629,12 +699,18 @@ const Canvas = ({ boardId }: CanvasProps) => {
         onReset={resetView}
       />
       <svg
-        className="h-[100vh] w-[100vw]"
+        className={`h-[100vh] w-[100vw] ${isPanning ? "cursor-grabbing" : ""}`}
         onWheel={onWheel}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
+        onPointerCancel={(event) => {
+          if (panPointer.current?.id === event.pointerId) {
+            panPointer.current = null;
+            setIsPanning(false);
+          }
+        }}
       >
         <g
           style={{
@@ -669,7 +745,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
               x={0}
               y={0}
               strokeWidth={canvasState.mode === CanvasMode.Pencil ? canvasState.width : 8}
-              drawingTool={canvasState.mode === CanvasMode.Pencil && canvasState.tool !== "eraser" ? canvasState.tool : "pen"}
+              drawingTool={canvasState.mode === CanvasMode.Pencil && (canvasState.tool === "pen" || canvasState.tool === "marker" || canvasState.tool === "style") ? canvasState.tool : "pen"}
             />
           )}
         </g>

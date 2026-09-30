@@ -21,9 +21,10 @@ const Path = ({ x, y, points, fill, onPointerDown, stroke, strokeWidth = 8, draw
       d={getSvgPathFromStroke(
         getStroke(points, {
           size: drawingTool === "marker" ? strokeWidth * 1.8 : strokeWidth,
-          thinning: drawingTool === "marker" ? 0 : drawingTool === "style" ? -0.35 : 0.5,
-          smoothing: drawingTool === "style" ? 0.72 : 0.5,
-          streamline: drawingTool === "style" ? 0.72 : 0.5,
+          thinning: drawingTool === "marker" ? 0 : drawingTool === "style" ? 0.62 : 0.5,
+          smoothing: drawingTool === "style" ? 0.9 : 0.5,
+          streamline: drawingTool === "style" ? 0.88 : 0.5,
+          simulatePressure: true,
         })
       )}
       style={{

@@ -13,6 +13,10 @@ export const get = query({
     if (!identity) {
       throw new Error("Unauthorized");
     }
+    const activeOrgId = typeof identity.org_id === "string" ? identity.org_id : identity.orgId;
+    if (activeOrgId !== args.orgId) {
+      throw new Error("Organization access denied");
+    }
 
     if (args.favourites) {
       const favouritedBoards = await ctx.db
@@ -21,7 +25,7 @@ export const get = query({
           q.eq("userId", identity.subject).eq("orgId", args.orgId)
         )
         .order("desc")
-        .collect();
+        .take(100);
 
       const ids = favouritedBoards.map((b) => b.boardId);
 
@@ -44,13 +48,13 @@ export const get = query({
         .withSearchIndex("search_title", (q) =>
           q.search("title", title).eq("orgId", args.orgId)
         )
-        .collect();
+        .take(100);
     } else {
       boards = await ctx.db
         .query("boards")
         .withIndex("by_org", (q) => q.eq("orgId", args.orgId))
         .order("desc")
-        .collect();
+        .take(100);
     }
 
     const boardsWithFavouriteRelation = boards.map((board) => {

@@ -30,12 +30,19 @@ Run these from the repository root:
 - npm run typecheck — check TypeScript.
 - npm run lint — run Next.js ESLint.
 - npm run build — build all workspaces.
+- npm test — run environment and assistant regression tests.
+
+The `/api/health` endpoint reports HTTP 200 only when public and server service configuration is ready. It returns HTTP 503 without exposing credential values when configuration is incomplete.
 
 ## Docker development
 
 Copy .env.example to .env.local at the repository root. Run npx convex dev from apps/web on the host to connect the Convex deployment, then run docker compose up --build at the repository root. Open http://localhost:3000.
 
 Docker Compose mounts source files for hot reload. Start Docker Desktop before building the image. Environment values come from .env.local and are excluded from the Docker build context.
+
+The default Docker image target is a non-root, standalone production server. Pass only `NEXT_PUBLIC_CONVEX_URL` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` as build arguments because Next.js embeds public values at build time. Provide `CLERK_SECRET_KEY` and `LIVEBLOCKS_SECRET_KEY` only when starting the container; never pass server secrets as Docker build arguments.
+
+GitHub Actions runs TypeScript, lint, regression tests, and an optimized build for every pull request and push to `main`.
 
 ## Using Flowboard
 

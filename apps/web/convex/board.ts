@@ -35,6 +35,22 @@ const displayName = (identity: {
   identity.email?.split("@")[0]?.trim() ||
   "Flowboard member";
 
+const getActiveOrgId = (identity: Record<string, unknown>) =>
+  typeof identity.org_id === "string"
+    ? identity.org_id
+    : typeof identity.orgId === "string"
+      ? identity.orgId
+      : null;
+
+const assertBoardOrganization = (
+  identity: Record<string, unknown>,
+  board: { orgId: string },
+) => {
+  if (getActiveOrgId(identity) !== board.orgId) {
+    throw new Error("Board access denied");
+  }
+};
+
 export const create = mutation({
   args: {
     orgId: v.string(),
@@ -46,6 +62,9 @@ export const create = mutation({
 
     if (!identity) {
       throw new Error("Unauthorized");
+    }
+    if (getActiveOrgId(identity) !== args.orgId) {
+      throw new Error("Organization access denied");
     }
 
     const title = boardTitleSchema.parse(args.title);
@@ -73,10 +92,13 @@ export const remove = mutation({
     if (!identity) {
       throw new Error("Unauthorized");
     }
+    const board = await ctx.db.get(args.id);
+    if (!board) return null;
+    assertBoardOrganization(identity, board);
     const favourites = await ctx.db
       .query("userFavourites")
       .withIndex("by_board", (q) => q.eq("boardId", args.id))
-      .collect();
+      .take(1000);
 
     for (const favourite of favourites) {
       await ctx.db.delete(favourite._id);
@@ -97,6 +119,9 @@ export const update = mutation({
     if (!identity) {
       throw new Error("Unauthorized");
     }
+    const board = await ctx.db.get(args.id);
+    if (!board) return null;
+    assertBoardOrganization(identity, board);
     const title = boardTitleSchema.parse(args.title);
 
     await ctx.db.patch(args.id, {
@@ -122,6 +147,7 @@ export const favourite = mutation({
     if (!board) {
       throw new Error("Board not found");
     }
+    assertBoardOrganization(identity, board);
     if (board.orgId !== args.orgId) {
       throw new Error("Board does not belong to this organization");
     }
@@ -163,6 +189,7 @@ export const unfavourite = mutation({
     if (!board) {
       throw new Error("Board not found");
     }
+    assertBoardOrganization(identity, board);
 
     const userId = identity.subject;
 
@@ -171,7 +198,6 @@ export const unfavourite = mutation({
       .withIndex(
         "by_user_board",
         (q) => q.eq("userId", userId).eq("boardId", board._id)
-        // TODO : check if orgId is needed?
       )
       .unique();
     if (!existingFavourite) {
@@ -201,6 +227,7 @@ export const get = query({
     if (!identity) throw new Error("Unauthorized");
     const board = await ctx.db.get(args.id);
     if (!board) return null;
+    assertBoardOrganization(identity, board);
     const favourite = await ctx.db
       .query("userFavourites")
       .withIndex("by_user_board", (q) =>

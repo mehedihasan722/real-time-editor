@@ -1,5 +1,5 @@
 export type Color = { r: number; g: number; b: number; a: number };
-export type DrawingTool = "pen" | "marker" | "style" | "eraser";
+export type DrawingTool = "pen" | "marker" | "style" | "eraser" | "pixel-eraser";
 
 export type Camera = { x: number; y: number };
 
@@ -97,7 +97,7 @@ export type PathLayer = {
   fill: Color;
   points: number[][];
   strokeWidth?: number;
-  drawingTool?: Exclude<DrawingTool, "eraser">;
+  drawingTool?: Exclude<DrawingTool, "eraser" | "pixel-eraser">;
   value?: string;
 };
 
@@ -120,7 +120,14 @@ export type NoteLayer = {
   fill: Color;
   value?: string;
   author?: string;
-  fontFamily?: "sans" | "hand";
+  fontFamily?:
+    | "arial"
+    | "calibri"
+    | "times"
+    | "georgia"
+    | "verdana"
+    | "courier"
+    | "comic";
   fontSize?: "small" | "medium" | "large";
   bold?: boolean;
   strike?: boolean;

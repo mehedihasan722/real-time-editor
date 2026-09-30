@@ -10,7 +10,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { assistPromptSchema } from "@/lib/board-templates";
+import { assistPromptSchema, resolveAssistTemplate } from "@/lib/board-templates";
 
 const suggestions = [
   { label: "Brainstorm ideas", template: "AI Playground" },
@@ -37,15 +37,7 @@ export const BoardStarter = ({ name, onClose, onStart }: BoardStarterProps) => {
       return;
     }
     setError("");
-    const value = parsed.data.toLowerCase();
-    const template = value.includes("roadmap")
-      ? "Roadmap"
-      : value.includes("flow") || value.includes("journey")
-        ? "Flowchart"
-        : value.includes("research") || value.includes("requirement")
-          ? "Product requirements"
-          : "AI Playground";
-    onStart(template, parsed.data);
+    onStart(resolveAssistTemplate(parsed.data), parsed.data);
   };
 
   return (
@@ -64,7 +56,7 @@ export const BoardStarter = ({ name, onClose, onStart }: BoardStarterProps) => {
         <textarea
           value={prompt}
           onChange={(event) => { setPrompt(event.target.value); if (error) setError(""); }}
-          placeholder="Describe what you want to create..."
+          placeholder="Try: Create a roadmap, a login flow, or 5 sticky notes for launch ideas..."
           aria-label="Describe your board"
         />
         <div>

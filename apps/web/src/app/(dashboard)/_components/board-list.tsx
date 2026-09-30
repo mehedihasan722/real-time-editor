@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { LayoutGrid, List, Plus } from "lucide-react";
+import { LayoutGrid, List } from "lucide-react";
 import Link from "next/link";
 import BoardCard from "./board-card";
 import NewBoardButton from "./new-board-button";
@@ -10,6 +10,7 @@ import TemplateGallery from "./template-gallery";
 import EmptySearch from "./empty-search";
 import EmptyFavourites from "./empty-favourites";
 import EmptyBoard from "./empty-board";
+import BoardTable from "./board-table";
 
 interface BoardListProps { orgId: string; query: { search?: string; favourites?: string }; }
 
@@ -39,7 +40,7 @@ const BoardList = ({ orgId, query }: BoardListProps) => {
       </div>
     </div>
     {view === "grid" ? <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5 pb-10">{sortedData.map(board => <BoardCard key={board._id} id={board._id} title={board.title} imageUrl={board.imageUrl} authorId={board.authorId} authorName={board.authorName} createdAt={board._creationTime} orgId={board.orgId} isFavourite={board.isFavourite} />)}</div> :
-      <div className="overflow-x-auto"><div className="min-w-[600px]"><div className="grid grid-cols-[minmax(0,2fr)_1fr_1fr] px-4 py-3 text-xs text-slate-500 border-b"><span>Name</span><span>Created</span><span>Owner</span></div>{sortedData.map(board => <Link key={board._id} href={`/board/${board._id}`} className="grid grid-cols-[minmax(0,2fr)_1fr_1fr] items-center px-4 py-4 text-sm rounded-lg hover:bg-[#f4f6fa] transition-colors"><div className="flex items-center gap-3 min-w-0"><div className="h-10 w-12 shrink-0 rounded-md bg-[#fff4c5] border border-[#eadb9c] flex items-center justify-center"><Plus className="h-4 w-4" /></div><span className="font-semibold truncate">{board.title}</span></div><span className="text-slate-500">{new Date(board._creationTime).toLocaleDateString()}</span><span className="text-slate-500 truncate">{board.authorName}</span></Link>)}</div></div>}
+      <BoardTable boards={data} />}
   </div>;
 };
 export default BoardList;

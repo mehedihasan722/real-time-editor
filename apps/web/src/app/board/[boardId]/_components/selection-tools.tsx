@@ -5,7 +5,7 @@ import useDeleteLayers from "@/hooks/use-delete-layers";
 import useSelectionBounds from "@/hooks/use-selection-bounds";
 import { Camera, Color, LayerType, NoteLayer } from "@/types/canvas";
 import { useMutation, useSelf, useStorage } from "@liveblocks/react";
-import { Bold, BringToFront, CaseUpper, Link2, List, SendToBack, Strikethrough, Trash2 } from "lucide-react";
+import { Bold, BringToFront, Link2, List, SendToBack, Strikethrough, Trash2 } from "lucide-react";
 import React, { memo, useEffect, useState } from "react";
 import ColorPicker from "./color-picker";
 import { LiveObject } from "@liveblocks/client";
@@ -162,7 +162,21 @@ const SelectionTools = memo(
         {selectedLayerType === LayerType.Note && (
           <>
             <span className="selection-tools__label">Sticky note</span>
-            <button type="button" className={`note-format-button ${selectedNote?.fontFamily === "hand" ? "is-active" : ""}`} title="Toggle typeface" onClick={() => updateSelectedNote({ fontFamily: selectedNote?.fontFamily === "hand" ? "sans" : "hand" })}><CaseUpper size={17} /></button>
+            <select
+              className="note-format-font"
+              aria-label="Sticky note font style"
+              title="Font style"
+              value={selectedNote?.fontFamily || "calibri"}
+              onChange={(event) => updateSelectedNote({ fontFamily: event.target.value as NoteLayer["fontFamily"] })}
+            >
+              <option value="arial">Arial</option>
+              <option value="calibri">Calibri</option>
+              <option value="times">Times New Roman</option>
+              <option value="georgia">Georgia</option>
+              <option value="verdana">Verdana</option>
+              <option value="courier">Courier New</option>
+              <option value="comic">Comic Sans</option>
+            </select>
             <button type="button" className="note-format-size" title="Change text size" onClick={cycleNoteSize}>{selectedNote?.fontSize || "small"}</button>
             <button type="button" className={`note-format-button ${selectedNote?.bold ? "is-active" : ""}`} title="Bold" onClick={() => updateSelectedNote({ bold: !selectedNote?.bold })}><Bold size={16} /></button>
             <button type="button" className={`note-format-button ${selectedNote?.strike ? "is-active" : ""}`} title="Strikethrough" onClick={() => updateSelectedNote({ strike: !selectedNote?.strike })}><Strikethrough size={16} /></button>

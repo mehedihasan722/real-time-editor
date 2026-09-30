@@ -1,7 +1,6 @@
 import { NoteLayer } from "@/types/canvas";
-import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
 import { useMutation } from "@liveblocks/react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { colorToCss, getContrastingTextColor } from "@/lib/utils";
 
 
@@ -17,24 +16,19 @@ interface NoteProps {
 }
 
 const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) => {
-  const { x, y, width, height, fill, value, author, fontFamily = "sans", fontSize = "small", bold, strike, list, link } = layer;
-  const [newValue, setNewValue] = useState(value ?? "");
+  const { x, y, width, height, fill, value, author, fontFamily = "calibri", fontSize = "small", bold, strike, list, link } = layer;
+  const editorRef = useRef<HTMLDivElement>(null);
 
   const updateValue = useMutation(({ storage }, newValue: string) => {
     const liveLayers = storage.get("layers");
 
-    setNewValue(newValue);
     liveLayers.get(id)?.set("value", newValue);
   }, []);
 
-  const handleContentChange = (e: ContentEditableEvent) => {
-    const updatedValue = e.target.value;
-
-    updateValue(updatedValue);
-  };
-
   useEffect(() => {
-    setNewValue(value ?? "");
+    if (editorRef.current && document.activeElement !== editorRef.current) {
+      editorRef.current.textContent = value ?? "";
+    }
   }, [value]);
 
   const backgroundColor = fill ? colorToCss(fill) : "rgb(177, 239, 188)";
@@ -62,14 +56,25 @@ const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) => {
           outlineColor: selectionColor,
         }}
       >
-        <ContentEditable
-          html={newValue}
-          onChange={handleContentChange}
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={(event) => updateValue(event.currentTarget.textContent ?? "")}
           aria-label="Sticky note text"
           data-placeholder="Type anything, @mention anyone"
-          className={`figjam-note__content ${fontFamily === "hand" ? "font-hand" : ""}`}
+          className="figjam-note__content"
           style={{
             fontSize: calculateFontSize(width, height) * sizeMultiplier,
+            fontFamily: {
+              arial: "Arial, Helvetica, sans-serif",
+              calibri: "Calibri, Carlito, Arial, sans-serif",
+              times: "'Times New Roman', Times, serif",
+              georgia: "Georgia, serif",
+              verdana: "Verdana, Geneva, sans-serif",
+              courier: "'Courier New', Courier, monospace",
+              comic: "'Comic Sans MS', 'Segoe Print', cursive",
+            }[fontFamily],
             fontWeight: bold ? 800 : 500,
             textDecoration: strike ? "line-through" : "none",
             display: list ? "list-item" : "block",

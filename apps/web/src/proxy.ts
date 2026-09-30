@@ -2,8 +2,9 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { publicEnv, setupMessage } from "@/lib/public-env";
+import { serverEnv } from "@/lib/server-env";
 
-const isPublicRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
+const isPublicRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)", "/api/health"]);
 
 const authenticatedMiddleware = clerkMiddleware(
   async (auth, request) => {
@@ -14,8 +15,11 @@ const authenticatedMiddleware = clerkMiddleware(
 );
 
 // Fail closed before Clerk or a protected route can run without configuration.
-export default function middleware(request: NextRequest, event: NextFetchEvent) {
-  if (!publicEnv.success || !process.env.CLERK_SECRET_KEY?.trim()) {
+export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  if (request.nextUrl.pathname === "/api/health") {
+    return NextResponse.next();
+  }
+  if (!publicEnv.success || !serverEnv.success) {
     const headers = { "Cache-Control": "no-store" };
     if (/^\/(api|trpc)(\/|$)/.test(request.nextUrl.pathname)) {
       return NextResponse.json(

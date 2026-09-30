@@ -1,8 +1,7 @@
 import { cn, colorToCss } from "@/lib/utils";
 import { TextLayer } from "@/types/canvas";
 import { useMutation } from "@liveblocks/react";
-import React, { useEffect, useState } from "react";
-import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
+import React, { useEffect, useRef, useState } from "react";
 
 
 const calculateFontSize = (width: number, height: number) => {
@@ -23,33 +22,25 @@ interface TextProps {
 
 const Text = ({ layer, onPointerDown, id, selectionColor }: TextProps) => {
   const { x, y, width, height, fill, value } = layer;
-  const [newValue, setNewValue] = useState("Text");
+  const editorRef = useRef<HTMLDivElement>(null);
 
   const [hasModified, setHasModified] = useState(false);
 
   const updateValue = useMutation(({ storage }, newValue: string) => {
     const liveLayers = storage.get("layers");
 
-    setNewValue(newValue);
     liveLayers.get(id)?.set("value", newValue);
   }, []);
 
-  const handleContentChange = (e: ContentEditableEvent) => {
-    const updatedValue = e.target.value;
-
-    setHasModified(true);
-    updateValue(updatedValue);
-  };
-
   const handleFocus = () => {
-    if (!hasModified && newValue === "Text") {
-      setNewValue(""); //
+    if (!hasModified && editorRef.current?.textContent === "Text") {
+      editorRef.current.textContent = "";
     }
   };
 
   useEffect(() => {
-    if (value) {
-      setNewValue(value);
+    if (editorRef.current && document.activeElement !== editorRef.current) {
+      editorRef.current.textContent = value || "Text";
     }
   }, [value]);
   return (
@@ -63,9 +54,14 @@ const Text = ({ layer, onPointerDown, id, selectionColor }: TextProps) => {
         outline: selectionColor ? `1px solid ${selectionColor}` : "none",
       }}
     >
-      <ContentEditable
-        html={newValue}
-        onChange={handleContentChange}
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={(event) => {
+          setHasModified(true);
+          updateValue(event.currentTarget.textContent ?? "");
+        }}
         onFocus={handleFocus}
         className={cn(
           "h-full w-full flex items-center justify-center text-center drop-shadow-md outline-none",

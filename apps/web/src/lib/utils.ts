@@ -171,7 +171,9 @@ export function penPointsToPathLayer(
   let right = Number.NEGATIVE_INFINITY;
   let bottom = Number.NEGATIVE_INFINITY;
 
-  for (const point of points) {
+  const preparedPoints = drawingTool === "style" ? smoothDrawingPoints(points) : points;
+
+  for (const point of preparedPoints) {
     const [x, y] = point;
 
     if (left > x) {
@@ -198,10 +200,89 @@ export function penPointsToPathLayer(
     width: right - left,
     height: bottom - top,
     fill: color,
-    points: points.map(([x, y, pressure]) => [x - left, y - top, pressure]),
+    points: preparedPoints.map(([x, y, pressure]) => [x - left, y - top, pressure]),
     strokeWidth,
     drawingTool,
   };
+}
+
+function smoothDrawingPoints(points: number[][]) {
+  if (points.length < 3) return points;
+  const first = points[0];
+  const last = points[points.length - 1];
+  const directDistance = Math.hypot(last[0] - first[0], last[1] - first[1]);
+  const travelledDistance = points.slice(1).reduce(
+    (distance, point, index) =>
+      distance + Math.hypot(point[0] - points[index][0], point[1] - points[index][1]),
+    0,
+  );
+
+  if (directDistance > 24 && directDistance / Math.max(travelledDistance, 1) > 0.94) {
+    return [first, last];
+  }
+
+  return points.map((point, index) => {
+    if (index === 0 || index === points.length - 1) return point;
+    const previous = points[index - 1];
+    const next = points[index + 1];
+    return [
+      (previous[0] + point[0] * 2 + next[0]) / 4,
+      (previous[1] + point[1] * 2 + next[1]) / 4,
+      point[2] ?? 0.5,
+    ];
+  });
+}
+
+export function isPointNearPath(layer: PathLayer, point: Point, radius: number) {
+  const points = layer.points.map(([x, y]) => ({ x: x + layer.x, y: y + layer.y }));
+  for (let index = 1; index < points.length; index += 1) {
+    const start = points[index - 1];
+    const end = points[index];
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const lengthSquared = dx * dx + dy * dy;
+    const progress = lengthSquared === 0
+      ? 0
+      : Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared));
+    const closestX = start.x + progress * dx;
+    const closestY = start.y + progress * dy;
+    if (Math.hypot(point.x - closestX, point.y - closestY) <= radius) return true;
+  }
+  return false;
+}
+
+export function erasePathPortion(layer: PathLayer, point: Point, radius: number) {
+  const sampled: number[][] = [];
+  for (let index = 1; index < layer.points.length; index += 1) {
+    const start = layer.points[index - 1];
+    const end = layer.points[index];
+    const distance = Math.hypot(end[0] - start[0], end[1] - start[1]);
+    const steps = Math.max(1, Math.ceil(distance / Math.max(3, radius / 2)));
+    for (let step = index === 1 ? 0 : 1; step <= steps; step += 1) {
+      const progress = step / steps;
+      sampled.push([
+        start[0] + (end[0] - start[0]) * progress,
+        start[1] + (end[1] - start[1]) * progress,
+        (start[2] ?? 0.5) + ((end[2] ?? 0.5) - (start[2] ?? 0.5)) * progress,
+      ]);
+    }
+  }
+
+  let touched = false;
+  const segments: number[][][] = [];
+  let current: number[][] = [];
+  for (const sample of sampled) {
+    const erased = Math.hypot(sample[0] + layer.x - point.x, sample[1] + layer.y - point.y) <= radius;
+    if (erased) {
+      touched = true;
+      if (current.length >= 2) segments.push(current);
+      current = [];
+    } else {
+      current.push(sample);
+    }
+  }
+  if (current.length >= 2) segments.push(current);
+  return touched ? segments : null;
 }
 
 export function getSvgPathFromStroke(stroke: number[][]) {

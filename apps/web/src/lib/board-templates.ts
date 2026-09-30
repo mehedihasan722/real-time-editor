@@ -3,6 +3,23 @@ import { z } from "zod";
 
 export const assistPromptSchema = z.string().trim().min(3, "Describe what you want to create.").max(280, "Keep the prompt under 280 characters.");
 
+export function resolveAssistTemplate(prompt: string) {
+  const value = prompt.toLowerCase();
+  if (/\b(roadmap|milestone|quarterly plan)\b/.test(value)) return "Roadmap";
+  if (/\b(flow|flowchart|journey|process|workflow)\b/.test(value)) return "Flowchart";
+  if (/\b(research|requirement|requirements|prd)\b/.test(value)) return "Product requirements";
+  if (/\b(kanban|tasks?|to[ -]?do)\b/.test(value)) return "Kanban";
+  if (/\b(timeline|schedule)\b/.test(value)) return "Timeline";
+  if (/\b(table|matrix|spreadsheet)\b/.test(value)) return "Table";
+  if (/\b(prototype|wireframe|screen)\b/.test(value)) return "Prototype";
+  if (/\b(slides?|presentation|pitch deck)\b/.test(value)) return "Slides";
+  if (/\b(document|\bdoc\b|brief)\b/.test(value)) return "Doc";
+  if (/\b(retro|retrospective)\b/.test(value)) return "Retrospective";
+  if (/\b(weekly update|status update)\b/.test(value)) return "Weekly update";
+  if (/\b(diagram|architecture|system design)\b/.test(value)) return "Diagram";
+  return "AI Playground";
+}
+
 const palette = [
   { r: 255, g: 229, b: 114, a: 1 },
   { r: 181, g: 216, b: 255, a: 1 },
@@ -46,14 +63,15 @@ export function getTemplateLayers(template?: string, prompt?: string, author = "
   const headingValue = request
     ? escapeMarkup(request.length > 68 ? `${request.slice(0, 65)}…` : request)
     : selected.heading;
+  const requestedCount = request.match(/\b([1-8])\s+(?:sticky\s+)?notes?\b/i);
+  const count = requestedCount ? Number(requestedCount[1]) : selected.notes.length;
   const generatedNotes = safeRequest
-    ? [
-        `Goal: ${safeRequest}`,
-        selected.notes[1] || "Key ideas and decisions",
-        selected.notes[2] || "Owners and next actions",
-      ]
+    ? Array.from({ length: count }, (_, index) => {
+        if (index === 0) return `Goal: ${safeRequest}`;
+        return selected.notes[index] || `Idea ${index + 1}: add details, an owner, and a next action`;
+      })
     : selected.notes;
   const heading: Layer = { type: LayerType.Text, x: 190, y: 110, width: 720, height: 80, fill: { r: 30, g: 41, b: 59, a: 1 }, value: headingValue };
-  const notes: [string, Layer][] = generatedNotes.map((value, index) => [`template-note-${index}`, { type: LayerType.Note, x: 190 + index * 250, y: 240, width: 210, height: 180, fill: palette[index], value, author }]);
+  const notes: [string, Layer][] = generatedNotes.map((value, index) => [`template-note-${index}`, { type: LayerType.Note, x: 190 + (index % 4) * 250, y: 240 + Math.floor(index / 4) * 210, width: 210, height: 180, fill: palette[index % palette.length], value, author }]);
   return [["template-heading", heading], ...notes];
 }

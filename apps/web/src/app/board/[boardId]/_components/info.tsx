@@ -60,7 +60,7 @@ const Info = ({ boardId }: InfoProps) => {
                 "font-display"
               )}
             >
-              Board
+              Flowboard
             </span>
           </Link>
         </Button>

@@ -11,7 +11,10 @@ import { WorkspacePreferencesProvider } from "@/providers/workspace-preferences-
 
 
 export const metadata: Metadata = {
-  title: "Flowboard | Visual collaboration workspace",
+  title: {
+    default: "Flowboard",
+    template: "%s | Flowboard",
+  },
   description:
     "Create and collaborate on visual boards with your team.",
   applicationName: "Flowboard",

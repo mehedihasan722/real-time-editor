@@ -46,7 +46,7 @@ const Drafts = () => {
                 other.penColor ? colorToCss(other.penColor) : "rgba(0,0,0,1)"
               }
               strokeWidth={other.penWidth}
-              drawingTool={other.penTool === "eraser" ? "pen" : other.penTool}
+              drawingTool={other.penTool === "pen" || other.penTool === "marker" || other.penTool === "style" ? other.penTool : "pen"}
             />
           );
         }

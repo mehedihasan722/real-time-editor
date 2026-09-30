@@ -228,8 +228,9 @@ const Toolbar = ({
             {([
               ["pen", Pencil, "Pen"],
               ["marker", Highlighter, "Marker"],
-              ["style", WandSparkles, "Styled drawing"],
-              ["eraser", Eraser, "Eraser"],
+              ["style", WandSparkles, "Smart drawing"],
+              ["eraser", Eraser, "Object eraser"],
+              ["pixel-eraser", Eraser, "Partial eraser"],
             ] as const).map(([tool, Icon, label]) => (
               <button key={tool} type="button" title={label} aria-label={label} className={canvasState.tool === tool ? "is-active" : ""} onClick={() => selectDrawingTool(tool)}>
                 <Icon size={19} />
