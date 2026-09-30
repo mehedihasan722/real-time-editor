@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { CalendarDays, Code2, Columns3, Eraser, FileText, Frame, Gamepad2, GitBranch, Grid3X3, Image, Layers3, MessageCircle, Network, Presentation, Search, Shapes, Smartphone, Sparkles, Sticker, StickyNote, Table2, Type, Upload, Users, Video, Workflow } from "lucide-react";
 
-type ToolAction = "template" | "diagram" | "frames" | "shapes" | "stickers" | "eraser" | "note" | "text";
+type ToolAction = "template" | "diagram" | "frames" | "shapes" | "stickers" | "eraser" | "note" | "text" | "comment";
 interface ToolOption { label: string; description: string; action: ToolAction; template?: string; icon: typeof Search; color?: string; }
 interface ToolGroup { label: string; items: ToolOption[]; }
 
@@ -24,7 +24,7 @@ const groups: ToolGroup[] = [
     { label: "Sticky note", description: "Capture an idea with author and formatting", action: "note", icon: StickyNote },
     { label: "Card", description: "Organize and assign work", action: "template", template: "Kanban", icon: Layers3 },
     { label: "Code block", description: "Create a collaborative technical note", action: "template", template: "Doc", icon: Code2 },
-    { label: "Comment", description: "Add a discussion prompt", action: "note", icon: MessageCircle },
+    { label: "Comment", description: "Start a board discussion", action: "comment", icon: MessageCircle },
     { label: "Frame", description: "Add structure to the board", action: "frames", icon: Frame },
     { label: "Grid", description: "Organize information in a grid", action: "template", template: "Table", icon: Grid3X3 },
     { label: "Mind map", description: "Create a connected idea map", action: "template", template: "Flowchart", icon: Network },

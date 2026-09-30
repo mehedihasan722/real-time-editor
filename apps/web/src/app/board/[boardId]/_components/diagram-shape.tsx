@@ -19,12 +19,12 @@ const starPoints = (width: number, height: number) =>
 const DiagramShape = ({ id, layer, onPointerDown, selectionColor }: DiagramShapeProps) => {
   const { width: w, height: h, shape } = layer;
   const fill = colorToCss(layer.fill);
-  const stroke = selectionColor || "#202840";
-  const common = { fill, stroke, strokeWidth: selectionColor ? 3 : 2, vectorEffect: "non-scaling-stroke" as const };
+  const stroke = selectionColor || (layer.strokeColor ? colorToCss(layer.strokeColor) : "#202840");
+  const common = { fill, stroke, strokeWidth: selectionColor ? 3 : (layer.strokeWidth ?? 2), vectorEffect: "non-scaling-stroke" as const };
 
   const content = (() => {
     switch (shape) {
-      case "line": return <line x1={4} y1={h / 2} x2={w - 4} y2={h / 2} fill="none" stroke={stroke} strokeWidth={3} vectorEffect="non-scaling-stroke" />;
+      case "line": return <line x1={4} y1={h / 2} x2={w - 4} y2={h / 2} fill="none" stroke={stroke} strokeWidth={layer.strokeWidth ?? 3} vectorEffect="non-scaling-stroke" />;
       case "divider": return <line x1={4} y1={h / 2} x2={w - 4} y2={h / 2} fill="none" stroke={stroke} strokeWidth={2} strokeDasharray="8 5" vectorEffect="non-scaling-stroke" />;
       case "arrow": return <><line x1={4} y1={h / 2} x2={w - 16} y2={h / 2} fill="none" stroke={stroke} strokeWidth={3} vectorEffect="non-scaling-stroke" /><path d={`M${w - 22} ${h / 2 - 8} L${w - 5} ${h / 2} L${w - 22} ${h / 2 + 8}`} fill="none" stroke={stroke} strokeWidth={3} /></>;
       case "elbow-arrow": return <><path d={`M4 ${h - 6} V${h * .3} H${w - 16}`} fill="none" stroke={stroke} strokeWidth={3} vectorEffect="non-scaling-stroke" /><path d={`M${w - 22} ${h * .3 - 8} L${w - 5} ${h * .3} L${w - 22} ${h * .3 + 8}`} fill="none" stroke={stroke} strokeWidth={3} /></>;

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ToolButton from "./tool-button";
 import {
   Eraser,
+  BrushCleaning,
   Highlighter,
   Frame,
   Circle,
@@ -20,6 +21,7 @@ import {
   WandSparkles,
   Shapes,
   Sticker,
+  MessageCircle,
 } from "lucide-react";
 import { CanvasMode, CanvasState, Color, DrawingTool, LayerType } from "@/types/canvas";
 import { colorToCss } from "@/lib/utils";
@@ -31,6 +33,8 @@ import { FrameMenu } from "./frame-menu";
 import { StickerPanel } from "./sticker-panel";
 
 interface ToolbarProps {
+  onOpenComments: () => void;
+  commentsOpen: boolean;
   canvasState: CanvasState;
   setCanvasState: (newState: CanvasState) => void;
   undo: () => void;
@@ -56,6 +60,8 @@ const drawingColors: Color[] = [
 ];
 
 const Toolbar = ({
+  onOpenComments,
+  commentsOpen,
   canvasState,
   setCanvasState,
   undo,
@@ -223,17 +229,19 @@ const Toolbar = ({
           onClick={() => selectDrawingTool(canvasState.mode === CanvasMode.Pencil ? canvasState.tool : "pen")}
           isActive={canvasState.mode === CanvasMode.Pencil}
         />
+        <ToolButton label="Comments" icon={MessageCircle} onClick={onOpenComments} isActive={commentsOpen} />
         {canvasState.mode === CanvasMode.Pencil && (
           <div className="drawing-palette" aria-label="Drawing tools">
             {([
               ["pen", Pencil, "Pen"],
               ["marker", Highlighter, "Marker"],
-              ["style", WandSparkles, "Smart drawing"],
+              ["style", WandSparkles, "Magic pen · draw a shape to convert it"],
               ["eraser", Eraser, "Object eraser"],
-              ["pixel-eraser", Eraser, "Partial eraser"],
+              ["pixel-eraser", BrushCleaning, "Partial eraser"],
             ] as const).map(([tool, Icon, label]) => (
               <button key={tool} type="button" title={label} aria-label={label} className={canvasState.tool === tool ? "is-active" : ""} onClick={() => selectDrawingTool(tool)}>
                 <Icon size={19} />
+                {tool.includes("eraser") && <small style={{ fontSize: 8, lineHeight: 1 }}>{tool === "eraser" ? "Object" : "Partial"}</small>}
               </button>
             ))}
             <span className="drawing-palette__divider" />
@@ -285,6 +293,7 @@ const Toolbar = ({
           if (action === "stickers") setStickersOpen(true);
           if (action === "eraser") setCanvasState({ mode: CanvasMode.Pencil, tool: "eraser", width: 8 });
           if (action === "note") setCanvasState({ mode: CanvasMode.Inserting, layerType: LayerType.Note });
+          if (action === "comment") onOpenComments();
           if (action === "text") setCanvasState({ mode: CanvasMode.Inserting, layerType: LayerType.Text });
         }} />}
         {diagramOpen && <DiagramPanel onClose={() => setDiagramOpen(false)} onInsertShape={onInsertShape} onCreateDiagram={() => { insertTemplate("Diagram"); setDiagramOpen(false); }} />}

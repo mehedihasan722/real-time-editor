@@ -1,0 +1,14 @@
+services:
+  web:
+    build:
+      context: .
+      target: runner
+      args:
+        NEXT_PUBLIC_CONVEX_URL: ${NEXT_PUBLIC_CONVEX_URL:?Set NEXT_PUBLIC_CONVEX_URL in apps/web/.env.local}
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:?Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY in apps/web/.env.local}
+    env_file:
+      - ./apps/web/.env.local
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    init: true

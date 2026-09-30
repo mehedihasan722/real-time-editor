@@ -441,3 +441,8 @@ html.dark { color-scheme:dark; }
 @keyframes board-shimmer { to { transform:translateX(340%); } }
 @media(max-width:640px) { .board-starter { width:calc(100vw - 84px); padding:26px 20px 22px; } .board-starter__title-row { justify-content:flex-start; } .board-starter__modes { display:none; } .board-controls { right:8px; bottom:8px; } }
 @media(prefers-reduced-motion:reduce) { .board-skeleton::after { animation:none; } }
+/* Native selects and inputs follow the selected theme as well. */
+:root{color-scheme:light}.dark{color-scheme:dark}
+html,body{max-width:100%;overflow-x:clip}
+@media(max-width:420px){.board-starter{width:calc(100vw - 84px);padding:18px}.board-starter__title-row h1{font-size:22px}.board-starter__suggestions{flex-wrap:wrap}.board-controls{right:6px;bottom:6px}.future-loader{width:min(300px,calc(100vw - 40px))}}
+.dark .workspace-notifications{border-color:#34405f;background:#11182e;color:#e8ecff}.dark .workspace-notifications header,.dark .workspace-notifications>div:last-child{background:#1b2440;border-color:#34405f}.dark .workspace-notifications :is(.text-slate-950,.text-slate-900){color:#edf1ff}.dark .workspace-notifications :is(.text-slate-500,.text-slate-400){color:#aab6d4}.dark .workspace-notifications .bg-white{background:#283455}.dark .workspace-notifications .bg-indigo-100{background:#303960}

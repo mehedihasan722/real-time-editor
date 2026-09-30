@@ -7,6 +7,7 @@ import { createRoomContext } from "@liveblocks/react";
 import { Layer } from "@/types/canvas";
 import { getTemplateLayers } from "@/lib/board-templates";
 import { client } from "../../liveblocks.config";
+import { resolveCommentUsers, resolveCommentMentions } from "@/lib/comment-users";
 
 // Create the room context
 const { RoomProvider } = createRoomContext(client);
@@ -21,7 +22,7 @@ interface RoomProps {
 const Room = ({ children, roomId, template, fallback }: RoomProps) => {
   const templateLayers = getTemplateLayers(template);
   return (
-    <LiveblocksProvider throttle={16} authEndpoint="/api/liveblocks-auth">
+    <LiveblocksProvider throttle={16} authEndpoint="/api/liveblocks-auth" resolveUsers={resolveCommentUsers} resolveMentionSuggestions={resolveCommentMentions}>
       <RoomProvider
         id={roomId}
         initialPresence={{

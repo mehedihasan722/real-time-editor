@@ -58,6 +58,8 @@ export type StickerLayer = {
 };
 
 export type ShapeLayer = {
+  strokeColor?: Color;
+  strokeWidth?: number;
   type: LayerType.Shape;
   shape: DiagramShapeKind;
   x: number;

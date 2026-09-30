@@ -23,7 +23,7 @@ export const NotificationsMenu = () => {
         <Bell className="size-5" />
         {latestBoard && <span className="absolute right-2 top-2 size-2 rounded-full bg-indigo-500 ring-2 ring-white" />}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={10} className="w-[min(380px,calc(100vw-24px))] overflow-hidden rounded-2xl border-slate-200 p-0 shadow-2xl">
+      <DropdownMenuContent align="end" sideOffset={10} className="workspace-notifications w-[min(380px,calc(100vw-24px))] overflow-hidden rounded-2xl border-slate-200 p-0 shadow-2xl">
         <header className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-5 py-4">
           <div><p className="font-bold text-slate-950">Notifications</p><p className="mt-0.5 text-xs text-slate-500">Workspace activity and shortcuts</p></div>
           <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-indigo-600 shadow-sm">{latestBoard ? "1 new" : "Up to date"}</span>

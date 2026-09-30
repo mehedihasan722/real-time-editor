@@ -10,13 +10,22 @@ Flowboard is a collaborative visual workspace built with Next.js, Convex, Clerk,
 - Use the admin dashboard for board counts, creation trends, owner distribution, invitations, and board controls.
 - Open the in-app guide at /guide and browse templates at /templates.
 - Install the app from a supported browser. The offline fallback explains when board sync is unavailable.
+- Play 22 original mini-games at /games: 16 WebGL arcade games and six puzzle/strategy games with raised boards. Includes a first-person target arena, football penalties, racing, an endless runner, egg matching, and flying.
+- Discuss boards with persistent Liveblocks comment threads, pinned feedback, mentions, reactions, and resolve/reopen controls.
+- Use the magic pen to turn rough geometric strokes into editable shapes while retaining stroke color and width.
+
+## Arcade and performance
+
+The arcade is single-player. Scores are stored locally on the device; it does not provide multiplayer matches or a shared leaderboard. The WebGL renderer uses the installed Three.js dependency, is dynamically loaded when a game opens, caps pixel ratio, disables mobile shadows, stops rendering while paused or hidden, and disposes GPU resources on exit. Hardware acceleration is required for the action games. Game scenes use procedural models rather than licensed game assets.
+
+Library navigation, admin, notifications, and comments follow the app theme. The game worlds retain their own scene lighting. Layouts include narrow-phone breakpoints, keyboard/touch controls, and reduced-motion support.
 
 ## Service setup
 
 1. Create a Clerk application with Organizations enabled. Configure its Convex JWT template and use the same Clerk issuer as apps/web/convex/auth.config.js.
 2. Create a Convex project and run the Convex CLI from apps/web to deploy the schema and functions.
 3. Create a Liveblocks project and copy its secret key.
-4. Copy .env.example to .env.local at the repository root for Docker, and to apps/web/.env.local for local Next.js development. Fill in every value. Keep both files private.
+4. Copy .env.example to apps/web/.env.local for local Next.js development and Docker. Fill in every value. Keep this file private.
 5. In one terminal, run cd apps/web followed by npx convex dev. In another terminal at the repository root, run npm install followed by npm run dev.
 6. Open http://localhost:3000 and sign in. Create or select a Clerk organization to make boards.
 
@@ -36,9 +45,11 @@ The `/api/health` endpoint reports HTTP 200 only when public and server service 
 
 ## Docker development
 
-Copy .env.example to .env.local at the repository root. Run npx convex dev from apps/web on the host to connect the Convex deployment, then run docker compose up --build at the repository root. Open http://localhost:3000.
+Copy .env.example to apps/web/.env.local. Run npx convex dev from apps/web on the host to connect the Convex deployment, then run docker compose up --build at the repository root. Open http://localhost:3000.
 
-Docker Compose mounts source files for hot reload. Start Docker Desktop before building the image. Environment values come from .env.local and are excluded from the Docker build context.
+Docker Compose mounts source files for hot reload. Start Docker Desktop before building the image. Environment values come from apps/web/.env.local and are excluded from the Docker build context.
+
+For the production container, run `docker compose --env-file apps/web/.env.local -f compose.production.yaml up --build -d`. This uses the standalone server without development mounts and includes a readiness health check. Public variables are supplied at build time; server secrets are supplied at runtime.
 
 The default Docker image target is a non-root, standalone production server. Pass only `NEXT_PUBLIC_CONVEX_URL` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` as build arguments because Next.js embeds public values at build time. Provide `CLERK_SECRET_KEY` and `LIVEBLOCKS_SECRET_KEY` only when starting the container; never pass server secrets as Docker build arguments.
 
@@ -74,7 +85,7 @@ The current Clerk integration adds `aud: "convex"` to the normal session token. 
 
 The Clerk redirect variables from `.env.example` configure the built-in `/sign-in` and `/sign-up` routes. Copy them unchanged into `apps/web/.env.local` when adding credentials.
 
-Restart npm run dev from the repository root after changing configuration. For Docker, populate the root .env.local as well and recreate the service with docker compose up --build --force-recreate. For hosted deployments, set these variables in the hosting environment before rebuilding; Next.js public variables are embedded at build time.
+Restart npm run dev from the repository root after changing configuration. For Docker, update apps/web/.env.local and recreate the service with docker compose up --build --force-recreate. For hosted deployments, set these variables in the hosting environment before rebuilding; Next.js public variables are embedded at build time.
 
 Reference: [Convex Next.js setup](https://docs.convex.dev/quickstart/nextjs).
 

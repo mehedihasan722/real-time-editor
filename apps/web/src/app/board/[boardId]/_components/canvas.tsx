@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Info from "./info";
 import Participants from "./participants";
 import Toolbar from "./toolbar";
+import { CommentSidebar } from "./comment-sidebar";
 import {
   Camera,
   CanvasMode,
@@ -47,6 +48,7 @@ import { BoardStarter } from "./board-starter";
 import { BoardControls } from "./board-controls";
 import { getTemplateLayers } from "@/lib/board-templates";
 import { createDiagramShapeLayer } from "@/lib/diagram-shapes";
+import { recognizeDrawing } from "@/lib/smart-drawing";
 import { DiagramShapeKind } from "@/types/canvas";
 
 const MAX_LAYERS = 100;
@@ -66,6 +68,9 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [placingComment, setPlacingComment] = useState(false);
+  const [commentPoint, setCommentPoint] = useState<Point | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const panPointer = useRef<{ id: number; x: number; y: number } | null>(null);
   const [starterOpen, setStarterOpen] = useState(() => layerIds.length === 0);
@@ -295,10 +300,13 @@ const Canvas = ({ boardId }: CanvasProps) => {
       }
 
       const id = nanoid();
+      const recognized = canvasState.mode === CanvasMode.Pencil && canvasState.tool === "style"
+        ? recognizeDrawing(pencilDraft, lastUsedColor, canvasState.width)
+        : null;
       liveLayers.set(
         id,
         new LiveObject(
-          penPointsToPathLayer(
+          recognized ?? penPointsToPathLayer(
             pencilDraft,
             lastUsedColor,
             canvasState.mode === CanvasMode.Pencil ? canvasState.width : 8,
@@ -560,7 +568,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       if (canvasState.mode === CanvasMode.Pencil && canvasState.tool === "eraser") {
         e.stopPropagation();
         const liveLayers = storage.get("layers");
-        if (liveLayers.get(layerId)?.get("type") === LayerType.Path) {
+        if (liveLayers.has(layerId)) {
           const liveLayerIds = storage.get("layerIds");
           const index = liveLayerIds.toJSON().indexOf(layerId);
           if (index !== -1) liveLayerIds.delete(index);
@@ -666,10 +674,19 @@ const Canvas = ({ boardId }: CanvasProps) => {
   }, [deleteLayers, history, resetView, zoom, zoomTo]);
 
   return (
-    <main className="h-full w-full relative board-canvas future-board touch-none">
+    <main className="h-full w-full relative board-canvas future-board touch-none" onPointerDownCapture={event => {
+      if (!placingComment || event.button !== 0 || !(event.target as Element).closest("[data-board-surface]")) return;
+      event.stopPropagation();
+      event.preventDefault();
+      setCommentPoint(pointerEventToCanvasPoint(event, camera, zoom));
+      setPlacingComment(false);
+      setCommentsOpen(true);
+    }}>
       <Info boardId={boardId} />
       <Participants />
       <Toolbar
+        commentsOpen={commentsOpen}
+        onOpenComments={() => { setCommentsOpen(open => !open); setPlacingComment(false); }}
         canvasState={canvasState}
         setCanvasState={setCanvasState}
         canRedo={canRedo}
@@ -685,6 +702,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
         onInsertSticker={insertSticker}
       />
       <SelectionTools camera={camera} zoom={zoom} setLastUsedColor={setLastUsedColor} />
+      <CommentSidebar open={commentsOpen} onClose={() => { setCommentsOpen(false); setPlacingComment(false); }} camera={camera} zoom={zoom} point={commentPoint} placing={placingComment} onPlace={() => { setCanvasState({ mode: CanvasMode.None }); setCommentPoint(null); setPlacingComment(true); }} onSubmitted={() => setCommentPoint(null)} onOpen={() => setCommentsOpen(true)} />
       {starterOpen && (
         <BoardStarter
           name={info?.name}
@@ -699,6 +717,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
         onReset={resetView}
       />
       <svg
+        data-board-surface
         className={`h-[100vh] w-[100vw] ${isPanning ? "cursor-grabbing" : ""}`}
         onWheel={onWheel}
         onPointerMove={onPointerMove}

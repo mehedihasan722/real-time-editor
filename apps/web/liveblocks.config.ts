@@ -1,4 +1,5 @@
 import { Color, DrawingTool, Layer } from "@/types/canvas";
+import { resolveCommentUsers, resolveCommentMentions } from "@/lib/comment-users";
 import {
   createClient,
   LiveList,
@@ -9,6 +10,8 @@ import {
 export const client = createClient({
   throttle: 16,
   authEndpoint: "/api/liveblocks-auth",
+  resolveUsers: resolveCommentUsers,
+  resolveMentionSuggestions: resolveCommentMentions,
 });
 
 // Define Liveblocks types for your application
@@ -40,6 +43,7 @@ declare global {
       info?: {
         name?: string;
         picture?: string;
+        avatar?: string;
         // Example properties, for useSelf, useUser, useOthers, etc.
         // name: string;
         // avatar: string;
@@ -54,6 +58,9 @@ declare global {
 
     // Custom metadata set on threads, for useThreads, useCreateThread, etc.
     ThreadMetadata: {
+      x?: number;
+      y?: number;
+      color?: string;
       // Example, attaching coordinates to a thread
       // x: number;
       // y: number;
