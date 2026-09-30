@@ -32,6 +32,8 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - name: Prepare Compose validation environment
+        run: touch apps/web/.env.local
       - name: Validate development Compose
         run: docker compose config --no-env-resolution --quiet
       - name: Validate production Compose
