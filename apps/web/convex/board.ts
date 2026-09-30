@@ -1,6 +1,7 @@
 import { boardTitleSchema } from "../src/lib/board-validation";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getActiveOrganizationId } from "../src/lib/organization-claim";
 
 const images = [
   "/placeholders/1.svg",
@@ -35,18 +36,11 @@ const displayName = (identity: {
   identity.email?.split("@")[0]?.trim() ||
   "Flowboard member";
 
-const getActiveOrgId = (identity: Record<string, unknown>) =>
-  typeof identity.org_id === "string"
-    ? identity.org_id
-    : typeof identity.orgId === "string"
-      ? identity.orgId
-      : null;
-
 const assertBoardOrganization = (
   identity: Record<string, unknown>,
   board: { orgId: string },
 ) => {
-  if (getActiveOrgId(identity) !== board.orgId) {
+  if (getActiveOrganizationId(identity) !== board.orgId) {
     throw new Error("Board access denied");
   }
 };
@@ -63,7 +57,7 @@ export const create = mutation({
     if (!identity) {
       throw new Error("Unauthorized");
     }
-    if (getActiveOrgId(identity) !== args.orgId) {
+    if (getActiveOrganizationId(identity) !== args.orgId) {
       throw new Error("Organization access denied");
     }
 

@@ -1,13 +1,14 @@
 "use client";
-import React from "react";
+import React, { use } from "react";
 import EmptyOrg from "./_components/empty-org";
 import { useOrganization } from "@clerk/nextjs";
 import BoardList from "./_components/board-list";
 
 interface DashBoardPageProps {
-  searchParams: { search?: string; favourites?: string };
+  searchParams: Promise<{ search?: string; favourites?: string }>;
 }
 const DashboardPage = ({ searchParams }: DashBoardPageProps) => {
+  const resolvedSearchParams = use(searchParams);
   const { organization } = useOrganization();
 
   return (
@@ -16,14 +17,14 @@ const DashboardPage = ({ searchParams }: DashBoardPageProps) => {
         <EmptyOrg />
       ) : (
         <div>
-          {!searchParams.favourites && !searchParams.search && <section className="future-hero">
+          {!resolvedSearchParams.favourites && !resolvedSearchParams.search && <section className="future-hero">
             <div><span className="future-hero__eyebrow">YOUR CREATIVE SPACE</span>
               <h1>Ideas without limits.</h1>
               <p>Think together, map what matters, and turn your next big idea into a shared board.</p>
             </div>
             <div className="future-hero__art" aria-hidden="true"><i /><i /><i /></div>
           </section>}
-          <BoardList orgId={organization.id} query={searchParams} />
+          <BoardList orgId={organization.id} query={resolvedSearchParams} />
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
+import { getActiveOrganizationId } from "../src/lib/organization-claim";
 
 export const get = query({
   args: {
@@ -13,7 +14,7 @@ export const get = query({
     if (!identity) {
       throw new Error("Unauthorized");
     }
-    const activeOrgId = typeof identity.org_id === "string" ? identity.org_id : identity.orgId;
+    const activeOrgId = getActiveOrganizationId(identity);
     if (activeOrgId !== args.orgId) {
       throw new Error("Organization access denied");
     }
