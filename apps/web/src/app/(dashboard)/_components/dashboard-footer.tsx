@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Github, Heart, Orbit } from "lucide-react";
+import { GitFork, Heart, Orbit } from "lucide-react";
 
 const footerLinks = [
   { href: "/", label: "Boards" },
@@ -39,7 +39,7 @@ export const DashboardFooter = () => {
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 transition-colors hover:text-indigo-600"
           >
-            <Github className="size-4" aria-hidden="true" />
+            <GitFork className="size-4" aria-hidden="true" />
             GitHub
           </a>
         </nav>

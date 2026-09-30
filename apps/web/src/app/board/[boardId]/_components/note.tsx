@@ -16,7 +16,7 @@ interface NoteProps {
 }
 
 const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) => {
-  const { x, y, width, height, fill, value, author, fontFamily = "calibri", fontSize = "small", bold, strike, list, link } = layer;
+  const { x, y, width, height, fill, value, author, fontFamily = "calibri", fontSize = "small", bold, strike, list, link, rotation = 0 } = layer;
   const editorRef = useRef<HTMLDivElement>(null);
 
   const updateValue = useMutation(({ storage }, newValue: string) => {
@@ -41,6 +41,7 @@ const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) => {
       y={y}
       width={width}
       height={height}
+      transform={`rotate(${rotation} ${x + width / 2} ${y + height / 2})`}
       onPointerDown={(e) => onPointerDown(e, id)}
       style={{
         overflow: "visible",

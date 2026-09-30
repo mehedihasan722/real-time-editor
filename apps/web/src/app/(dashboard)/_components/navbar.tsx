@@ -9,6 +9,7 @@ import SearchInput from "./search-input";
 import InviteButton from "./invite-button";
 import MobileNav from "./mobile-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationsMenu } from "./notifications-menu";
 
 export const Navbar = () => {
   const { organization } = useOrganization();
@@ -44,6 +45,8 @@ export const Navbar = () => {
         />
       </div>
       {organization && <div className="hidden sm:block"><InviteButton /></div>}
+      <span className="hidden rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 md:inline">Free plan</span>
+      <NotificationsMenu />
       <ThemeToggle />
       <UserButton />
     </div>

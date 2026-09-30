@@ -197,7 +197,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const updateSelectionNet = useMutation(
     ({ storage, setMyPresence }, current: Point, origin: Point) => {
-      const layers = storage.get("layers").toImmutable();
+      const layers = new Map(Object.entries(storage.get("layers").toJSON()));
       setCanvasState({
         mode: CanvasMode.SelectionNet,
         origin,
@@ -424,11 +424,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
       ) {
         const liveLayers = storage.get("layers");
         const liveLayerIds = storage.get("layerIds");
-        const ids = liveLayerIds.toImmutable();
+        const ids = liveLayerIds.toJSON();
         for (let index = ids.length - 1; index >= 0; index -= 1) {
           const layer = liveLayers.get(ids[index]);
           if (layer?.get("type") !== LayerType.Path) continue;
-          const path = layer.toImmutable() as Extract<Layer, { type: LayerType.Path }>;
+          const path = layer.toJSON() as Extract<Layer, { type: LayerType.Path }>;
           const radius = Math.max(10, canvasState.width);
           if (canvasState.tool === "eraser") {
             if (!isPointNearPath(path, current, radius)) continue;
@@ -562,7 +562,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
         const liveLayers = storage.get("layers");
         if (liveLayers.get(layerId)?.get("type") === LayerType.Path) {
           const liveLayerIds = storage.get("layerIds");
-          const index = liveLayerIds.toImmutable().indexOf(layerId);
+          const index = liveLayerIds.toJSON().indexOf(layerId);
           if (index !== -1) liveLayerIds.delete(index);
           liveLayers.delete(layerId);
         }

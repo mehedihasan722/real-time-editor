@@ -50,7 +50,7 @@ const DiagramShape = ({ id, layer, onPointerDown, selectionColor }: DiagramShape
     }
   })();
 
-  return <g transform={`translate(${layer.x} ${layer.y})`} onPointerDown={(event) => onPointerDown(event, id)} className="drop-shadow-sm">{layer.value && <text x={4} y={-7} fill={stroke} fontSize={12} fontWeight={700}>{layer.value}</text>}{content}</g>;
+  return <g transform={`translate(${layer.x} ${layer.y}) rotate(${layer.rotation || 0} ${w / 2} ${h / 2})`} onPointerDown={(event) => onPointerDown(event, id)} className="drop-shadow-sm">{layer.value && <text x={4} y={-7} fill={stroke} fontSize={12} fontWeight={700}>{layer.value}</text>}{content}</g>;
 };
 
 export default DiagramShape;

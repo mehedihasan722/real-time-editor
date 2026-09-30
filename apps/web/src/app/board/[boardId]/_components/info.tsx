@@ -53,7 +53,7 @@ const Info = ({ boardId }: InfoProps) => {
       <Hint label="Go to boards" side="bottom" sideOffset={10}>
         <Button className="px-2" variant="board" asChild>
           <Link href="/">
-            <Image src="/logo.svg" alt="Flowboard Logo" height={60} width={60} />
+            <Image src="/logo.svg" alt="Flowboard Logo" height={60} width={60} className="h-8 w-auto" />
             <span
               className={cn(
                 "font-semibold text-xl ml-2 text-black",

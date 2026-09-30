@@ -66,6 +66,7 @@ export type ShapeLayer = {
   width: number;
   fill: Color;
   value?: string;
+  rotation?: number;
 };
 
 export type RectangleLayer = {
@@ -133,6 +134,7 @@ export type NoteLayer = {
   strike?: boolean;
   list?: boolean;
   link?: string;
+  rotation?: number;
 };
 
 export type Point = { x: number; y: number };

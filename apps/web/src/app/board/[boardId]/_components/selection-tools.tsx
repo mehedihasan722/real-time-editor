@@ -3,9 +3,9 @@ import Hint from "@/components/hint";
 import { Button } from "@/components/ui/button";
 import useDeleteLayers from "@/hooks/use-delete-layers";
 import useSelectionBounds from "@/hooks/use-selection-bounds";
-import { Camera, Color, LayerType, NoteLayer } from "@/types/canvas";
+import { Camera, Color, LayerType, NoteLayer, ShapeLayer } from "@/types/canvas";
 import { useMutation, useSelf, useStorage } from "@liveblocks/react";
-import { Bold, BringToFront, Link2, List, SendToBack, Strikethrough, Trash2 } from "lucide-react";
+import { Bold, BringToFront, Link2, List, RotateCcw, RotateCw, SendToBack, Strikethrough, Trash2 } from "lucide-react";
 import React, { memo, useEffect, useState } from "react";
 import ColorPicker from "./color-picker";
 import { LiveObject } from "@liveblocks/client";
@@ -32,7 +32,7 @@ const SelectionTools = memo(
         const liveLayerIds = storage.get("layerIds");
         const indices: number[] = [];
 
-        const arr = liveLayerIds.toImmutable();
+        const arr = liveLayerIds.toJSON();
 
         for (let i = 0; i < arr.length; i++) {
           if (selection?.includes(arr[i])) {
@@ -55,7 +55,7 @@ const SelectionTools = memo(
         const liveLayerIds = storage.get("layerIds");
         const indices: number[] = [];
 
-        const arr = liveLayerIds.toImmutable();
+        const arr = liveLayerIds.toJSON();
 
         for (let i = 0; i < arr.length; i++) {
           if (selection?.includes(arr[i])) {
@@ -73,16 +73,21 @@ const SelectionTools = memo(
     const storage = useStorage((root) => root.layers);
     const selectedLayerType = useStorage((root) => {
       if (selection?.length !== 1) return null;
-      return root.layers.get(selection[0])?.type ?? null;
+      return root.layers[selection[0]]?.type ?? null;
     });
     const selectedNote = useStorage((root) => {
       if (selection?.length !== 1) return null;
-      const layer = root.layers.get(selection[0]);
+      const layer = root.layers[selection[0]];
       return layer?.type === LayerType.Note ? layer : null;
+    });
+    const selectedRotation = useStorage((root) => {
+      if (selection?.length !== 1) return 0;
+      const layer = root.layers[selection[0]];
+      return layer?.type === LayerType.Note || layer?.type === LayerType.Shape ? layer.rotation ?? 0 : 0;
     });
     useEffect(() => {
       const firstColor = selection
-        ?.map((id) => storage?.get(id)?.fill)
+        ?.map((id) => storage?.[id]?.fill)
         .find(isValidColor);
       setSelectionColor(firstColor ?? { r: 0, g: 0, b: 0, a: 1 });
     }, [selection, storage]);
@@ -119,6 +124,17 @@ const SelectionTools = memo(
       [selection]
     );
 
+    const updateSelectedRotation = useMutation(
+      ({ storage }, rotation: number) => {
+        if (selection?.length !== 1) return;
+        const layer = storage.get("layers").get(selection[0]) as LiveObject<NoteLayer | ShapeLayer> | undefined;
+        if (!layer) return;
+        const type = layer.get("type");
+        if (type === LayerType.Note || type === LayerType.Shape) layer.set("rotation", rotation);
+      },
+      [selection],
+    );
+
     const cycleNoteSize = () => {
       const current = selectedNote?.fontSize || "small";
       updateSelectedNote({ fontSize: current === "small" ? "medium" : current === "medium" ? "large" : "small" });
@@ -138,6 +154,7 @@ const SelectionTools = memo(
 
     const deleteLayers = useDeleteLayers();
     const selectionBounds = useSelectionBounds();
+    const rotation = selectedRotation ?? 0;
 
     useEffect(() => {
       setColorPickerVisible(false);
@@ -183,6 +200,14 @@ const SelectionTools = memo(
             <button type="button" className={`note-format-button ${selectedNote?.link ? "is-active" : ""}`} title="Add link" onClick={editNoteLink}><Link2 size={16} /></button>
             <button type="button" className={`note-format-button ${selectedNote?.list ? "is-active" : ""}`} title="Toggle list" onClick={() => updateSelectedNote({ list: !selectedNote?.list })}><List size={16} /></button>
           </>
+        )}
+        {(selectedLayerType === LayerType.Note || selectedLayerType === LayerType.Shape) && (
+          <div className="rotation-control" title="Rotate selected object">
+            <button type="button" aria-label="Rotate left 15 degrees" onClick={() => updateSelectedRotation(Math.max(-180, rotation - 15))}><RotateCcw size={15} /></button>
+            <input aria-label="Rotation in degrees" type="range" min="-180" max="180" step="5" value={rotation} onChange={(event) => updateSelectedRotation(Number(event.target.value))} />
+            <button type="button" aria-label="Rotate right 15 degrees" onClick={() => updateSelectedRotation(Math.min(180, rotation + 15))}><RotateCw size={15} /></button>
+            <button type="button" className="rotation-control__value" aria-label="Reset rotation" title="Reset rotation" onClick={() => updateSelectedRotation(0)}>{rotation}°</button>
+          </div>
         )}
         <ColorPicker
           selectionColor={selectionColor}

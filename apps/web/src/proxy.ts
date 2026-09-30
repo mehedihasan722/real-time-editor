@@ -1,14 +1,19 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { publicEnv, setupMessage } from "@/lib/public-env";
 import { serverEnv } from "@/lib/server-env";
 
-const isPublicRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)", "/api/health"]);
+const isPublicPath = (pathname: string) =>
+  pathname === "/api/health" ||
+  pathname === "/sign-in" ||
+  pathname.startsWith("/sign-in/") ||
+  pathname === "/sign-up" ||
+  pathname.startsWith("/sign-up/");
 
 const authenticatedMiddleware = clerkMiddleware(
   async (auth, request) => {
-    if (!isPublicRoute(request)) {
+    if (!isPublicPath(request.nextUrl.pathname)) {
       await auth.protect();
     }
   }
