@@ -4,6 +4,8 @@ Flowboard is a Turborepo. The Next.js application and its local environment file
 
 See [Enterprise architecture](Enterprise-Architecture) for shared packages, role enforcement, export workers, monitoring and release prerequisites.
 
+See [Canvas 2D engine](Canvas-2D-Engine) for vector persistence, versioned commits, rendering controls and limits.
+
 ## Required services
 
 Configure these values in `apps/web/.env.local`:

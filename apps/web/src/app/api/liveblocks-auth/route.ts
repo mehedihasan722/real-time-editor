@@ -33,6 +33,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid room" }, { status: 400 });
   }
   const { room } = parsed.data;
+  const boardId = room.startsWith("vector:") ? room.slice(7) : room;
   const audience = authorization.sessionClaims?.aud;
   const usesConvexSession =
     audience === "convex" ||
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
   const convex = new ConvexHttpClient(publicEnv.data.NEXT_PUBLIC_CONVEX_URL);
   convex.setAuth(token);
   const board = await convex
-    .query(api.board.get, { id: room as Id<"boards"> })
+    .query(api.board.get, { id: boardId as Id<"boards"> })
     .catch(() => null);
 
   if (board?.orgId !== authorization.orgId) {

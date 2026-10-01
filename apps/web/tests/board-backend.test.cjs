@@ -4,7 +4,7 @@ const load = require("./helpers/load-ts.cjs");
 const register = config => config;
 const mocks = {
   "./_generated/server": { query: register, mutation: register, internalQuery: register, internalMutation: register, internalAction: register },
-  "./_generated/api": { internal: { board: { cleanupFavourites: "cleanupFavourites", cleanupRoom: "cleanupRoom", getCleanupJob: "getCleanupJob", finishCleanup: "finishCleanup" } } },
+  "./_generated/api": { internal: { vector: { cleanupLayers: "cleanupLayers" }, board: { cleanupFavourites: "cleanupFavourites", cleanupRoom: "cleanupRoom", getCleanupJob: "getCleanupJob", finishCleanup: "finishCleanup" } } },
 };
 const board = load("convex/board.ts", mocks);
 const boards = load("convex/boards.ts", mocks);
@@ -37,8 +37,9 @@ test("board deletion schedules durable room and favourite cleanup atomically", a
   await board.remove.handler(ctx, { id: "board_1" });
   assert.equal(deleted[0], "board_1");
   assert.equal(inserted[0].table, "roomCleanup");
-  assert.equal(scheduled.length, 2);
-  assert.equal(scheduled[1][1], "cleanupRoom");
+  assert.equal(scheduled.length, 3);
+  assert.equal(scheduled[1][1], "cleanupLayers");
+  assert.equal(scheduled[2][1], "cleanupRoom");
 });
 test("room cleanup retries failure and retains exhausted jobs for operations", async () => {
   let patch, scheduled = 0, deleted = 0;

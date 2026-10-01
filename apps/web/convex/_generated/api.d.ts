@@ -12,6 +12,8 @@ import type * as assist from "../assist.js";
 import type * as board from "../board.js";
 import type * as boardValidators from "../boardValidators.js";
 import type * as boards from "../boards.js";
+import type * as vector from "../vector.js";
+import type * as vectorValidators from "../vectorValidators.js";
 
 import type {
   ApiFromModules,
@@ -24,6 +26,8 @@ declare const fullApi: ApiFromModules<{
   board: typeof board;
   boardValidators: typeof boardValidators;
   boards: typeof boards;
+  vector: typeof vector;
+  vectorValidators: typeof vectorValidators;
 }>;
 
 /**
