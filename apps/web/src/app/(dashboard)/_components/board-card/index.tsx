@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { BoardPreview } from "../board-identity";
 import Link from "next/link";
 import React from "react";
 import OverLay from "./overlay";
@@ -27,7 +27,6 @@ interface BoardCardProps {
 const BoardCard = ({
   id,
   title,
-  imageUrl,
   authorId,
   authorName,
   createdAt,
@@ -60,7 +59,7 @@ const BoardCard = ({
     <Link href={`/board/${id}`}>
       <div className="group aspect-[4/3] border border-slate-200 rounded-xl flex flex-col justify-between overflow-hidden bg-white shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
         <div className="relative flex-1 bg-[#f5f5f3]">
-          <Image src={imageUrl} alt={title} fill className="object-cover" />
+          <BoardPreview title={title} id={id} />
           <OverLay />
           <Actions id={id} title={title} side="right">
             <button className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity px-3 py-2 outline-none">
