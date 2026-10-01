@@ -11,11 +11,13 @@ test("Playground submits chat to Assist and keeps a failed prompt available for 
   for (const success of [true, false]) {
     const changes = [];
     const conversation = { id: "first", title: "New conversation", mode: "chat", messages: [] };
-    const states = [[conversation], "first", "Plan my launch", false, "", { chat: true, generate: false, image: false }, "auto", {}, false];
+    const states = [[conversation], "first", "Plan my launch", false, "", { chat: true, generate: false, image: false }, "auto", {}, false, []];
     let sent;
     const exports = {};
     const mocks = {
       react: { useState: () => { const index = changes.length; changes.push([]); return [states[index], value => changes[index].push(value)]; }, useEffect() {}, useRef: () => ({ current: null }) },
+      "./assist-upload": { AssistUpload: "div" },
+      "./assist-connections": { AssistConnections: "div" },
       "next/link": { default: "a" },
       "lucide-react": new Proxy({}, { get: () => "span" }),
       "@liveblocks/react/suspense": { useSelf: callback => callback({ info: { name: "Tester" } }) },

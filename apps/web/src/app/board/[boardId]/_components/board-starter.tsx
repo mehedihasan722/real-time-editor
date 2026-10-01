@@ -11,6 +11,9 @@ import {
   X,
 } from "lucide-react";
 import { assistPromptSchema, resolveAssistTemplate } from "@/lib/board-templates";
+import { AssistConnections } from "./assist-connections";
+import { AssistUpload } from "./assist-upload";
+import { type AssistAttachment } from "@/lib/assist-attachments";
 import { generatedBoardLayers, generatedBoardSchema } from "@/lib/assist";
 import { Layer } from "@/types/canvas";
 
@@ -35,6 +38,8 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
   const [mode, setMode] = useState<"generate" | "chat" | "templates">("templates");
   const [provider, setProvider] = useState("auto");
   const [available, setAvailable] = useState({ generate: false, chat: false });
+  const [attachments, setAttachments] = useState<AssistAttachment[]>([]);
+  const [readingFiles, setReadingFiles] = useState(false);
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [generated, setGenerated] = useState<ReturnType<typeof generatedBoardSchema.parse> | null>(null);
@@ -52,6 +57,7 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (busy || readingFiles) return;
     const parsed = assistPromptSchema.safeParse(prompt);
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message || "Enter a board prompt.");
@@ -62,7 +68,7 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
     setBusy(true); setGenerated(null);
     const conversation = [...(mode === "chat" ? messages.slice(-18) : []), { role: "user" as const, content: parsed.data }];
     try {
-      const response = await fetch("/api/assist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ boardId, mode, provider, messages: conversation }), signal: AbortSignal.timeout(60000) });
+      const response = await fetch("/api/assist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ boardId, mode, provider, attachments, messages: conversation }), signal: AbortSignal.timeout(60000) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Assist could not complete the request.");
       if (mode === "generate") setGenerated(generatedBoardSchema.parse(result.board));
@@ -88,7 +94,7 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
       </div>
       {!available.generate && !available.chat && <p className="board-starter__availability" role="status">Starter templates are ready. AI services are not configured yet.</p>}
       {mode === "chat" && messages.length > 0 && <div className="max-h-48 overflow-auto text-sm" role="log" aria-label="Hermes conversation">{messages.map((message, index) => <p className="mb-3 whitespace-pre-wrap" key={index}><strong>{message.role === "user" ? "You" : "Hermes"}: </strong>{message.content}</p>)}</div>}
-      <form className="board-starter__composer" onSubmit={submit}>
+      <AssistConnections onRefresh={result => setAvailable({ chat: result.chat === true, generate: result.generate === true })} /><AssistUpload onReading={setReadingFiles} attachments={attachments} onChange={setAttachments} disabled={busy || mode === "templates"} /><form className="board-starter__composer" onSubmit={submit}>
         <textarea
           value={prompt}
           onChange={(event) => { setPrompt(event.target.value); if (error) setError(""); }}
@@ -99,7 +105,7 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
         />
         <div>
           <span><Bot className="size-4" /> {busy ? "Working…" : mode === "chat" ? "Hermes Agent" : mode === "generate" ? "AI board generator" : "Guided workspace generator"}</span>
-          <button type="submit" disabled={busy} aria-label={mode === "chat" ? "Send message to Hermes" : "Create workspace from prompt"}>
+          <button type="submit" disabled={busy || readingFiles} aria-label={mode === "chat" ? "Send message to Hermes" : "Create workspace from prompt"}>
             <ArrowUp className="size-4" />
           </button>
         </div>

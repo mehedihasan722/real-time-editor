@@ -6,6 +6,9 @@ import Link from "next/link";
 import { BookOpen, Bot, Home, LayoutGrid, MessageSquare, Plus, Send, Settings, Sparkles, Trash2 } from "lucide-react";
 import { useSelf } from "@liveblocks/react/suspense";
 import { Button } from "@/components/ui/button";
+import { AssistConnections } from "./assist-connections";
+import { AssistUpload } from "./assist-upload";
+import { type AssistAttachment } from "@/lib/assist-attachments";
 import { generatedBoardLayers, generatedBoardSchema } from "@/lib/assist";
 import { Layer } from "@/types/canvas";
 import { consumeAssistStream } from "@/lib/assist-stream";
@@ -28,9 +31,12 @@ export function AIPlayground({ boardId, onCanvas, onGenerated }: { boardId: stri
   const [provider, setProvider] = useState("auto");
   const [providers, setProviders] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [attachments, setAttachments] = useState<AssistAttachment[]>([]);
+  const [readingFiles, setReadingFiles] = useState(false);
   const request = useRef<AbortController | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const active = conversations.find(conversation => conversation.id === activeId)!;
+  const canSend = available[active.mode] && (active.mode === "image" || provider === "auto" || providers[provider] === true);
   useEffect(() => {
     const controller = new AbortController();
     fetch("/api/assist", { signal: controller.signal }).then(async response => {
@@ -49,7 +55,7 @@ export function AIPlayground({ boardId, onCanvas, onGenerated }: { boardId: stri
   };
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (busy || !prompt.trim() || !available[active.mode]) return;
+    if (busy || readingFiles || !prompt.trim() || !canSend) return;
     const submitted = prompt.trim();
     const messages: Message[] = [...active.messages, { role: "user", content: submitted }];
     const id = active.id;
@@ -58,7 +64,7 @@ export function AIPlayground({ boardId, onCanvas, onGenerated }: { boardId: stri
     const controller = new AbortController(); request.current = controller;
     const timeout = window.setTimeout(() => controller.abort(), 60000);
     try {
-      const response = await fetch("/api/assist", { method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal, body: JSON.stringify({ boardId, mode: active.mode, provider, stream: active.mode === "chat", messages: (active.mode === "chat" ? messages.slice(-19) : messages.slice(-1)).map(({ role, content }) => ({ role, content })) }) });
+      const response = await fetch("/api/assist", { method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal, body: JSON.stringify({ boardId, mode: active.mode, provider, attachments, stream: active.mode === "chat", messages: (active.mode === "chat" ? messages.slice(-19) : messages.slice(-1)).map(({ role, content }) => ({ role, content })) }) });
       if (response.ok && active.mode === "chat") {
         await consumeAssistStream(response, content => update(id, { messages: [...messages, { role: "assistant", content }] }), controller.signal);
         return;
@@ -85,7 +91,7 @@ export function AIPlayground({ boardId, onCanvas, onGenerated }: { boardId: stri
           {active.messages.map((message, index) => <article key={index} className={`mx-auto mb-5 max-w-3xl rounded-2xl p-4 ${message.role === "assistant" ? "border bg-muted/10 shadow-sm" : ""}`}><div className="mb-3 flex items-center gap-2 text-xs font-semibold"><span className={`flex h-6 w-6 items-center justify-center rounded-full text-white ${message.role === "user" ? "bg-teal-700" : "bg-violet-700"}`}>{message.role === "user" ? name.slice(0, 1) : <Bot size={14} />}</span>{message.role === "user" ? "You" : active.mode === "chat" ? "Flowboard Assist" : active.mode === "image" ? "Nano Banana" : "Board generator"}</div><p className="whitespace-pre-wrap break-words border-l-2 border-violet-200 pl-4 text-sm leading-6 dark:border-violet-800">{message.content}</p>{message.image && <div className="mt-4"><Image unoptimized src={message.image} alt={messagesPrompt(active.messages, index)} width={1024} height={1024} className="h-auto max-h-96 w-auto rounded-xl" /><a href={message.image} download="flowboard-generated-image" className="mt-3 inline-block underline">Download image</a></div>}{message.board && <div className="mt-4 rounded-xl border p-4"><ul className="space-y-2 text-sm">{message.board.notes.map((note, i) => <li key={i} className="rounded-lg bg-muted p-2">{note}</li>)}</ul><Button className="mt-4" size="sm" onClick={() => onGenerated(generatedBoardLayers(message.board!))}>Add {message.board.notes.length} notes to canvas</Button></div>}</article>)}
           {busy && <div className="mx-auto flex max-w-3xl items-center justify-between"><p role="status" className="text-sm text-muted-foreground">Assistant is working…</p><Button variant="outline" size="sm" onClick={() => request.current?.abort()}>Stop response</Button></div>}<div ref={bottom} />
         </div>
-        <div className="px-3 pb-3 sm:px-6 sm:pb-6">{error && <p role="alert" className="mb-2 text-sm text-red-700 dark:text-red-300">{error}</p>}{!loading && !available[active.mode] && <p role="status" className="mb-2 text-sm text-muted-foreground">{active.mode === "chat" ? "Hermes chat" : "Board generation"} is not connected. Configure this service in the server environment to send messages.</p>}<form onSubmit={submit} className="rounded-2xl border p-3 shadow-sm"><textarea aria-label="Message to assistant" placeholder="Ask anything about your next idea…" maxLength={4000} disabled={busy} value={prompt} onChange={event => setPrompt(event.target.value)} className="min-h-20 w-full resize-y bg-transparent p-1 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring" /><div className="flex flex-wrap justify-end gap-2"><select aria-label="AI provider" value={provider} disabled={busy || active.mode === "image"} onChange={event => setProvider(event.target.value)} className="rounded-md border bg-background px-2 py-1 text-sm">{[["auto", "Automatic"], ["hermes", "Hermes"], ["gemini", "Gemini"], ["grok", "Grok"], ["deepseek", "DeepSeek"], ["custom", "Custom model"]].map(([value, label]) => <option key={value} value={value}>{label}{value !== "auto" && !providers[value] ? " · not connected" : ""}</option>)}</select><select aria-label="Assistant mode" value={active.mode} disabled={busy} onChange={event => { const id = crypto.randomUUID(); setConversations(current => [{ id, title: "New conversation", mode: event.target.value as Conversation["mode"], messages: [] }, ...current]); setActiveId(id); setPrompt(""); setError(""); }} className="rounded-md border bg-background px-2 py-1 text-sm"><option value="chat">Chat</option><option value="generate">Board generator</option><option value="image">Nano Banana image</option></select><Button size="sm" type="submit" disabled={busy || loading || !available[active.mode] || !prompt.trim()} className="gap-2">{busy ? "Sending…" : "Send"}<Send size={14} /></Button></div></form></div>
+        <div className="px-3 pb-3 sm:px-6 sm:pb-6">{error && <p role="alert" className="mb-2 text-sm text-red-700 dark:text-red-300">{error}</p>}{!loading && !canSend && <p role="status" className="mb-2 text-sm text-muted-foreground">{active.mode === "image" ? "Nano Banana" : provider === "auto" ? "AI service" : provider} is not connected. Open AI connections & setup, then refresh connections after configuration.</p>}<AssistConnections onRefresh={result => { setAvailable({ chat: result.chat === true, generate: result.generate === true, image: result.image === true }); setProviders(result.providers || {}); }} /><AssistUpload onReading={setReadingFiles} attachments={attachments} onChange={setAttachments} disabled={busy} /><form onSubmit={submit} className="rounded-2xl border p-3 shadow-sm"><textarea aria-label="Message to assistant" placeholder="Ask anything about your next idea…" maxLength={4000} disabled={busy} value={prompt} onChange={event => setPrompt(event.target.value)} className="min-h-20 w-full resize-y bg-transparent p-1 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring" /><div className="flex flex-wrap justify-end gap-2"><select aria-label="AI provider" value={active.mode === "image" ? "gemini" : provider} disabled={busy || active.mode === "image"} onChange={event => setProvider(event.target.value)} className="rounded-md border bg-background px-2 py-1 text-sm">{[["auto", "Automatic"], ["hermes", "Hermes"], ["gemini", "Gemini"], ["grok", "Grok"], ["deepseek", "DeepSeek"], ["custom", "Custom model"]].map(([value, label]) => <option key={value} value={value}>{label}{value !== "auto" && !providers[value] ? " · not connected" : ""}</option>)}</select><select aria-label="Assistant mode" value={active.mode} disabled={busy} onChange={event => { const id = crypto.randomUUID(); setConversations(current => [{ id, title: "New conversation", mode: event.target.value as Conversation["mode"], messages: [] }, ...current]); setActiveId(id); setPrompt(""); setError(""); }} className="rounded-md border bg-background px-2 py-1 text-sm"><option value="chat">Chat</option><option value="generate">Board generator</option><option value="image">Nano Banana image</option></select><Button size="sm" type="submit" disabled={busy || readingFiles || loading || !canSend || !prompt.trim()} className="gap-2">{busy ? "Sending…" : "Send"}<Send size={14} /></Button></div></form></div>
       </section>
     </div>
   </m.main>;

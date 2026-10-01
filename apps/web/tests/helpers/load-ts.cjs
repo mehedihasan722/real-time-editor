@@ -8,7 +8,7 @@ module.exports = function loadTs(filename, mocks = {}, globals = {}) {
   const exports = {};
   const code = ts.transpileModule(fs.readFileSync(filepath, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   vm.runInNewContext(code, {
-    exports, process, console, TextEncoder, TextDecoder, TransformStream, AbortSignal, URL, Response, Request, fetch,
+    exports, process, console, TextEncoder, TextDecoder, TransformStream, AbortSignal, URL, Response, Request, fetch, atob,
     require: name => {
       if (Object.hasOwn(mocks, name)) return mocks[name];
       if (name === "@flowboard/types/canvas") return module.exports("../../packages/types/src/canvas.ts", mocks, globals);

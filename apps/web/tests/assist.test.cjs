@@ -92,3 +92,17 @@ test("Nano Banana sends a native image request and returns a bounded image", asy
   assert.equal(response.status, 200); assert.match(sent.url, /gemini-2.5-flash-image:generateContent$/); assert.equal(sent.headers["x-goog-api-key"], "image-secret");
   assert.equal((await response.json()).image, "data:image/png;base64,aGVsbG8=");
 });
+
+test("Assist forwards validated file contents, not local paths or credentials", async () => {
+  let sent;
+  const handler = route({ fetcher: async (url, options) => { sent = JSON.parse(options.body); return Response.json({ choices: [{ message: { content: "Summary" } }] }); } });
+  const response = await handler(new Request("https://flowboard.example/api/assist", { method: "POST", body: JSON.stringify({ boardId: "board_1", mode: "chat", attachments: [{ kind: "text", name: "project/plan.md", content: "Launch checklist" }], messages: [{ role: "user", content: "Summarize the attached files" }] }) }));
+  assert.equal(response.status, 200); assert.match(sent.messages.at(-1).content, /Launch checklist/);
+  assert.ok(!JSON.stringify(sent).includes("private-clerk-token"));
+});
+test("malformed images fail validation before calling the provider", async () => {
+  let called = false;
+  const handler = route({ fetcher: async () => { called = true; throw new Error(); } });
+  const response = await handler(new Request("https://flowboard.example/api/assist", { method: "POST", body: JSON.stringify({ boardId: "board_1", mode: "chat", attachments: [{ kind: "image", name: "fake.png", content: "data:image/png;base64,PGh0bWw+" }], messages: [{ role: "user", content: "Analyze this" }] }) }));
+  assert.equal(response.status, 400); assert.equal(called, false);
+});
