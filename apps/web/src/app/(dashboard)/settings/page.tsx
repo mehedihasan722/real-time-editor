@@ -1,58 +1,69 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check, Contrast, Grid3X3, Laptop, Moon, RotateCcw, Sun, Waves } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useClerk, useOrganization, useUser } from "@clerk/nextjs";
+import { Check, Contrast, Grid3X3, Laptop, Moon, Sun, Waves, UserRound, ShieldCheck, Palette, Users, Plug, CreditCard, ExternalLink } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { useWorkspacePreferences } from "@/providers/workspace-preferences-provider";
+import { Input } from "@/components/ui/input";
+import { useWorkspacePreferences, type WorkspacePreferences } from "@/providers/workspace-preferences-provider";
+import { toast } from "sonner";
+import Image from "next/image";
 
-const themes = [
-  { value: "light", label: "Light", description: "Bright workspace surfaces", icon: Sun },
-  { value: "dark", label: "Dark", description: "Low-light collaboration", icon: Moon },
-  { value: "system", label: "System", description: "Follow this device", icon: Laptop },
-] as const;
+const tabs = [{ label: "Account", icon: UserRound }, { label: "Security", icon: ShieldCheck }, { label: "Appearance", icon: Palette }, { label: "Team", icon: Users }, { label: "Integrations", icon: Plug }, { label: "Billing", icon: CreditCard }] as const;
+const themes = [{ value: "system", label: "System preference", icon: Laptop }, { value: "light", label: "Light", icon: Sun }, { value: "dark", label: "Dark", icon: Moon }] as const;
+
+function SettingRow({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+  return <div className="grid gap-5 border-b py-6 last:border-0 md:grid-cols-[minmax(160px,1fr)_minmax(220px,2fr)]"><div><h3 className="text-sm font-semibold">{title}</h3><p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">{description}</p></div><div>{children}</div></div>;
+}
 
 export default function SettingsPage() {
-  const [mounted, setMounted] = useState(false);
+  const [tab, setTab] = useState<(typeof tabs)[number]["label"]>("Account");
+  const { user, isLoaded } = useUser();
+  const { organization } = useOrganization();
+  const clerk = useClerk();
+  return <div className="settings-page px-3 pb-10 md:px-6"><div className="mx-auto max-w-6xl overflow-hidden rounded-2xl border bg-background text-foreground shadow-sm">
+    <header className="border-b px-5 py-6 md:px-8"><h1 className="text-2xl font-semibold tracking-tight">Settings</h1><p className="mt-1 text-sm text-muted-foreground">Manage your account, workspace, and preferences.</p></header>
+    <nav aria-label="Settings tabs" className="flex gap-1 overflow-x-auto border-b px-4 py-2 md:px-7">{tabs.map(item => <button key={item.label} aria-current={tab === item.label ? "page" : undefined} onClick={() => setTab(item.label)} className={`shrink-0 rounded-md px-3 py-2 text-sm ${tab === item.label ? "bg-muted font-semibold" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{item.label}</button>)}</nav>
+    <div className="flex min-h-[600px]"><aside className="hidden w-48 shrink-0 border-r bg-muted/20 p-4 xl:block"><p className="mb-3 px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">General settings</p>{tabs.map(({ label, icon: Icon }) => <button key={label} onClick={() => setTab(label)} className={`mb-1 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm ${tab === label ? "bg-muted font-medium" : "hover:bg-muted"}`}><Icon size={15} />{label}</button>)}<div className="mt-8 border-t pt-4"><p className="text-xs text-muted-foreground">Workspace</p><p className="mt-2 truncate text-sm font-medium">{organization?.name || "Select a team"}</p><a href="/guide" className="mt-5 flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground">Help Center<ExternalLink size={12} /></a></div></aside>
+      <section aria-label={`${tab} settings`} className="min-w-0 flex-1 p-5 md:p-8">
+        {tab === "Account" && <><SectionHeading title="My Profile" description="Your profile is shared with teammates on your boards." />{!isLoaded ? <p role="status">Loading account…</p> : !user ? <p>Sign in to manage your account.</p> : <><SettingRow title="Profile photo" description="Manage your avatar and account image."><div className="flex flex-wrap items-center gap-4"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-xl font-semibold">{user.imageUrl ? <Image src={user.imageUrl} alt="Profile photo" width={56} height={56} unoptimized className="h-14 w-14 rounded-full object-cover" /> : user.firstName?.slice(0, 1) || "U"}</span><Button variant="outline" size="sm" onClick={() => clerk.openUserProfile()}>Change image</Button></div></SettingRow><ProfileForm key={`${user.id}-${user.firstName}-${user.lastName}`} firstName={user.firstName || ""} lastName={user.lastName || ""} onSave={async (firstName, lastName) => { await user.update({ firstName, lastName }); }} /><SettingRow title="Email address" description="Verify or change your email in account settings."><div className="flex flex-wrap items-center gap-3"><Input readOnly value={user.primaryEmailAddress?.emailAddress || "No primary email"} aria-label="Account email" className="max-w-sm bg-muted/30" /><Button variant="outline" size="sm" onClick={() => clerk.openUserProfile()}>Change email</Button></div></SettingRow></> }</>}
+        {tab === "Security" && <><SectionHeading title="Account Security" description="Manage sign-in methods and sessions securely." /><SettingRow title="Password and sign-in" description="Update your password or linked sign-in accounts."><Button variant="outline" onClick={() => clerk.openUserProfile()}>Manage sign-in methods</Button></SettingRow><SettingRow title="Two-step verification" description="Add another layer of protection to your account."><div className="flex flex-wrap items-center gap-3"><span className="rounded-full border px-3 py-1 text-xs">{!isLoaded ? "Loading…" : user?.twoFactorEnabled ? "Enabled" : "Not enabled"}</span><Button variant="outline" onClick={() => clerk.openUserProfile()}>Manage verification</Button></div></SettingRow><SettingRow title="Active sessions" description="Review connected devices and revoke sessions from account security settings."><Button variant="outline" onClick={() => clerk.openUserProfile()}>Manage sessions</Button></SettingRow><SettingRow title="Sign out" description="Sign out of Flowboard on this device."><Button variant="outline" onClick={() => clerk.signOut({ redirectUrl: "/" })}>Sign out</Button></SettingRow><SettingRow title="Delete account" description="Review permanent account deletion in your account security settings."><Button variant="outline" className="text-red-700 dark:text-red-300" onClick={() => clerk.openUserProfile()}>Manage account deletion</Button></SettingRow></>}
+        {tab === "Appearance" && <AppearanceSettings />}
+        {tab === "Team" && <><SectionHeading title="Workspace settings" description="Manage your organization and membership." /><SettingRow title="General" description="Update your team name and organization profile."><div className="space-y-3"><p className="text-sm font-medium">{organization?.name || "No team selected"}</p><Button variant="outline" disabled={!organization} onClick={() => clerk.openOrganizationProfile()}>Manage workspace</Button></div></SettingRow><SettingRow title="Members and invitations" description="View members, invite teammates, and manage access according to your team role."><Button variant="outline" disabled={!organization} onClick={() => clerk.openOrganizationProfile()}>Manage members</Button></SettingRow></>}
+        {tab === "Integrations" && <IntegrationSettings />}
+        {tab === "Billing" && <><SectionHeading title="Billing" description="Workspace subscription information." /><SettingRow title="Subscription" description="Flowboard does not currently have a billing service connected."><div className="rounded-lg border bg-muted/20 p-5"><p className="text-sm font-semibold">No billing provider configured</p><p className="mt-2 text-sm text-muted-foreground">Payment methods, invoices, and subscriptions will appear here when billing is available.</p></div></SettingRow></>}
+      </section>
+    </div>
+  </div></div>;
+}
+
+function SectionHeading({ title, description }: { title: string; description: string }) { return <div className="border-b pb-4"><h2 className="text-base font-semibold">{title}</h2><p className="mt-1 text-xs text-muted-foreground">{description}</p></div>; }
+
+function ProfileForm({ firstName, lastName, onSave }: { firstName: string; lastName: string; onSave: (first: string, last: string) => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  return <form onSubmit={async event => { event.preventDefault(); const data = new FormData(event.currentTarget); setBusy(true); setError(""); try { await onSave(String(data.get("firstName") || "").trim(), String(data.get("lastName") || "").trim()); toast.success("Profile updated."); } catch { setError("Could not update your profile. Check your connection or manage your profile through account settings."); } finally { setBusy(false); } }}><SettingRow title="Full name" description="Your name appears on collaborative boards."><div className="grid gap-3 sm:grid-cols-2"><label className="space-y-2 text-xs">First name<Input name="firstName" defaultValue={firstName} maxLength={100} disabled={busy} /></label><label className="space-y-2 text-xs">Last name<Input name="lastName" defaultValue={lastName} maxLength={100} disabled={busy} /></label></div><div className="mt-3 flex justify-end"><Button size="sm" disabled={busy}>{busy ? "Saving…" : "Save profile"}</Button></div>{error && <p role="alert" className="mt-2 text-xs text-red-700 dark:text-red-300">{error}</p>}</SettingRow></form>;
+}
+
+function AppearanceSettings() {
   const { theme, setTheme } = useTheme();
   const { preferences, updatePreference, resetPreferences } = useWorkspacePreferences();
+  const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  return <AppearanceForm key={`${mounted}-${theme}-${JSON.stringify(preferences)}`} theme={mounted ? theme || "system" : "system"} preferences={preferences} onSave={(nextTheme, nextPreferences) => { setTheme(nextTheme); for (const key of Object.keys(nextPreferences) as (keyof WorkspacePreferences)[]) updatePreference(key, nextPreferences[key]); toast.success("Appearance saved on this browser."); }} onReset={resetPreferences} />;
+}
 
-  const preferenceOptions = [
-    { key: "showGrid" as const, label: "Canvas grid", description: "Show the alignment grid behind board content.", icon: Grid3X3 },
-    { key: "highContrastCanvas" as const, label: "High-contrast canvas", description: "Increase grid and workspace separation.", icon: Contrast },
-    { key: "reducedMotion" as const, label: "Reduce motion", description: "Limit loaders, panels, and transition animation.", icon: Waves },
-  ];
+function AppearanceForm({ theme, preferences, onSave, onReset }: { theme: string; preferences: WorkspacePreferences; onSave: (theme: string, preferences: WorkspacePreferences) => void; onReset: () => void }) {
+  const [draftTheme, setDraftTheme] = useState(theme);
+  const [draft, setDraft] = useState(preferences);
+  const options = [{ key: "showGrid", label: "Canvas grid", description: "Display the dotted alignment grid on boards.", icon: Grid3X3 }, { key: "highContrastCanvas", label: "High-contrast canvas", description: "Increase separation between the grid and workspace.", icon: Contrast }, { key: "reducedMotion", label: "Reduce motion", description: "Limit loaders and interface animation.", icon: Waves }] as const;
+  return <><SectionHeading title="Appearance" description="Personalize Flowboard on this browser." /><SettingRow title="Interface theme" description="Choose a light, dark, or system-matched workspace."><div className="grid gap-3 sm:grid-cols-3">{themes.map(({ value, label, icon: Icon }) => <button key={value} aria-pressed={draftTheme === value} onClick={() => setDraftTheme(value)} className={`relative rounded-xl border p-2 text-left ${draftTheme === value ? "border-indigo-500 ring-1 ring-indigo-500" : "hover:border-muted-foreground"}`}><div className={`mb-3 flex h-24 overflow-hidden rounded-lg border ${value === "dark" ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-slate-50"}`}><div className={`w-1/4 border-r p-2 ${value === "dark" ? "border-slate-700 bg-slate-800" : "border-slate-200 bg-white"}`}><div className="mb-3 h-2 rounded bg-indigo-500" /><div className="mb-2 h-1 rounded bg-slate-400" /><div className="h-1 rounded bg-slate-400" /></div><div className={`flex-1 p-3 ${value === "system" ? "bg-gradient-to-r from-slate-50 to-slate-900" : ""}`}><div className="mb-3 h-2 w-2/3 rounded bg-slate-400" /><div className="mb-2 h-3 rounded bg-indigo-400/50" /><div className="h-3 rounded bg-slate-400/40" /></div></div><span className="flex items-center gap-2 text-xs font-medium"><Icon size={13} />{label}</span>{draftTheme === value && <Check className="absolute right-1 top-1 rounded-full bg-indigo-600 p-0.5 text-white" size={17} />}</button>)}</div></SettingRow>{options.map(({ key, label, description, icon: Icon }) => <SettingRow key={key} title={label} description={description}><button role="switch" aria-checked={draft[key]} aria-label={label} onClick={() => setDraft(current => ({ ...current, [key]: !current[key] }))} className="flex w-full items-center justify-between gap-3 rounded-lg border p-3"><span className="flex items-center gap-2 text-sm"><Icon size={16} />{draft[key] ? "Enabled" : "Disabled"}</span><span className={`flex h-6 w-11 items-center rounded-full p-1 ${draft[key] ? "justify-end bg-indigo-600" : "justify-start bg-slate-400 dark:bg-slate-600"}`}><span className="h-4 w-4 rounded-full bg-white" /></span></button></SettingRow>)}<footer className="mt-6 flex flex-wrap justify-end gap-2"><Button variant="ghost" onClick={onReset}>Reset canvas preferences</Button><Button variant="outline" onClick={() => { setDraftTheme(theme); setDraft(preferences); }}>Cancel</Button><Button onClick={() => onSave(draftTheme, draft)}>Save changes</Button></footer></>;
+}
 
-  return (
-    <div className="settings-page px-6 pb-12 max-w-[1080px]">
-      <p className="text-xs uppercase tracking-[.2em] font-bold text-indigo-500">Workspace preferences</p>
-      <h1 className="mt-1 text-3xl font-bold">Settings</h1>
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Personalize Flowboard on this browser. Preferences are validated and stored locally.</p>
-
-      <section className="settings-panel mt-8">
-        <div><h2>Appearance</h2><p>Choose how Flowboard looks across dashboards and boards.</p></div>
-        <div className="settings-theme-grid">
-          {themes.map(({ value, label, description, icon: Icon }) => (
-            <button key={value} onClick={() => setTheme(value)} className={mounted && theme === value ? "is-active" : ""}>
-              <span><Icon className="size-5" /></span><strong>{label}</strong><small>{description}</small>{mounted && theme === value && <Check className="settings-check size-4" />}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="settings-panel mt-5">
-        <div><h2>Canvas</h2><p>Control board visibility and motion preferences.</p></div>
-        <div className="settings-options">
-          {preferenceOptions.map(({ key, label, description, icon: Icon }) => (
-            <button key={key} onClick={() => updatePreference(key, !preferences[key])} aria-pressed={preferences[key]}>
-              <span><Icon className="size-5" /></span><span><strong>{label}</strong><small>{description}</small></span><i className={preferences[key] ? "is-on" : ""}><b /></i>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <div className="mt-5 flex justify-end"><Button variant="outline" onClick={resetPreferences}><RotateCcw className="mr-2 size-4" />Reset canvas preferences</Button></div>
-    </div>
-  );
+function IntegrationSettings() {
+  const [status, setStatus] = useState<{ chat: boolean; generate: boolean } | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => { const controller = new AbortController(); fetch("/api/assist", { signal: controller.signal }).then(async response => { if (!response.ok) throw new Error(); const value = await response.json(); if (!controller.signal.aborted) setStatus({ chat: value.chat === true, generate: value.generate === true }); }).catch(() => { if (!controller.signal.aborted) setError("Could not check integration configuration."); }); return () => controller.abort(); }, []);
+  return <><SectionHeading title="Integrations" description="AI services configured for this workspace." />{error && <p role="alert" className="mt-3 text-sm text-red-700 dark:text-red-300">{error}</p>}{[{ label: "Hermes Agent", description: "Chat and brainstorming in Assist and AI Playground.", key: "chat" }, { label: "Board generation", description: "Generate editable notes from your submitted prompts.", key: "generate" }].map(item => <SettingRow key={item.key} title={item.label} description={item.description}><span className="inline-flex rounded-full border bg-muted/30 px-3 py-1 text-xs">{status ? status[item.key as keyof typeof status] ? "Configured" : "Not configured" : error ? "Unavailable" : "Checking…"}</span><p className="mt-2 text-xs text-muted-foreground">Server configuration is managed by the workspace administrator.</p></SettingRow>)}</>;
 }
