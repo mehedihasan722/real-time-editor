@@ -10,6 +10,7 @@ import Text from "./text";
 import Ellipse from "./ellipse";
 import DiagramShape from "./diagram-shape";
 import StickerLayerView from "./sticker-layer";
+import { RoadmapCard } from "./roadmap-card";
 
 interface LayerPreviewProps {
   id: string;
@@ -47,6 +48,7 @@ const LayerPreview = memo(
           />
         );
       case LayerType.Note:
+        if (layer.roadmap) return <RoadmapCard id={id} layer={layer} onPointerDown={onLayerPointerDown} selected={!!selectionColor} />;
         return (
           <Note
             id={id}

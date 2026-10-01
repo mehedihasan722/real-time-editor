@@ -31,6 +31,7 @@ declare global {
 
     // The Storage tree for the room, for useMutation, useStorage, etc.
     Storage: {
+      workspace: "retrospective" | "playground" | "todo" | "flowchart" | "roadmap" | "weekly" | null;
       layers: LiveMap<string, LiveObject<Layer>>;
       layerIds: LiveList<string>;
       // Example, a conflict-free list

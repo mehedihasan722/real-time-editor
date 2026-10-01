@@ -46,12 +46,16 @@ import Path from "./path";
 import useDisableScrollBounce from "@/hooks/use-disable-scroll-bounce";
 import { BoardStarter } from "./board-starter";
 import { BoardControls } from "./board-controls";
-import { getTemplateLayers } from "@/lib/board-templates";
+import { getTemplateLayers, getWorkspaceType } from "@/lib/board-templates";
+import { TaskWorkspace } from "./task-workspace";
+import { RetrospectiveWorkspace } from "./retrospective-workspace";
+import { AIPlayground } from "./ai-playground";
+import { WeeklyWorkspace } from "./weekly-workspace";
 import { createDiagramShapeLayer } from "@/lib/diagram-shapes";
 import { recognizeDrawing } from "@/lib/smart-drawing";
 import { DiagramShapeKind } from "@/types/canvas";
 import { BoardFiles } from "./board-files";
-import { MAX_LAYERS } from "@/lib/board-portability";
+import { MAX_LAYERS, getBoardBounds } from "@/lib/board-portability";
 import { toast } from "sonner";
 
 interface CanvasProps {
@@ -59,6 +63,13 @@ interface CanvasProps {
 }
 const Canvas = ({ boardId }: CanvasProps) => {
   const layerIds = useStorage((root) => root.layerIds);
+  const workspace = useStorage(root => root.workspace || (root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "To-do planning") ? "todo" : root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "Team retrospective") ? "retrospective" : root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "AI Playground") ? "playground" : null));
+  const [showCanvas, setShowCanvas] = useState(false);
+  const legacyWeekly = useStorage(root => root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "Weekly update"));
+  const roadmapCards = useStorage(root => root.layerIds.flatMap(id => {
+    const layer = root.layers[id];
+    return layer?.type === LayerType.Note && layer.roadmap ? [{ id, ...layer }] : [];
+  }));
 
   const pencilDraft = useSelf((me) => me.presence.pencilDraft);
 
@@ -70,6 +81,15 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const flowBounds = useStorage(root => (root.workspace === "flowchart" || root.workspace === "roadmap") ? getBoardBounds(root.layerIds.map(id => root.layers[id]).filter(Boolean)) : null);
+  const fittedFlow = useRef(false);
+  useEffect(() => {
+    if (!flowBounds || fittedFlow.current) return;
+    fittedFlow.current = true;
+    const scale = Math.max(.15, Math.min(1, (window.innerWidth - 180) / flowBounds.width, (window.innerHeight - 180) / flowBounds.height));
+    setZoom(scale);
+    setCamera({ x: window.innerWidth / 2 - (flowBounds.x + flowBounds.width / 2) * scale, y: window.innerHeight / 2 - (flowBounds.y + flowBounds.height / 2) * scale });
+  }, [flowBounds]);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [placingComment, setPlacingComment] = useState(false);
   const [commentPoint, setCommentPoint] = useState<Point | null>(null);
@@ -110,6 +130,16 @@ const Canvas = ({ boardId }: CanvasProps) => {
     toast.success(`${ids.length} objects added`);
   }, [camera, zoom]);
 
+  const addMilestone = useMutation(({ storage }) => {
+    const layers = storage.get("layers");
+    if (layers.size >= MAX_LAYERS) { toast.error("Board object limit reached."); return; }
+    const id = nanoid();
+    const x = (window.innerWidth / 2 - camera.x) / zoom;
+    const y = (window.innerHeight / 2 - camera.y) / zoom;
+    layers.set(id, new LiveObject<Layer>({ type: LayerType.Note, x, y, width: 330, height: 220, fill: { r: 255, g: 255, b: 255, a: 1 }, roadmap: true, value: "New milestone", description: "Describe the outcome and next steps.", tags: "", status: "planned", author: info?.name || "Team" }));
+    storage.get("layerIds").push(id);
+  }, [camera, zoom, info?.name]);
+
   const applyStarter = useMutation(
     ({ storage, setMyPresence }, template: string, prompt?: string) => {
       const liveLayers = storage.get("layers");
@@ -137,6 +167,9 @@ const Canvas = ({ boardId }: CanvasProps) => {
       });
 
       setMyPresence({ selection: insertedIds });
+      storage.set("workspace", getWorkspaceType(template));
+      fittedFlow.current = false;
+      setShowCanvas(false);
       setStarterOpen(false);
     },
     [camera, info?.name, zoom]
@@ -700,6 +733,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
     };
   }, [deleteLayers, history, resetView, zoom, zoomTo]);
 
+  if (workspace === "todo" && !showCanvas) return <TaskWorkspace onCanvas={() => setShowCanvas(true)} />;
+  if (workspace === "retrospective" && !showCanvas) return <RetrospectiveWorkspace onCanvas={() => setShowCanvas(true)} />;
+  if (workspace === "playground" && !showCanvas) return <AIPlayground boardId={boardId} onCanvas={() => setShowCanvas(true)} onGenerated={importLayers} />;
+  if ((workspace === "weekly" || (!workspace && legacyWeekly)) && !showCanvas) return <WeeklyWorkspace onCanvas={() => setShowCanvas(true)} />;
+
   return (
     <main className="h-full w-full relative board-canvas future-board touch-none" onPointerDownCapture={event => {
       if (!placingComment || event.button !== 0 || !(event.target as Element).closest("[data-board-surface]")) return;
@@ -710,6 +748,21 @@ const Canvas = ({ boardId }: CanvasProps) => {
       setCommentsOpen(true);
     }}>
       <Info boardId={boardId} />
+      {workspace === "todo" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open tasks</button>}
+      {workspace === "retrospective" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open retrospective</button>}
+      {workspace === "playground" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open AI Playground</button>}
+      {(workspace === "weekly" || (!workspace && legacyWeekly)) && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open weekly check-in</button>}
+      {workspace === "flowchart" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => applyStarter("Flowchart")}>Add connected flowchart</button>}
+      {workspace === "roadmap" && <aside className="absolute bottom-24 left-3 top-24 z-30 hidden w-48 overflow-auto rounded-xl border bg-background p-4 text-foreground shadow-sm lg:block">
+        <h2 className="mb-5 text-sm font-semibold">Roadmap planning</h2>
+        <p className="mb-2 text-xs text-muted-foreground">How-to</p>
+        <a href="/guide" className="mb-2 block rounded p-2 text-sm hover:bg-muted">Instructions</a>
+        <a href="/templates" className="mb-5 block rounded p-2 text-sm hover:bg-muted">Templates</a>
+        <p className="mb-2 text-xs text-muted-foreground">Planning</p>
+        <button className="mb-3 w-full rounded bg-muted p-2 text-left text-sm font-medium" onClick={() => addMilestone()}>+ Add milestone</button>
+        <p className="mb-3 text-xs text-muted-foreground">Milestones</p>
+        {roadmapCards.map(card => <button key={card.id} className="mb-2 flex w-full items-start gap-2 rounded p-2 text-left text-xs hover:bg-muted" onClick={() => setCamera({ x: window.innerWidth / 2 - (card.x + card.width / 2) * zoom, y: window.innerHeight / 2 - (card.y + card.height / 2) * zoom })}><span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${card.status === "done" ? "bg-green-500" : card.status === "in-progress" ? "bg-blue-500" : "bg-slate-400"}`} /><span>{card.value}</span></button>)}
+      </aside>}
       <Participants />
       <BoardFiles boardId={boardId} onImport={importLayers} />
       {layerIds.length >= MAX_LAYERS && <p role="status" className="absolute bottom-20 left-1/2 z-30 -translate-x-1/2 rounded bg-amber-100 px-4 py-2 text-sm text-amber-950">Board limit reached ({MAX_LAYERS} objects). Delete objects to add more.</p>}

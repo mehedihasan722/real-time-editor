@@ -5,7 +5,7 @@ import { ClientSideSuspense, LiveblocksProvider } from "@liveblocks/react";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import { createRoomContext } from "@liveblocks/react";
 import { Layer } from "@/types/canvas";
-import { getTemplateLayers } from "@/lib/board-templates";
+import { getTemplateLayers, getWorkspaceType } from "@/lib/board-templates";
 import { client } from "../../liveblocks.config";
 import { resolveCommentUsers, resolveCommentMentions } from "@/lib/comment-users";
 
@@ -34,6 +34,7 @@ const Room = ({ children, roomId, template, fallback }: RoomProps) => {
           penTool: "pen",
         }}
         initialStorage={{
+          workspace: getWorkspaceType(template),
           layers: new LiveMap<string, LiveObject<Layer>>(templateLayers.map(([id, layer]) => [id, new LiveObject(layer)])),
           layerIds: new LiveList(templateLayers.map(([id]) => id)),
         }}

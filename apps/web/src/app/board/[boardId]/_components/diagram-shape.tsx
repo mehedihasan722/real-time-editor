@@ -1,6 +1,7 @@
 import { colorToCss } from "@/lib/utils";
 import { ShapeLayer } from "@/types/canvas";
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import { useMutation } from "@liveblocks/react";
 
 interface DiagramShapeProps {
   id: string;
@@ -21,6 +22,12 @@ const DiagramShape = ({ id, layer, onPointerDown, selectionColor }: DiagramShape
   const fill = colorToCss(layer.fill);
   const stroke = selectionColor || (layer.strokeColor ? colorToCss(layer.strokeColor) : "#202840");
   const common = { fill, stroke, strokeWidth: selectionColor ? 3 : (layer.strokeWidth ?? 2), vectorEffect: "non-scaling-stroke" as const };
+  const editor = useRef<HTMLDivElement>(null);
+  const connector = ["line", "arrow", "elbow-arrow", "divider"].includes(shape);
+  const updateValue = useMutation(({ storage }, value: string) => { storage.get("layers").get(id)?.set("value", value.slice(0, 2000)); }, [id]);
+  useEffect(() => { if (editor.current && document.activeElement !== editor.current) editor.current.textContent = layer.value || ""; }, [layer.value]);
+  const luminance = (0.2126 * layer.fill.r + 0.7152 * layer.fill.g + 0.0722 * layer.fill.b) / 255;
+  const labelColor = luminance > .6 ? "#17202a" : "#ffffff";
 
   const content = (() => {
     switch (shape) {
@@ -50,7 +57,7 @@ const DiagramShape = ({ id, layer, onPointerDown, selectionColor }: DiagramShape
     }
   })();
 
-  return <g transform={`translate(${layer.x} ${layer.y}) rotate(${layer.rotation || 0} ${w / 2} ${h / 2})`} onPointerDown={(event) => onPointerDown(event, id)} className="drop-shadow-sm">{layer.value && <text x={4} y={-7} fill={stroke} fontSize={12} fontWeight={700}>{layer.value}</text>}{content}</g>;
+  return <g transform={`translate(${layer.x} ${layer.y}) rotate(${layer.rotation || 0} ${w / 2} ${h / 2})`} onPointerDown={(event) => onPointerDown(event, id)} className="drop-shadow-sm">{content}{connector ? layer.value && <text x={4} y={-7} fill={stroke} fontSize={12} fontWeight={700}>{layer.value}</text> : <foreignObject x={shape === "diamond" ? w * .22 : 10} y={shape === "diamond" ? h * .22 : 8} width={shape === "diamond" ? w * .56 : w - 20} height={shape === "diamond" ? h * .56 : h - 16}><div ref={editor} contentEditable suppressContentEditableWarning role="textbox" aria-label="Shape label" onInput={event => updateValue(event.currentTarget.textContent || "")} onPaste={event => { event.preventDefault(); document.execCommand("insertText", false, event.clipboardData.getData("text/plain")); }} className="flex h-full w-full items-center justify-center whitespace-pre-wrap break-words text-center font-sans font-semibold outline-none focus:ring-2 focus:ring-blue-400" style={{ color: labelColor, fontSize: Math.max(10, Math.min(16, h * .2)) }} /></foreignObject>}</g>;
 };
 
 export default DiagramShape;

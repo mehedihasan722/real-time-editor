@@ -1,0 +1,56 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { CalendarDays, CheckCircle2, Home, Plus, Target, X } from "lucide-react";
+import { useMutation, useSelf, useStorage } from "@liveblocks/react/suspense";
+import { LiveObject } from "@liveblocks/client";
+
+import { getISOWeek, startOfWeek, addDays, format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Layer, LayerType, NoteLayer } from "@/types/canvas";
+import { MAX_LAYERS } from "@/lib/board-portability";
+import { toast } from "sonner";
+
+type CheckIn = NonNullable<NoteLayer["checkIn"]>;
+const moods = [{ label: "Amazing", emoji: "😆" }, { label: "Happy", emoji: "🙂" }, { label: "Neutral", emoji: "😐" }, { label: "Sad", emoji: "😔" }, { label: "Not well", emoji: "😟" }];
+
+export function WeeklyWorkspace({ onCanvas }: { onCanvas: () => void }) {
+  const owner = useSelf(me => me.id || String(me.connectionId));
+  const name = useSelf(me => me.info?.name || "Team member");
+  const [week, setWeek] = useState(() => format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"));
+  const entries = useStorage(root => root.layerIds.flatMap(id => {
+    const layer = root.layers[id];
+    return layer?.type === LayerType.Note && layer.checkIn?.owner === owner ? [{ id, data: layer.checkIn }] : [];
+  }));
+  const saved = entries.find(entry => entry.data.week === week);
+  const save = useMutation(({ storage }, data: CheckIn) => {
+    const id = saved?.id || `weekly-${owner}-${week}`;
+    const existingId = storage.get("layers").has(id) ? id : undefined;
+    if (!existingId && storage.get("layers").size >= MAX_LAYERS) { toast.error("Board object limit reached."); return false; }
+    const summary = `${name} · Week ${getISOWeek(new Date(`${week}T12:00:00`))}\n${data.mood}\nPriorities: ${data.priorities.map(item => item.text).join("; ")}\nLast week: ${data.achievements.join("; ")}\nDiscussion: ${data.issues}`;
+    const value = summary.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    if (existingId) storage.get("layers").get(id)?.update({ checkIn: data, value });
+    else { storage.get("layers").set(id, new LiveObject<Layer>({ type: LayerType.Note, x: 190 + entries.length % 4 * 300, y: 240 + Math.floor(entries.length / 4) * 260, width: 280, height: 240, fill: { r: 221, g: 214, b: 254, a: 1 }, author: name, value, checkIn: data })); storage.get("layerIds").push(id); }
+    toast.success("Weekly check-in saved to the board."); return true;
+  }, [owner, week, name, entries.length, saved?.id]);
+  return <main className="h-screen bg-muted/50 p-3 text-foreground md:p-7"><div className="mx-auto flex h-full max-w-7xl overflow-hidden rounded-xl border bg-background shadow-sm">
+    <aside className="hidden w-56 shrink-0 flex-col border-r bg-muted/20 p-4 md:flex"><Link href="/" className="mb-6 flex items-center gap-2 text-sm font-semibold"><span className="rounded bg-blue-600 px-2 py-1 text-white">F</span>Flowboard</Link><span className="mb-5 rounded-lg bg-violet-100 px-3 py-2 text-sm font-medium text-violet-900 dark:bg-violet-950 dark:text-violet-100">My Check-in</span><Link href="/" className="mb-4 flex gap-2 text-sm"><Home size={16} />Home</Link><a href="#weekly-objectives" className="mb-4 flex gap-2 text-sm"><Target size={16} />Objectives</a><a href="#weekly-form" className="mb-5 flex gap-2 text-sm"><CheckCircle2 size={16} />Check-ins</a><div className="border-t pt-4"><p className="mb-3 text-xs text-muted-foreground">Your saved weeks</p>{entries.map(entry => <button key={entry.id} className="mb-2 block w-full rounded p-2 text-left text-xs hover:bg-muted" onClick={() => setWeek(entry.data.week)}>{entry.data.week} · {entry.data.mood || "Check-in"}</button>)}</div><Link href="/guide" className="mt-auto text-sm">Help Center</Link></aside>
+    <section className="flex min-w-0 flex-1 flex-col"><header className="flex items-center justify-between border-b px-5 py-3"><span className="text-sm font-semibold">My Check-in</span><div className="flex items-center gap-3"><span className="text-sm">{name}</span><Button variant="outline" size="sm" onClick={onCanvas}>Canvas</Button></div></header><div className="flex-1 overflow-auto p-5 md:p-9"><div className="mx-auto max-w-xl"><h1 className="mb-5 text-3xl font-semibold tracking-tight">My Weekly Check-in</h1><div className="mb-7 flex flex-wrap items-center gap-3 text-sm"><CalendarDays size={16} /><span>Week {getISOWeek(new Date(`${week}T12:00:00`))} · {format(new Date(`${week}T12:00:00`), "d MMM")} – {format(addDays(new Date(`${week}T12:00:00`), 6), "d MMM")}</span><input aria-label="Check-in week" type="date" className="ml-auto rounded border bg-background p-1 text-xs" value={week} onChange={event => { if (event.target.value) setWeek(format(startOfWeek(new Date(`${event.target.value}T12:00:00`), { weekStartsOn: 1 }), "yyyy-MM-dd")); }} /></div><CheckInForm key={`${owner}-${week}`} initial={saved?.data || { owner, week, mood: "", priorities: [{ text: "", done: false }], achievements: [""], issues: "", objectives: [] }} onSave={save} /></div></div></section>
+  </div></main>;
+}
+
+function CheckInForm({ initial, onSave }: { initial: CheckIn; onSave: (data: CheckIn) => boolean }) {
+  const [draft, setDraft] = useState(initial);
+  const [dirty, setDirty] = useState(false);
+  const edit = (patch: Partial<CheckIn>) => { setDraft(current => ({ ...current, ...patch })); setDirty(true); };
+  return <form id="weekly-form" onSubmit={event => { event.preventDefault(); const data = { ...draft, priorities: draft.priorities.filter(item => item.text.trim()), achievements: draft.achievements.filter(item => item.trim()), objectives: draft.objectives.filter(item => item.title.trim()) }; if (onSave(data)) { setDraft(data); setDirty(false); } }} className="space-y-8">
+    <section><h2 className="mb-4 text-sm font-semibold">How do you feel today?</h2><div className="flex flex-wrap gap-4">{moods.map(mood => <button type="button" key={mood.label} aria-pressed={draft.mood === mood.label} onClick={() => edit({ mood: mood.label })} className={`flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-full border text-xs ${draft.mood === mood.label ? "border-violet-500 bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-100" : "hover:bg-muted"}`}><span className="text-2xl">{mood.emoji}</span>{mood.label}</button>)}</div></section>
+    <section><h2 className="mb-3 text-sm font-semibold">What are your priorities for this week?</h2><div className="space-y-2">{draft.priorities.map((item, index) => <div key={index} className="flex items-center gap-2"><label className="flex flex-1 items-center gap-2 rounded border px-3"><input type="checkbox" aria-label={`Complete priority ${index + 1}`} checked={item.done} onChange={event => edit({ priorities: draft.priorities.map((priority, i) => i === index ? { ...priority, done: event.target.checked } : priority) })} /><input aria-label={`Priority ${index + 1}`} placeholder="Type your plan" maxLength={500} value={item.text} onChange={event => edit({ priorities: draft.priorities.map((priority, i) => i === index ? { ...priority, text: event.target.value } : priority) })} className="w-full bg-transparent py-2 text-sm outline-none" /></label><button type="button" aria-label={`Remove priority ${index + 1}`} onClick={() => edit({ priorities: draft.priorities.filter((_, i) => i !== index) })}><X size={15} /></button></div>)}</div><Button type="button" variant="link" size="sm" disabled={draft.priorities.length >= 30} onClick={() => edit({ priorities: [...draft.priorities, { text: "", done: false }] })}><Plus size={12} />Add priorities</Button></section>
+    <section><h2 className="mb-3 text-sm font-semibold">What did you work on last week?</h2>{draft.achievements.map((item, index) => <div className="mb-2 flex items-center gap-2" key={index}><Input aria-label={`Last week answer ${index + 1}`} placeholder="Share a highlight" maxLength={500} value={item} onChange={event => edit({ achievements: draft.achievements.map((answer, i) => i === index ? event.target.value : answer) })} /><button type="button" aria-label={`Remove answer ${index + 1}`} onClick={() => edit({ achievements: draft.achievements.filter((_, i) => i !== index) })}><X size={15} /></button></div>)}<Button type="button" variant="link" size="sm" disabled={draft.achievements.length >= 30} onClick={() => edit({ achievements: [...draft.achievements, ""] })}><Plus size={12} />Add answer</Button></section>
+    <section><h2 className="mb-3 text-sm font-semibold">Any issues you want to discuss?</h2><textarea aria-label="Issues to discuss" className="min-h-28 w-full rounded border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring" maxLength={2000} value={draft.issues} onChange={event => edit({ issues: event.target.value })} /></section>
+    <section id="weekly-objectives" className="border-t pt-6"><h2 className="mb-4 text-sm font-semibold">Objective updates</h2><div className="space-y-3">{draft.objectives.map((objective, index) => <article key={index} className="rounded-lg border p-4"><div className="mb-3 flex flex-wrap items-center gap-2"><Target size={16} className="text-amber-600 dark:text-amber-300" /><input aria-label={`Objective ${index + 1}`} className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none" placeholder="Objective title" maxLength={200} value={objective.title} onChange={event => edit({ objectives: draft.objectives.map((item, i) => i === index ? { ...item, title: event.target.value } : item) })} /><select aria-label={`Objective ${index + 1} status`} className="rounded border bg-background p-1 text-xs" value={objective.status} onChange={event => edit({ objectives: draft.objectives.map((item, i) => i === index ? { ...item, status: event.target.value as typeof item.status } : item) })}><option value="on-track">On Track</option><option value="at-risk">At Risk</option><option value="off-track">Off Track</option></select><button type="button" aria-label={`Remove objective ${index + 1}`} onClick={() => edit({ objectives: draft.objectives.filter((_, i) => i !== index) })}><X size={14} /></button></div><label className="flex items-center gap-3 text-xs"><span>Progress</span><input aria-label={`Objective ${index + 1} progress`} type="range" min="0" max="100" value={objective.progress} className="flex-1 accent-green-600" onChange={event => edit({ objectives: draft.objectives.map((item, i) => i === index ? { ...item, progress: Number(event.target.value) } : item) })} /><span className="min-w-8">{objective.progress}%</span></label></article>)}</div><Button type="button" variant="link" size="sm" disabled={draft.objectives.length >= 20} onClick={() => edit({ objectives: [...draft.objectives, { title: "", progress: 0, status: "on-track" }] })}><Plus size={12} />Add objective</Button></section>
+    <footer className="flex items-center justify-end gap-3 pb-8"><span role="status" className="text-xs text-muted-foreground">{dirty ? "Unsaved changes" : "Update to save your check-in"}</span><Button type="submit" className="bg-violet-600 text-white hover:bg-violet-700">Update</Button></footer>
+  </form>;
+}

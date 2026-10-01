@@ -126,6 +126,15 @@ export type TextLayer = {
 };
 
 export type NoteLayer = {
+  checkIn?: { owner: string; week: string; mood: string; priorities: { text: string; done: boolean }[]; achievements: string[]; issues: string; objectives: { title: string; progress: number; status: "on-track" | "at-risk" | "off-track" }[]; };
+  roadmap?: boolean;
+  description?: string;
+  tags?: string;
+  status?: "planned" | "in-progress" | "done";
+  lane?: "positive" | "improve" | "action";
+  completed?: boolean;
+  dueDate?: string;
+  project?: string;
   type: LayerType.Note;
   x: number;
   y: number;

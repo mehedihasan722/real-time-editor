@@ -12,7 +12,7 @@ const code = ts.transpileModule(source, {
 const moduleExports = {};
 vm.runInNewContext(code, {
   exports: moduleExports,
-  require: (name) => name === "@/types/canvas" ? { LayerType: { Text: 3, Note: 4 } } : require(name),
+  require: (name) => name === "@/types/canvas" ? { LayerType: { Text: 3, Note: 4 } } : name === "./flowchart-template" ? require("./helpers/load-ts.cjs")("src/lib/flowchart-template.ts") : name === "./roadmap-template" ? require("./helpers/load-ts.cjs")("src/lib/roadmap-template.ts") : require(name),
 });
 
 test("assistant routes common commands to matching workspaces", () => {

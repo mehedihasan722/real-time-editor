@@ -24,6 +24,21 @@ function docker(args, timeout = 600000) {
 async function main() {
   docker(["info", "--format", "{{.ServerVersion}}"], 20000);
   docker([...compose, "up", "-d"]);
+  // Cache and verify small metadata before Ollama's streaming pull (some registry proxies end it with EOF).
+  const registry = "https://registry.ollama.ai/v2/library/qwen3.5";
+  const manifestResponse = await fetch(`${registry}/manifests/2b`, { signal: AbortSignal.timeout(15000) });
+  if (!manifestResponse.ok) throw new Error("The model registry is unavailable. Retry AI setup later.");
+  const manifest = await manifestResponse.json();
+  for (const entry of [manifest.config, ...manifest.layers]) {
+    if (!Number.isInteger(entry.size) || entry.size > 65536 || !/^sha256:[a-f0-9]{64}$/.test(entry.digest)) continue;
+    const response = await fetch(`${registry}/blobs/${entry.digest}`, { signal: AbortSignal.timeout(15000) });
+    if (!response.ok) throw new Error("Model metadata is unavailable. Retry AI setup later.");
+    const data = Buffer.from(await response.arrayBuffer());
+    if (data.length !== entry.size || `sha256:${crypto.createHash("sha256").update(data).digest("hex")}` !== entry.digest) throw new Error("Model metadata checksum failed.");
+    const filename = path.join(root, ".local-tools", entry.digest.replace(":", "-"));
+    fs.writeFileSync(filename, data);
+    docker([...compose, "cp", filename, `ollama:/root/.ollama/models/blobs/${path.basename(filename)}`], 20000);
+  }
   docker([...compose, "exec", "-T", "ollama", "ollama", "pull", "qwen3.5:2b"]);
   const toolsResponse = await fetch("http://127.0.0.1:8642/v1/toolsets", { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(10000) });
   const tools = await toolsResponse.json();

@@ -1,5 +1,7 @@
 import { Layer, LayerType } from "@/types/canvas";
 import { z } from "zod";
+import { getFlowchartLayers } from "./flowchart-template";
+import { getRoadmapLayers } from "./roadmap-template";
 
 export const assistPromptSchema = z.string().trim().min(3, "Describe what you want to create.").max(280, "Keep the prompt under 280 characters.");
 
@@ -54,11 +56,23 @@ const escapeMarkup = (value: string) => value
   .replaceAll('"', "&quot;")
   .replaceAll("'", "&#039;");
 
+export function getWorkspaceType(template?: string): "retrospective" | "playground" | "todo" | "flowchart" | "roadmap" | "weekly" | null {
+  if (template === "Weekly update") return "weekly";
+  if (template === "Roadmap") return "roadmap";
+  if (template === "Retrospective") return "retrospective";
+  if (template === "AI Playground") return "playground";
+  if (template === "To-do planning") return "todo";
+  if (template === "Flowchart" || template === "Flows") return "flowchart";
+  return null;
+}
+
 export function getTemplateLayers(template?: string, prompt?: string, author = "Flowboard Assist"): [string, Layer][] {
   const selected = template && content[template];
   if (!selected) return [];
   const parsedPrompt = prompt ? assistPromptSchema.safeParse(prompt) : null;
   const request = parsedPrompt?.success ? parsedPrompt.data : "";
+  if (template === "Flowchart" || template === "Flows") return getFlowchartLayers(request || undefined);
+  if (template === "Roadmap") return getRoadmapLayers(request || undefined, author);
   const safeRequest = escapeMarkup(request);
   const headingValue = request
     ? escapeMarkup(request.length > 68 ? `${request.slice(0, 65)}…` : request)
@@ -72,6 +86,7 @@ export function getTemplateLayers(template?: string, prompt?: string, author = "
       })
     : selected.notes;
   const heading: Layer = { type: LayerType.Text, x: 190, y: 110, width: 720, height: 80, fill: { r: 30, g: 41, b: 59, a: 1 }, value: headingValue };
+  if ((template === "To-do planning" || template === "Retrospective" || template === "Weekly update") && !request) return [["template-heading", heading]];
   const notes: [string, Layer][] = generatedNotes.map((value, index) => [`template-note-${index}`, { type: LayerType.Note, x: 190 + (index % 4) * 250, y: 240 + Math.floor(index / 4) * 210, width: 210, height: 180, fill: palette[index % palette.length], value, author }]);
   return [["template-heading", heading], ...notes];
 }

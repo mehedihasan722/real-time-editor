@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- ✨ Add collaborative To-do, Retrospective, and Weekly Check-in workspaces with editable saved entries.
+- 🎨 Add AI Playground conversation layout, connected flowchart templates, and editable roadmap milestone cards.
+- 🐛 Reveal newly added tasks and preserve workspace metadata in editable exports.
+- ✅ Cover task creation, Playground retries, flowchart branches, roadmaps, and weekly check-in validation.
+
 - 🎨 Audit light/dark workspace contrast and fix selected, hover, placeholder and muted text states.
 - 🐛 Make Assist flow, organization and planning actions functional; select available modes automatically.
 - 🤖 Add verified local Hermes/Ollama setup with isolated tools and private API keys.
