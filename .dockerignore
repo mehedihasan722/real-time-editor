@@ -2,7 +2,14 @@ node_modules
 **/node_modules
 .next
 **/.next
+**/.turbo
 .git
 .env*
+**/.env*
 !.env.example
+.local-tools
+**/.auth
+**/.vercel
+**/playwright-report
+**/test-results
 npm-debug.log*

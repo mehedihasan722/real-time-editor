@@ -2,6 +2,12 @@ import { v } from "convex/values";
 import { defineSchema, defineTable } from "convex/server";
 
 export default defineSchema({
+  roomCleanup: defineTable({
+    roomId: v.string(),
+    attempts: v.number(),
+    status: v.union(v.literal("pending"), v.literal("failed")),
+    lastError: v.optional(v.string()),
+  }).index("by_status", ["status"]),
   boards: defineTable({
     title: v.string(),
     orgId: v.string(),

@@ -1,0 +1,26 @@
+name: "🐛 Bug report"
+description: Report a reproducible problem in Flowboard.
+labels: [bug]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include expected and actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and device
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots or sanitized logs
+      description: Do not include tokens, secrets, or private board content.

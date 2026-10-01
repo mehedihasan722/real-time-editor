@@ -2,6 +2,8 @@
 
 Flowboard is a collaborative visual workspace built with Next.js, Convex, Clerk, and Liveblocks. It uses Turborepo with the web application in apps/web. The same responsive site can be installed as a PWA on supported mobile and desktop browsers.
 
+Production operations and integration setup are maintained in [the Wiki source](docs/wiki/Home.md): [Vercel and GitHub automation](docs/wiki/Production.md), [Hermes and AI generation](docs/wiki/AI-Assistant.md), and [release testing](docs/wiki/Testing.md). See [CHANGELOG.md](CHANGELOG.md) for recent changes.
+
 ## Features
 
 - Create blank boards or starter boards with editable notes and headings.
@@ -13,6 +15,9 @@ Flowboard is a collaborative visual workspace built with Next.js, Convex, Clerk,
 - Play 22 original mini-games at /games: 16 WebGL arcade games and six puzzle/strategy games with raised boards. Includes a first-person target arena, football penalties, racing, an endless runner, egg matching, and flying.
 - Discuss boards with persistent Liveblocks comment threads, pinned feedback, mentions, reactions, and resolve/reopen controls.
 - Use the magic pen to turn rough geometric strokes into editable shapes while retaining stroke color and width.
+- Load additional pages of team/starred boards and admin reports.
+- Import/export editable board JSON, export PNG/PDF, and upload compressed PNG/JPEG/WebP images from Board files.
+- Preview AI-generated notes before insertion and chat with a configured Hermes Agent server; starter templates work without AI credentials.
 
 ## Arcade and performance
 
@@ -40,6 +45,8 @@ Run these from the repository root:
 - npm run lint — run Next.js ESLint.
 - npm run build — build all workspaces.
 - npm test — run environment and assistant regression tests.
+- npm run test:e2e — run production browser smoke tests after a build and Playwright Chromium installation.
+- npm run test:e2e:live — run connected collaboration tests with dedicated saved test sessions (see the testing guide).
 
 The `/api/health` endpoint reports HTTP 200 only when public and server service configuration is ready. It returns HTTP 503 without exposing credential values when configuration is incomplete.
 
@@ -53,7 +60,7 @@ For the production container, run `docker compose --env-file apps/web/.env.local
 
 The default Docker image target is a non-root, standalone production server. Pass only `NEXT_PUBLIC_CONVEX_URL` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` as build arguments because Next.js embeds public values at build time. Provide `CLERK_SECRET_KEY` and `LIVEBLOCKS_SECRET_KEY` only when starting the container; never pass server secrets as Docker build arguments.
 
-GitHub Actions runs TypeScript, lint, regression tests, and an optimized build for every pull request and push to `main`.
+GitHub Actions runs TypeScript, lint, regression tests, an optimized build, and browser smoke tests for every pull request and push. Optional workflows add verified Vercel deployment, failure tracking issues, Projects sync, and Wiki publishing once their documented credentials are configured. PR titles use gitmoji.
 
 ## Using Flowboard
 
@@ -90,3 +97,5 @@ Restart npm run dev from the repository root after changing configuration. For D
 Reference: [Convex Next.js setup](https://docs.convex.dev/quickstart/nextjs).
 
 Regression checks: run npm run typecheck, npm run lint, npm run build, and node --test apps/web/tests/public-env.test.cjs. With service variables unset, the dashboard and admin routes return the setup page and /api/liveblocks-auth returns JSON with HTTP 503. Live service connectivity still requires real credentials.
+
+Local AI setup: start Docker Desktop and run `npm run ai:setup`. This provisions an isolated Hermes Agent and Ollama model, tests a real response, then configures unset local AI variables. Restart the development server afterward. Vercel requires a separate authenticated HTTPS AI host; your laptop endpoint is local only. See [AI setup](docs/wiki/AI-Assistant.md).

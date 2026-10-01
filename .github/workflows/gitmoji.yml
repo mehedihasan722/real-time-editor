@@ -1,0 +1,19 @@
+name: Gitmoji PR title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            if (!/^[\p{Extended_Pictographic}\p{Emoji_Presentation}]/u.test(context.payload.pull_request.title)) {
+              core.setFailed('Begin the PR title with gitmoji, for example: 🐛 Fix board cleanup');
+            }

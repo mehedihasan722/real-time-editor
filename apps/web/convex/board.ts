@@ -1,6 +1,7 @@
 import { boardTitleSchema } from "../src/lib/board-validation";
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation, internalAction, internalQuery } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getActiveOrganizationId } from "../src/lib/organization-claim";
 
 const images = [
@@ -89,16 +90,61 @@ export const remove = mutation({
     const board = await ctx.db.get(args.id);
     if (!board) return null;
     assertBoardOrganization(identity, board);
-    const favourites = await ctx.db
-      .query("userFavourites")
-      .withIndex("by_board", (q) => q.eq("boardId", args.id))
-      .take(1000);
-
-    for (const favourite of favourites) {
-      await ctx.db.delete(favourite._id);
-    }
-
     await ctx.db.delete(args.id);
+    await ctx.scheduler.runAfter(0, internal.board.cleanupFavourites, { id: args.id });
+    const jobId = await ctx.db.insert("roomCleanup", { roomId: args.id, attempts: 0, status: "pending" });
+    await ctx.scheduler.runAfter(0, internal.board.cleanupRoom, { jobId });
+    return null;
+  },
+});
+
+export const cleanupFavourites = internalMutation({
+  args: { id: v.id("boards") },
+  returns: v.null(),
+  handler: async (ctx, { id }) => {
+    const favourites = await ctx.db.query("userFavourites").withIndex("by_board", q => q.eq("boardId", id)).take(200);
+    for (const favourite of favourites) await ctx.db.delete(favourite._id);
+    if (favourites.length === 200) await ctx.scheduler.runAfter(0, internal.board.cleanupFavourites, { id });
+    return null;
+  },
+});
+
+export const getCleanupJob = internalQuery({
+  args: { jobId: v.id("roomCleanup") },
+  returns: v.union(v.object({ _id: v.id("roomCleanup"), _creationTime: v.number(), roomId: v.string(), attempts: v.number(), status: v.union(v.literal("pending"), v.literal("failed")), lastError: v.optional(v.string()) }), v.null()),
+  handler: (ctx, { jobId }) => ctx.db.get(jobId),
+});
+
+export const finishCleanup = internalMutation({
+  args: { jobId: v.id("roomCleanup"), error: v.optional(v.string()) },
+  returns: v.null(),
+  handler: async (ctx, { jobId, error }) => {
+    const job = await ctx.db.get(jobId);
+    if (!job) return null;
+    if (!error) { await ctx.db.delete(jobId); return null; }
+    const attempts = job.attempts + 1;
+    await ctx.db.patch(jobId, { attempts, status: attempts >= 8 ? "failed" : "pending", lastError: error });
+    if (attempts < 8) await ctx.scheduler.runAfter(Math.min(3600000, 30000 * 2 ** attempts), internal.board.cleanupRoom, { jobId });
+    return null;
+  },
+});
+
+export const cleanupRoom = internalAction({
+  args: { jobId: v.id("roomCleanup") },
+  returns: v.null(),
+  handler: async (ctx, { jobId }): Promise<null> => {
+    const job = await ctx.runQuery(internal.board.getCleanupJob, { jobId });
+    if (!job) return null;
+    let error: string | undefined;
+    try {
+      const secret = process.env.LIVEBLOCKS_SECRET_KEY;
+      if (!secret) throw new Error("LIVEBLOCKS_SECRET_KEY is not configured on Convex");
+      const response = await fetch(`https://api.liveblocks.io/v2/rooms/${encodeURIComponent(job.roomId)}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${secret}` }, signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok && response.status !== 404) throw new Error(`Liveblocks deletion failed: HTTP ${response.status}`);
+    } catch (cause) { error = cause instanceof Error ? cause.message : "Room cleanup failed"; }
+    await ctx.runMutation(internal.board.finishCleanup, { jobId, ...(error ? { error } : {}) });
     return null;
   },
 });

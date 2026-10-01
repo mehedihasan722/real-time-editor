@@ -1,0 +1,63 @@
+name: Vercel production
+
+on:
+  workflow_run:
+    workflows: [Quality]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Check deployment configuration
+        id: configuration
+        run: |
+          if [[ -n "$VERCEL_TOKEN" && -n "$VERCEL_ORG_ID" && -n "$VERCEL_PROJECT_ID" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Vercel Actions deployment is not configured. Add VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID. The existing Vercel Git integration remains responsible for deployment." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.configuration.outputs.ready == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Check this is still the current main revision
+        if: steps.configuration.outputs.ready == 'true'
+        id: revision
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          current=$(git ls-remote origin refs/heads/main | cut -f1)
+          [[ "$current" == "$EXPECTED_SHA" ]] && echo "current=true" >> "$GITHUB_OUTPUT" || echo "current=false" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: steps.revision.outputs.current == 'true'
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+        if: steps.revision.outputs.current == 'true'
+      - name: Pull Vercel production configuration
+        if: steps.revision.outputs.current == 'true'
+        run: npx --yes vercel@62.0.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Build production deployment
+        if: steps.revision.outputs.current == 'true'
+        run: npx --yes vercel@62.0.0 build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy verified production build
+        if: steps.revision.outputs.current == 'true'
+        run: npx --yes vercel@62.0.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN"

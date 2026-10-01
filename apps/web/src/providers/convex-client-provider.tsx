@@ -10,6 +10,7 @@ import {
 } from "convex/react";
 import Loading from "@/components/auth/loading";
 import { publicEnv, setupMessage } from "@/lib/public-env";
+import { useTheme } from "next-themes";
 
 interface ConvexClientProviderProps {
   children: React.ReactNode;
@@ -22,6 +23,8 @@ const convex = publicEnv.success
 export const ConvexClientProvider = ({
   children,
 }: ConvexClientProviderProps) => {
+  const { resolvedTheme } = useTheme();
+  const dark = resolvedTheme === "dark";
   if (!publicEnv.success || !convex) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 p-8 text-slate-100">
@@ -34,7 +37,16 @@ export const ConvexClientProvider = ({
   }
 
   return (
-    <ClerkProvider publishableKey={publicEnv.data.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider publishableKey={publicEnv.data.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} appearance={{ variables: {
+      colorPrimary: dark ? "#a5b4fc" : "#4262ff",
+      colorPrimaryForeground: dark ? "#11182e" : "#ffffff",
+      colorBackground: dark ? "#11182e" : "#ffffff",
+      colorForeground: dark ? "#edf1ff" : "#0f172a",
+      colorMutedForeground: dark ? "#b6c1de" : "#475569",
+      colorNeutral: dark ? "#edf1ff" : "#0f172a",
+      colorInput: dark ? "#18213a" : "#ffffff",
+      colorInputForeground: dark ? "#edf1ff" : "#0f172a",
+    } }}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <Authenticated>{children}</Authenticated>
         <Unauthenticated>{children}</Unauthenticated>

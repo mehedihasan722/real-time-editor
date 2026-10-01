@@ -26,6 +26,8 @@ const LayerPreview = memo(
     }
 
     switch (layer.type) {
+      case LayerType.Image:
+        return <g onPointerDown={event => onLayerPointerDown(event, id)}><image href={layer.src} x={layer.x} y={layer.y} width={layer.width} height={layer.height} preserveAspectRatio="xMidYMid meet"><title>{layer.alt}</title></image>{selectionColor && <rect x={layer.x} y={layer.y} width={layer.width} height={layer.height} fill="none" stroke={selectionColor} />}</g>;
       case LayerType.Sticker:
         return <StickerLayerView id={id} layer={layer} onPointerDown={onLayerPointerDown} selectionColor={selectionColor} />;
       case LayerType.Shape:

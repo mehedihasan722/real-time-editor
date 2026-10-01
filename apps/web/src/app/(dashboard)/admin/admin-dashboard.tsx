@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Activity, ArrowDownToLine, ArrowUpRight, BarChart3, ChevronRight, LayoutDashboard, MoreHorizontal, Search, Star, Users } from "lucide-react";
 import Link from "next/link";
@@ -12,7 +12,8 @@ import "./admin-dashboard.css";
 import { createBoardCsv } from "@/lib/admin-report";
 
 export default function AdminDashboard({ orgId }: { orgId: string }) {
-  const boards = useQuery(api.boards.get, { orgId });
+  const { results, status, loadMore } = usePaginatedQuery(api.boards.list, { orgId }, { initialNumItems: 100 });
+  const boards = status === "LoadingFirstPage" ? undefined : results;
   const [search, setSearch] = useState("");
   const [period, setPeriod] = useState("6");
   const stats = useMemo(() => {
@@ -56,10 +57,11 @@ export default function AdminDashboard({ orgId }: { orgId: string }) {
       <div><div className="ai-breadcrumb"><LayoutDashboard size={13} /> Workspace <ChevronRight size={12} /> Overview</div><h1>Workspace intelligence<span>.</span></h1><p>A clear view of your team’s creative momentum.</p></div>
       <div className="ai-header-actions"><InviteButton /><button onClick={exportBoards} disabled={!boards} className="ai-export"><ArrowDownToLine size={15} /> Export report</button></div>
     </header>
-    <div className="ai-status"><span className="ai-live-dot" /> Live workspace data <span className="ai-status-note">Based on up to 100 most recent boards</span><Link href="/">Open workspace <ArrowUpRight size={13} /></Link></div>
+    <div className="ai-status"><span className="ai-live-dot" /> Live workspace data <span className="ai-status-note">{status === "Exhausted" ? "All workspace boards loaded" : "Report covers loaded boards"}</span><Link href="/">Open workspace <ArrowUpRight size={13} /></Link></div>
 
+    {status !== "Exhausted" && <button className="ai-export" disabled={status !== "CanLoadMore"} onClick={() => loadMore(100)}>{status === "LoadingMore" ? "Loading…" : "Load more boards for the report"}</button>}
     <section className="ai-metrics" aria-label="Workspace metrics">
-      {[{ label: "Total boards", value: stats.all.length, icon: LayoutDashboard, caption: "Ideas taking shape", bars: true }, { label: "Created this month", value: stats.months.at(-1)?.count ?? 0, icon: Activity, caption: "New creative spaces", bars: true }, { label: "Board owners", value: stats.owners.length, icon: Users, caption: "People contributing", bars: false }, { label: "Starred by you", value: stats.starred, icon: Star, caption: `${starredPercent}% of workspace boards`, bars: false }].map(({ label, value, icon: Icon, caption, bars }) => <article className="ai-metric" key={label}><div className="ai-metric-label"><span>{label}</span><Icon size={16} /></div><div className="ai-metric-body"><strong>{boards === undefined ? "—" : value}</strong>{bars ? <div className="ai-spark-bars" aria-hidden="true">{stats.months.map((month, index) => <i key={index} style={{ height: `${6 + month.count / maximum * 30}px` }} />)}</div> : <ArrowUpRight className="ai-metric-arrow" size={30} />}</div><small>{caption}</small></article>)}
+      {[{ label: status === "Exhausted" ? "Total boards" : "Loaded boards", value: stats.all.length, icon: LayoutDashboard, caption: "Ideas taking shape", bars: true }, { label: "Created this month", value: stats.months.at(-1)?.count ?? 0, icon: Activity, caption: "New creative spaces", bars: true }, { label: "Board owners", value: stats.owners.length, icon: Users, caption: "People contributing", bars: false }, { label: "Starred by you", value: stats.starred, icon: Star, caption: `${starredPercent}% of workspace boards`, bars: false }].map(({ label, value, icon: Icon, caption, bars }) => <article className="ai-metric" key={label}><div className="ai-metric-label"><span>{label}</span><Icon size={16} /></div><div className="ai-metric-body"><strong>{boards === undefined ? "—" : value}</strong>{bars ? <div className="ai-spark-bars" aria-hidden="true">{stats.months.map((month, index) => <i key={index} style={{ height: `${6 + month.count / maximum * 30}px` }} />)}</div> : <ArrowUpRight className="ai-metric-arrow" size={30} />}</div><small>{caption}</small></article>)}
     </section>
 
     <div className="ai-main-grid">

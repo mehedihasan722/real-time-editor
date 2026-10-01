@@ -17,7 +17,6 @@ export const Navbar = () => {
     <div className="flex items-center gap-x-3 p-4 md:p-5 min-w-0">
       <MobileNav />
       <div className="hidden lg:flex lg:flex-1">
-        {/* TODO: Add Search  */}
         <SearchInput />
       </div>
       <div className="block lg:hidden flex-1">
@@ -36,10 +35,14 @@ export const Navbar = () => {
                 padding: "6px",
                 width: "100%",
                 borderRadius: "8px",
-                border: "1px solid #E5E7EB",
+                border: "1px solid var(--clerk-border)",
                 justifyContent: "space-between",
-                backgroundColor: "white",
+                backgroundColor: "var(--clerk-surface)",
+                color: "var(--clerk-foreground)",
               },
+              organizationPreviewMainIdentifier: { color: "var(--clerk-foreground)" },
+              organizationPreviewSecondaryIdentifier: { color: "var(--clerk-muted)" },
+              organizationSwitcherTriggerIcon: { color: "var(--clerk-foreground)" },
             },
           }}
         />

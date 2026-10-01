@@ -15,6 +15,11 @@ build/
 # local credentials and tools
 .env*.local
 .vercel/
+**/.vercel/
+**/playwright-report/
+**/test-results/
+**/.auth/
+.local-tools/
 .DS_Store
 *.pem
 npm-debug.log*

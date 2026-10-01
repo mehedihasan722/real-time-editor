@@ -23,3 +23,12 @@
 @media(prefers-reduced-motion:reduce){.arcade-card,.arcade-card-emoji,.flowboard-arcade button{transition:none!important;transform:none!important}}
 .arcade-screen canvas{display:block;max-width:100%;height:auto}
 .arcade-discovery label{max-width:100%;min-width:0}.arcade-discovery input{min-width:0;max-width:100%}@media(max-width:420px){.arcade-discovery label{width:100%}.arcade-discovery input{flex:1;width:auto}.arcade-heading h1{font-size:26px}.arcade-player-header{padding:10px}.arcade-player-header h2{font-size:14px}.arcade-player-actions{flex-wrap:wrap}.arcade-instructions{padding:14px}.arcade-hud{flex-wrap:wrap}.arcade-overlay h3{font-size:20px}.arcade-overlay p{font-size:11px}.puzzle-grid--mines button{font-size:12px}.puzzle-grid--connect button{font-size:16px}}
+
+.arcade-note,.arcade-instructions small,.arcade-discovery label { color:#b1bdd8; }
+.arcade-discovery label,.arcade-button,.arcade-touch button { border-color:#65718c; }
+:root:not(.dark) .arcade-discovery label,:root:not(.dark) .arcade-instructions small,:root:not(.dark) .arcade-note,:root:not(.dark) .arcade-discovery nav button { color:#526079; }
+:root:not(.dark) .arcade-discovery label,:root:not(.dark) .arcade-button { border-color:#8793a7; }
+:root:not(.dark) .arcade-3d-badge { color:#6545aa; }
+/* Puzzle surfaces use their own dark lighting in both workspace themes. */
+.puzzle-stage { color:#e9eaf5; }
+.puzzle-stage .puzzle-status { color:#b1bdd8; }

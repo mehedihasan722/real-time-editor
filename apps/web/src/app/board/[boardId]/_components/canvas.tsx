@@ -50,8 +50,10 @@ import { getTemplateLayers } from "@/lib/board-templates";
 import { createDiagramShapeLayer } from "@/lib/diagram-shapes";
 import { recognizeDrawing } from "@/lib/smart-drawing";
 import { DiagramShapeKind } from "@/types/canvas";
+import { BoardFiles } from "./board-files";
+import { MAX_LAYERS } from "@/lib/board-portability";
+import { toast } from "sonner";
 
-const MAX_LAYERS = 100;
 interface CanvasProps {
   boardId: string;
 }
@@ -87,11 +89,36 @@ const Canvas = ({ boardId }: CanvasProps) => {
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
 
+  const importLayers = useMutation(({ storage, setMyPresence }, layers: Layer[]) => {
+    const liveLayers = storage.get("layers");
+    if (liveLayers.size + layers.length > MAX_LAYERS) {
+      toast.error(`This board supports ${MAX_LAYERS} objects. Delete some objects or import into a new board.`);
+      return;
+    }
+    const ids: string[] = [];
+    const boundsX = Math.min(...layers.map(layer => layer.x));
+    const boundsY = Math.min(...layers.map(layer => layer.y));
+    const x = (window.innerWidth / 2 - camera.x) / zoom;
+    const y = (window.innerHeight / 2 - camera.y) / zoom;
+    for (const layer of layers) {
+      const id = nanoid();
+      liveLayers.set(id, new LiveObject<Layer>({ ...layer, x: layer.x - boundsX + x, y: layer.y - boundsY + y }));
+      storage.get("layerIds").push(id); ids.push(id);
+    }
+    setMyPresence({ selection: ids }, { addToHistory: true });
+    setStarterOpen(false);
+    toast.success(`${ids.length} objects added`);
+  }, [camera, zoom]);
+
   const applyStarter = useMutation(
     ({ storage, setMyPresence }, template: string, prompt?: string) => {
       const liveLayers = storage.get("layers");
       const liveLayerIds = storage.get("layerIds");
       const templateLayers = getTemplateLayers(template, prompt, info?.name || "Flowboard Assist");
+      if (liveLayers.size + templateLayers.length > MAX_LAYERS) {
+        toast.error(`This template would exceed the ${MAX_LAYERS}-object limit. Delete some objects first.`);
+        return;
+      }
       const centerX = (window.innerWidth / 2 - camera.x) / zoom;
       const centerY = (window.innerHeight / 2 - camera.y) / zoom;
       const offsetX = centerX - 570;
@@ -99,7 +126,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       const insertedIds: string[] = [];
 
       templateLayers.forEach(([, layer]) => {
-        if (liveLayers.size >= MAX_LAYERS) return;
+        if (liveLayers.size >= MAX_LAYERS) { toast.error(`Board limit reached (${MAX_LAYERS} objects). Delete objects to add more.`); return; }
         const id = nanoid();
         liveLayers.set(
           id,
@@ -127,7 +154,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
     ) => {
       const liveLayers = storage.get("layers");
 
-      if (liveLayers.size >= MAX_LAYERS) return;
+      if (liveLayers.size >= MAX_LAYERS) { toast.error(`Board limit reached (${MAX_LAYERS} objects). Delete objects to add more.`); return; }
 
       const liveLayerIds = storage.get("layerIds");
 
@@ -150,7 +177,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
   const insertDiagramShape = useMutation(
     ({ storage, setMyPresence }, kind: DiagramShapeKind) => {
       const liveLayers = storage.get("layers");
-      if (liveLayers.size >= MAX_LAYERS) return;
+      if (liveLayers.size >= MAX_LAYERS) { toast.error(`Board limit reached (${MAX_LAYERS} objects). Delete objects to add more.`); return; }
       const id = nanoid();
       const position = {
         x: (window.innerWidth / 2 - camera.x) / zoom,
@@ -167,7 +194,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
   const insertFrame = useMutation(
     ({ storage, setMyPresence }, width: number, height: number, label: string) => {
       const liveLayers = storage.get("layers");
-      if (liveLayers.size >= MAX_LAYERS) return;
+      if (liveLayers.size >= MAX_LAYERS) { toast.error(`Board limit reached (${MAX_LAYERS} objects). Delete objects to add more.`); return; }
       const id = nanoid();
       const center = { x: (window.innerWidth / 2 - camera.x) / zoom, y: (window.innerHeight / 2 - camera.y) / zoom };
       const layer: Layer = { type: LayerType.Shape, shape: "rectangle", x: center.x - width / 2, y: center.y - height / 2, width, height, fill: { r: 255, g: 255, b: 255, a: 0.12 }, value: label };
@@ -182,7 +209,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
   const insertSticker = useMutation(
     ({ storage, setMyPresence }, value: string) => {
       const liveLayers = storage.get("layers");
-      if (liveLayers.size >= MAX_LAYERS) return;
+      if (liveLayers.size >= MAX_LAYERS) { toast.error(`Board limit reached (${MAX_LAYERS} objects). Delete objects to add more.`); return; }
       const id = nanoid();
       const center = { x: (window.innerWidth / 2 - camera.x) / zoom, y: (window.innerHeight / 2 - camera.y) / zoom };
       const layer: Layer = { type: LayerType.Sticker, x: center.x - 55, y: center.y - 55, width: 110, height: 110, fill: { r: 255, g: 255, b: 255, a: 0 }, value };
@@ -684,6 +711,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
     }}>
       <Info boardId={boardId} />
       <Participants />
+      <BoardFiles boardId={boardId} onImport={importLayers} />
+      {layerIds.length >= MAX_LAYERS && <p role="status" className="absolute bottom-20 left-1/2 z-30 -translate-x-1/2 rounded bg-amber-100 px-4 py-2 text-sm text-amber-950">Board limit reached ({MAX_LAYERS} objects). Delete objects to add more.</p>}
       <Toolbar
         commentsOpen={commentsOpen}
         onOpenComments={() => { setCommentsOpen(open => !open); setPlacingComment(false); }}
@@ -705,6 +734,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
       <CommentSidebar open={commentsOpen} onClose={() => { setCommentsOpen(false); setPlacingComment(false); }} camera={camera} zoom={zoom} point={commentPoint} placing={placingComment} onPlace={() => { setCanvasState({ mode: CanvasMode.None }); setCommentPoint(null); setPlacingComment(true); }} onSubmitted={() => setCommentPoint(null)} onOpen={() => setCommentsOpen(true)} />
       {starterOpen && (
         <BoardStarter
+          boardId={boardId}
+          onGenerated={importLayers}
           name={info?.name}
           onClose={() => setStarterOpen(false)}
           onStart={applyStarter}
@@ -737,14 +768,14 @@ const Canvas = ({ boardId }: CanvasProps) => {
             transformOrigin: "0 0",
           }}
         >
-          {layerIds.map((layerId) => (
+          <g data-export-content>{layerIds.map((layerId) => (
             <LayerPreview
               key={layerId}
               id={layerId}
               onLayerPointerDown={onLayerPointerDown}
               selectionColor={layerIdsToColorSelection[layerId]}
             />
-          ))}
+          ))}</g>
           <SelectionBox onResizeHandlePointerDown={onResizeHandlePointerDown} />
           {canvasState.mode === CanvasMode.SelectionNet &&
             canvasState.current != null && (

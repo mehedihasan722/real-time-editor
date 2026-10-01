@@ -39,10 +39,14 @@ export const OrgSidebar = () => {
               padding: "6px",
               width: "100%",
               borderRadius: "8px",
-              border: "1px solid #E5E7EB",
+              border: "1px solid var(--clerk-border)",
               justifyContent: "space-between",
-              backgroundColor: "white",
+              backgroundColor: "var(--clerk-surface)",
+              color: "var(--clerk-foreground)",
             },
+            organizationPreviewMainIdentifier: { color: "var(--clerk-foreground)" },
+            organizationPreviewSecondaryIdentifier: { color: "var(--clerk-muted)" },
+            organizationSwitcherTriggerIcon: { color: "var(--clerk-foreground)" },
           },
         }}
       />

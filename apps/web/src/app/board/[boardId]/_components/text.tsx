@@ -64,12 +64,12 @@ const Text = ({ layer, onPointerDown, id, selectionColor }: TextProps) => {
         }}
         onFocus={handleFocus}
         className={cn(
-          "h-full w-full flex items-center justify-center text-center drop-shadow-md outline-none",
+          "canvas-text h-full w-full flex items-center justify-center text-center drop-shadow-md outline-none",
           "font-hand"
         )}
         style={{
           fontSize: calculateFontSize(width, height),
-          color: fill ? colorToCss(fill) : "rgba(0,0,0,1)",
+          color: !fill || (fill.r === 0 && fill.g === 0 && fill.b === 0) || (fill.r === 30 && fill.g === 41 && fill.b === 59) ? "var(--canvas-text-foreground)" : colorToCss(fill),
         }}
       />
     </foreignObject>

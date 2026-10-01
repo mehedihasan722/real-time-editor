@@ -1,0 +1,33 @@
+name: Sync issues to project
+
+on:
+  issues:
+    types: [opened, reopened]
+  pull_request:
+    types: [opened, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  add:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Projects configuration
+        id: configuration
+        env:
+          PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          PROJECT_URL: ${{ vars.PROJECT_URL }}
+        run: |
+          if [[ -n "$PROJECT_TOKEN" && -n "$PROJECT_URL" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Configure PROJECT_TOKEN with Projects write access and PROJECT_URL to enable issue/PR project sync." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
+        if: steps.configuration.outputs.ready == 'true' && github.event_name != 'workflow_dispatch'
+        with:
+          project-url: ${{ vars.PROJECT_URL }}
+          github-token: ${{ secrets.PROJECT_TOKEN }}

@@ -1,0 +1,22 @@
+name: flowboard-ai
+services:
+  ollama:
+    image: ollama/ollama@sha256:2a6e883b917fc543389599dae79918f5cac9e1438890506982f44aa4f5625d01
+    restart: unless-stopped
+    ports: ["127.0.0.1:11434:11434"]
+    volumes: ["models:/root/.ollama"]
+    mem_limit: 6g
+  hermes:
+    image: nousresearch/hermes-agent@sha256:d4da4a40cd7a28aba983775d9fd31d94cbf153eeb0cb9e844d6d0f612b7c24db
+    command: ["gateway", "run"]
+    restart: unless-stopped
+    depends_on: [ollama]
+    ports: ["127.0.0.1:8642:8642"]
+    environment:
+      API_SERVER_ENABLED: "true"
+      API_SERVER_HOST: "0.0.0.0"
+      API_SERVER_KEY: ${FLOWBOARD_HERMES_KEY:?Run npm run ai:setup first}
+    volumes: ["./.local-tools/hermes:/opt/data"]
+    mem_limit: 2g
+volumes:
+  models:

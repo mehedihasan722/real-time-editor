@@ -11,6 +11,7 @@ export enum LayerType {
   Note,
   Shape,
   Sticker,
+  Image,
 }
 
 export type DiagramShapeKind =
@@ -45,7 +46,17 @@ export type Layer =
   | TextLayer
   | NoteLayer
   | ShapeLayer
-  | StickerLayer;
+  | StickerLayer
+  | ImageLayer;
+
+export type ImageLayer = {
+  type: LayerType.Image;
+  x: number; y: number; width: number; height: number;
+  fill: Color;
+  src: string;
+  alt: string;
+  value?: string;
+};
 
 export type StickerLayer = {
   type: LayerType.Sticker;

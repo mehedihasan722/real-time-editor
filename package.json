@@ -10,11 +10,18 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "node --test apps/web/tests/*.test.cjs",
-    "start": "npm run start --workspace=@flowboard/web"
+    "start": "npm run start --workspace=@flowboard/web",
+    "test:e2e": "npm run test:e2e --workspace=@flowboard/web",
+    "test:e2e:live": "npm run test:e2e:live --workspace=@flowboard/web",
+    "ai:setup": "node scripts/setup-ai.cjs"
   },
   "devDependencies": {
     "brace-expansion": "^5.0.12",
     "turbo": "^2.11.5"
   },
-  "packageManager": "npm@11.12.1"
+  "packageManager": "npm@11.12.1",
+  "overrides": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
 }

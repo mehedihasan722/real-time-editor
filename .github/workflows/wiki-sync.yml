@@ -1,0 +1,50 @@
+name: Sync project Wiki
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wiki-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Wiki credentials
+        id: configuration
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_TOKEN }}
+        run: |
+          if [[ -n "$WIKI_TOKEN" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Wiki source is maintained in docs/wiki. Add WIKI_TOKEN with repository write access to enable automatic Wiki publishing." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.configuration.outputs.ready == 'true'
+        with:
+          fetch-depth: 30
+      - name: Publish maintained Wiki pages
+        if: steps.configuration.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.WIKI_TOKEN }}
+        run: |
+          gh auth setup-git
+          git clone "https://github.com/${GITHUB_REPOSITORY}.wiki.git" "$RUNNER_TEMP/wiki"
+          cp docs/wiki/*.md "$RUNNER_TEMP/wiki/"
+          node scripts/wiki-history.cjs "$RUNNER_TEMP/wiki/Recent-Changes.md"
+          cd "$RUNNER_TEMP/wiki"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add '*.md'
+          if ! git diff --cached --quiet; then
+            git commit -m '📝 Sync Flowboard documentation'
+            git push
+          fi
