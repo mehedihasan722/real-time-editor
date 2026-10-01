@@ -11,7 +11,7 @@ test("Playground submits chat to Assist and keeps a failed prompt available for 
   for (const success of [true, false]) {
     const changes = [];
     const conversation = { id: "first", title: "New conversation", mode: "chat", messages: [] };
-    const states = [[conversation], "first", "Plan my launch", false, "", { chat: true, generate: false }, false];
+    const states = [[conversation], "first", "Plan my launch", false, "", { chat: true, generate: false, image: false }, "auto", {}, false];
     let sent;
     const exports = {};
     const mocks = {

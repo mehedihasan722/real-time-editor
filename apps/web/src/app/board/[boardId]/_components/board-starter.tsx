@@ -33,6 +33,7 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
   const [prompt, setPrompt] = useState("");
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"generate" | "chat" | "templates">("templates");
+  const [provider, setProvider] = useState("auto");
   const [available, setAvailable] = useState({ generate: false, chat: false });
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
@@ -61,7 +62,7 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
     setBusy(true); setGenerated(null);
     const conversation = [...(mode === "chat" ? messages.slice(-18) : []), { role: "user" as const, content: parsed.data }];
     try {
-      const response = await fetch("/api/assist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ boardId, mode, messages: conversation }), signal: AbortSignal.timeout(60000) });
+      const response = await fetch("/api/assist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ boardId, mode, provider, messages: conversation }), signal: AbortSignal.timeout(60000) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Assist could not complete the request.");
       if (mode === "generate") setGenerated(generatedBoardSchema.parse(result.board));
@@ -82,7 +83,7 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
           <h1 id="board-starter-title">Hey {name?.split(" ")[0] || "there"}, what are we working on?</h1>
         </div>
       </div>
-      <div className="board-starter__suggestions" aria-label="Assistant mode">
+      <label className="block text-sm">AI provider <select aria-label="AI provider" className="rounded-md border bg-background p-2" value={provider} disabled={busy} onChange={event => setProvider(event.target.value)}><option value="auto">Automatic</option><option value="hermes">Hermes</option><option value="gemini">Gemini</option><option value="grok">Grok</option><option value="deepseek">DeepSeek</option><option value="custom">Custom model</option></select></label><div className="board-starter__suggestions" aria-label="Assistant mode">
         {(["generate", "chat", "templates"] as const).map(value => <button key={value} aria-pressed={mode === value} disabled={busy || (value !== "templates" && !available[value])} title={value !== "templates" && !available[value] ? "This AI service is not configured yet" : undefined} onClick={() => { setMode(value); setError(""); setGenerated(null); }}>{value === "generate" ? "AI board" : value === "chat" ? "Hermes chat" : "Starter templates"}</button>)}
       </div>
       {!available.generate && !available.chat && <p className="board-starter__availability" role="status">Starter templates are ready. AI services are not configured yet.</p>}

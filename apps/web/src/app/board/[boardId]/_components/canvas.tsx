@@ -1,4 +1,6 @@
 "use client";
+import { FlowchartPicker } from "./flowchart-picker";
+import { getFlowchartLayers, type FlowchartStyle } from "@/lib/flowchart-template";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Info from "./info";
@@ -120,7 +122,10 @@ const Canvas = ({ boardId }: CanvasProps) => {
   const [placingComment, setPlacingComment] = useState(false);
   const [commentPoint, setCommentPoint] = useState<Point | null>(null);
   const [isPanning, setIsPanning] = useState(false);
+  const [flowPicker, setFlowPicker] = useState(false);
+  const flowPrompt = useRef<string | undefined>(undefined);
   const panPointer = useRef<{ id: number; x: number; y: number } | null>(null);
+  const drawingPointer = useRef<number | null>(null);
   const [starterOpen, setStarterOpen] = useState(() => layerIds.length === 0);
   const [lastUsedColor, setLastUsedColor] = useState<Color>({
     r: 0,
@@ -132,6 +137,15 @@ const Canvas = ({ boardId }: CanvasProps) => {
   useDisableScrollBounce();
   
   const history = useHistory();
+  const cancelDrawing = useMutation(({ setMyPresence }) => {
+    drawingPointer.current = null;
+    setMyPresence({ pencilDraft: null });
+    history.resume();
+  }, [history]);
+  const drawingTool = canvasState.mode === CanvasMode.Pencil ? canvasState.tool : null;
+  useEffect(() => {
+    if (drawingPointer.current !== null) cancelDrawing();
+  }, [drawingTool, canWrite, cancelDrawing]);
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
 
@@ -166,11 +180,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
     storage.get("layerIds").push(id);
   }, [camera, zoom, info?.name]);
 
-  const applyStarter = useMutation(
-    ({ storage, setMyPresence }, template: string, prompt?: string) => {
+  const insertStarter = useMutation(
+    ({ storage, setMyPresence }, template: string, prompt?: string, flowStyle?: FlowchartStyle, steps?: string[]) => {
       const liveLayers = storage.get("layers");
       const liveLayerIds = storage.get("layerIds");
-      const templateLayers = getTemplateLayers(template, prompt, info?.name || "Flowboard Assist");
+      const templateLayers = template === "Flowchart" && flowStyle ? getFlowchartLayers(prompt || "Flowchart", flowStyle, steps) : getTemplateLayers(template, prompt, info?.name || "Flowboard Assist");
       if (liveLayers.size + templateLayers.length > MAX_LAYERS) {
         toast.error(`This template would exceed the ${MAX_LAYERS}-object limit. Delete some objects first.`);
         return;
@@ -200,6 +214,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
     },
     [camera, info?.name, zoom]
   );
+
+  const applyStarter = (template: string, prompt?: string) => {
+    if (template === "Flowchart") { flowPrompt.current = prompt; setFlowPicker(true); }
+    else insertStarter(template, prompt);
+  };
 
   const insertLayer = useMutation(
     (
@@ -323,7 +342,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
       if (
         canvasState.mode !== CanvasMode.Pencil ||
-        e.buttons !== 1 ||
+        (e.buttons & 1) === 0 ||
+        drawingPointer.current !== e.pointerId ||
         pencilDraft == null
       ) {
         return;
@@ -332,11 +352,9 @@ const Canvas = ({ boardId }: CanvasProps) => {
       setMyPresence({
         cursor: point,
         pencilDraft:
-          pencilDraft.length === 1 &&
-          pencilDraft[0][0] === point.x &&
-          pencilDraft[0][1] === point.y
+          Math.hypot(pencilDraft[pencilDraft.length - 1][0] - point.x, pencilDraft[pencilDraft.length - 1][1] - point.y) < .75
             ? pencilDraft
-            : [...pencilDraft, [point.x, point.y, e.pressure]],
+            : [...(pencilDraft.length >= 4096 ? pencilDraft.filter((_, index) => index % 2 === 0) : pencilDraft), [point.x, point.y, e.pressure]],
       });
     },
     [canvasState.mode]
@@ -381,6 +399,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
         pencilDraft.length < 2 ||
         liveLayers.size >= MAX_LAYERS
       ) {
+        if (liveLayers.size >= MAX_LAYERS) toast.error(`Board limit reached (${MAX_LAYERS} objects). Delete objects to draw more.`);
         setMyPresence({ pencilDraft: null });
         return;
       }
@@ -389,6 +408,20 @@ const Canvas = ({ boardId }: CanvasProps) => {
       const recognized = canvasState.mode === CanvasMode.Pencil && canvasState.tool === "style"
         ? recognizeDrawing(pencilDraft, lastUsedColor, canvasState.width)
         : null;
+      if (recognized) {
+        for (const previousId of [...storage.get("layerIds").toJSON()].reverse()) {
+          const previous = liveLayers.get(previousId)?.toJSON();
+          if (!previous || previous.type !== LayerType.Path) continue;
+          const intersection = Math.max(0, Math.min(previous.x + previous.width, recognized.x + recognized.width) - Math.max(previous.x, recognized.x)) * Math.max(0, Math.min(previous.y + previous.height, recognized.y + recognized.height) - Math.max(previous.y, recognized.y));
+          const union = previous.width * previous.height + recognized.width * recognized.height - intersection;
+          if (union <= 0 || intersection / union < .65) continue;
+          const previousShape = recognizeDrawing(previous.points.map(([x, y, pressure]) => [x + previous.x, y + previous.y, pressure]), lastUsedColor, recognized.strokeWidth || 8);
+          if (previousShape?.shape !== recognized.shape) continue;
+          liveLayers.set(previousId, new LiveObject({ ...recognized, x: previousShape.x, y: previousShape.y, width: previousShape.width, height: previousShape.height }));
+          setMyPresence({ pencilDraft: null, selection: [previousId] });
+          return;
+        }
+      }
       liveLayers.set(
         id,
         new LiveObject(
@@ -516,6 +549,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       if (
         canvasState.mode === CanvasMode.Pencil &&
         canvasState.tool.includes("eraser") &&
+        drawingPointer.current === e.pointerId &&
         (e.buttons & 1) === 1
       ) {
         const liveLayers = storage.get("layers");
@@ -594,13 +628,18 @@ const Canvas = ({ boardId }: CanvasProps) => {
       }
 
       if (canvasState.mode === CanvasMode.Pencil) {
+        if (!canWrite || e.button !== 0 || drawingPointer.current !== null) return;
+        e.preventDefault();
+        drawingPointer.current = e.pointerId;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        history.pause();
         startDrawing(point, e.pressure);
         return;
       }
 
       setCanvasState({ origin: point, mode: CanvasMode.Pressing });
     },
-    [camera, zoom, canvasState.mode, setCanvasState, startDrawing]
+    [camera, zoom, canvasState.mode, setCanvasState, startDrawing, history, canWrite]
   );
 
   const onPointerUp = useMutation(
@@ -624,7 +663,10 @@ const Canvas = ({ boardId }: CanvasProps) => {
           mode: CanvasMode.None,
         });
       } else if (canvasState.mode === CanvasMode.Pencil) {
+        if (drawingPointer.current !== e.pointerId) return;
         insertPath();
+        drawingPointer.current = null;
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
       } else if (canvasState.mode === CanvasMode.Inserting) {
         insertLayer(canvasState.layerType, point);
       } else {
@@ -654,7 +696,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       if (e.button === 1) return;
 
       if (canvasState.mode === CanvasMode.Pencil && canvasState.tool === "eraser") {
-        e.stopPropagation();
+        history.pause();
         const liveLayers = storage.get("layers");
         if (liveLayers.has(layerId)) {
           const liveLayerIds = storage.get("layerIds");
@@ -783,6 +825,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       {workspace === "playground" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open AI Playground</button>}
       {(workspace === "requirements" || (!workspace && legacyRequirements)) && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open product requirements</button>}
       {(workspace === "weekly" || (!workspace && legacyWeekly)) && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open weekly check-in</button>}
+      <FlowchartPicker open={flowPicker} onOpenChange={setFlowPicker} onChoose={(style, steps) => insertStarter("Flowchart", flowPrompt.current, style, steps)} />
       {workspace === "flowchart" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => applyStarter("Flowchart")}>Add connected flowchart</button>}
       {workspace === "roadmap" && <aside className="absolute bottom-24 left-3 top-24 z-30 hidden w-48 overflow-auto rounded-xl border bg-background p-4 text-foreground shadow-sm lg:block">
         <h2 className="mb-5 text-sm font-semibold">Roadmap planning</h2>
@@ -836,17 +879,20 @@ const Canvas = ({ boardId }: CanvasProps) => {
       <svg
         data-board-surface
         className={`h-[100vh] w-[100vw] ${isPanning ? "cursor-grabbing" : ""}`}
+        style={{ touchAction: "none" }}
         onWheel={onWheel}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={(event) => {
+          if (drawingPointer.current === event.pointerId) cancelDrawing();
           if (panPointer.current?.id === event.pointerId) {
             panPointer.current = null;
             setIsPanning(false);
           }
         }}
+        onLostPointerCapture={(event) => { if (drawingPointer.current === event.pointerId) cancelDrawing(); }}
       >
         <g
           style={{

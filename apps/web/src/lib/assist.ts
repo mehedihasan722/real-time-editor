@@ -3,7 +3,8 @@ import { LayerType, type Layer } from "@/types/canvas";
 
 export const assistRequestSchema = z.object({
   boardId: z.string().min(1).max(128),
-  mode: z.enum(["chat", "generate"]),
+  mode: z.enum(["chat", "generate", "image"]),
+  provider: z.enum(["auto", "hermes", "gemini", "grok", "deepseek", "custom"]).optional(),
   stream: z.boolean().optional(),
   messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(4000) })).min(1).max(20),
 });
