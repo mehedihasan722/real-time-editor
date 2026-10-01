@@ -8,6 +8,8 @@ import Loading from "@/components/auth/loading";
 import PwaRegister from "@/components/pwa-register";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { WorkspacePreferencesProvider } from "@/providers/workspace-preferences-provider";
+import { MotionProvider } from "@/providers/motion-provider";
+import { WorkspaceCommand } from "@/components/workspace-command";
 
 
 export const metadata: Metadata = {
@@ -31,16 +33,17 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <WorkspacePreferencesProvider>
+          <WorkspacePreferencesProvider><MotionProvider>
             <PwaRegister />
             <Suspense fallback={<Loading />}>
               <ConvexClientProvider>
                 <Toaster />
                 <ModalProvider />
+                <WorkspaceCommand />
                 {children}
               </ConvexClientProvider>
             </Suspense>
-          </WorkspacePreferencesProvider>
+          </MotionProvider></WorkspacePreferencesProvider>
         </ThemeProvider>
       </body>
     </html>

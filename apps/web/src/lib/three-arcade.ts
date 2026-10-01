@@ -15,13 +15,15 @@ export class ThreeArcade {
   private player = new THREE.Group();
   private keeper = new THREE.Group();
   private ball = new THREE.Group();
-  private observer: ResizeObserver;
+  private observer?: ResizeObserver;
   private shotTime = -10;
   private shotX = 0;
   private reactionPanel: THREE.Mesh | null = null;
   private lastScore = 0;
+  private disposed = false;
   constructor(private canvas: HTMLCanvasElement, private id: GameId) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+    try {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth < 768 ? 1.25 : 1.5));
     this.renderer.shadowMap.enabled = window.innerWidth >= 768;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -35,6 +37,7 @@ export class ThreeArcade {
     this.buildScene();
     this.observer = new ResizeObserver(() => { const width = Math.max(1, canvas.clientWidth); this.renderer.setSize(width, width * 440 / 720, false); this.camera.aspect = 720 / 440; this.camera.updateProjectionMatrix(); });
     this.observer.observe(canvas); this.renderer.setSize(Math.max(1, canvas.clientWidth), Math.max(1, canvas.clientWidth) * 440 / 720, false);
+    } catch (error) { this.dispose(); throw error; }
   }
   private material(color: number) { if (!this.materials.has(color)) this.materials.set(color, new THREE.MeshStandardMaterial({ color, roughness: .55, metalness: .15 })); return this.materials.get(color)!; }
   private mesh(group: THREE.Group, geometry: THREE.BufferGeometry, color: number, x = 0, y = 0, z = 0) {
@@ -177,5 +180,20 @@ export class ThreeArcade {
     else world.click(x, y);
   }
   private releaseGroup(group: THREE.Group) { group.traverse(child => { if (child instanceof THREE.Mesh) { child.geometry.dispose(); this.geometries.delete(child.geometry); } }); }
-  dispose() { this.observer.disconnect(); this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.renderer.dispose(); this.renderer.forceContextLoss(); this.scene.clear(); }
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.observer?.disconnect();
+    this.scene.traverse(object => {
+      if (object instanceof THREE.Light && "shadow" in object) (object as THREE.DirectionalLight).shadow?.dispose();
+      if (object instanceof THREE.Mesh) {
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        for (const material of materials) for (const value of Object.values(material)) if (value instanceof THREE.Texture) value.dispose();
+      }
+    });
+    this.geometries.forEach(geometry => geometry.dispose()); this.geometries.clear();
+    this.materials.forEach(material => material.dispose()); this.materials.clear();
+    this.objects.clear(); this.tiles.clear(); this.scenery.length = 0;
+    this.renderer.dispose(); this.renderer.forceContextLoss(); this.scene.clear();
+  }
 }

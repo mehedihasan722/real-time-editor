@@ -28,6 +28,7 @@ export async function POST(request: Request) {
   const parsed = assistRequestSchema.safeParse(payload);
   if (!parsed.success) return Response.json({ error: "Send a valid prompt with at most 20 messages." }, { status: 400 });
   const { mode, messages, boardId } = parsed.data;
+  const streaming = mode === "chat" && parsed.data.stream === true;
   if (messages.at(-1)?.role !== "user") return Response.json({ error: "The last message must be a user prompt." }, { status: 400 });
   const audience = authorization.sessionClaims?.aud;
   const token = audience === "convex" || (Array.isArray(audience) && audience.includes("convex"))
@@ -49,12 +50,16 @@ export async function POST(request: Request) {
     if (url.username || url.password || (url.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && local && url.protocol === "http:"))) throw new Error();
   } catch { return Response.json({ error: "The AI service URL is invalid. Production requires HTTPS." }, { status: 503 }); }
 
+  const reserved = await convex.mutation(api.assist.reserveRequest, { boardId: boardId as Id<"boards"> }).catch(() => null);
+  if (reserved === null) return Response.json({ error: "An organization member role is required to use Assist." }, { status: 403 });
+  if (!reserved) return Response.json({ error: "Too many AI requests. Wait a minute and try again." }, { status: 429, headers: { "Retry-After": "60" } });
+
   try {
     // Only the user's submitted messages leave the app. No board contents, IDs, or Clerk tokens are sent.
     const response = await fetch(url, {
-      method: "POST", redirect: "error", signal: AbortSignal.timeout(50000),
+      method: "POST", redirect: "error", signal: AbortSignal.any([request.signal, AbortSignal.timeout(50000)]),
       headers: { "Content-Type": "application/json", ...(key ? { Authorization: `Bearer ${key}` } : {}) },
-      body: JSON.stringify({ model, stream: false, max_tokens: 1024, ...(mode === "generate" ? { response_format: { type: "json_object" } } : {}), ...(mode === "chat" ? { model_options: { reasoning: { enabled: false } } } : {}), ...(mode === "generate" && process.env.AI_REASONING_EFFORT ? { reasoning_effort: process.env.AI_REASONING_EFFORT } : {}), messages: [
+      body: JSON.stringify({ model, stream: streaming, max_tokens: 1024, ...(mode === "generate" ? { response_format: { type: "json_object" } } : {}), ...(mode === "chat" ? { model_options: { reasoning: { enabled: false } } } : {}), ...(mode === "generate" && process.env.AI_REASONING_EFFORT ? { reasoning_effort: process.env.AI_REASONING_EFFORT } : {}), messages: [
         { role: "system", content: mode === "generate"
           ? 'Create useful board content. Return only JSON: {"title":"short title","notes":["note text"]}. Return 1 to 40 concise notes. No markup, tools, or external actions.'
           : "You are the Flowboard workspace assistant. Help with planning and brainstorming. You cannot change boards or execute external actions. Answer in plain text. Do not use tools." },
@@ -62,6 +67,12 @@ export async function POST(request: Request) {
       ] }),
     });
     if (!response.ok) return Response.json({ error: response.status === 429 ? "The AI provider is busy. Try again shortly." : "The AI service could not complete the request. Try again." }, { status: response.status === 429 ? 429 : 502 });
+    if (streaming) {
+      if (!response.body || !response.headers.get("content-type")?.includes("text/event-stream")) throw new Error("Streaming is unavailable");
+      let bytes = 0;
+      const bounded = response.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({ transform(chunk, controller) { bytes += chunk.byteLength; if (bytes > 1_000_000) controller.error(new Error("Response exceeded limit")); else controller.enqueue(chunk); } }));
+      return new Response(bounded, { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-store, no-transform", "X-Accel-Buffering": "no" } });
+    }
     const completion = await response.json();
     const content = completion?.choices?.[0]?.message?.content;
     if (typeof content !== "string" || !content.trim() || content.length > 50000) throw new Error("Invalid response");

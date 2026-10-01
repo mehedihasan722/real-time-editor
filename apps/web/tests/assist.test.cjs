@@ -15,8 +15,8 @@ test("AI command output becomes editable notes only after validation", () => {
 function route({ user = "user_1", org = "org_1", boardOrg = "org_1", fetcher = async () => Response.json({ choices: [{ message: { content: '{"title":"Plan","notes":["First step"]}' } }] }), env = {}, method = "POST" } = {}) {
   return load("src/app/api/assist/route.ts", {
     "@clerk/nextjs/server": { auth: async () => ({ userId: user, orgId: org, sessionClaims: { aud: "convex" }, getToken: async () => "private-clerk-token" }) },
-    "convex/browser": { ConvexHttpClient: class { setAuth() {} async query() { return { orgId: boardOrg, title: "PRIVATE BOARD TITLE" }; } } },
-    "../../../../convex/_generated/api": { api: { board: { get: "get" } } },
+    "convex/browser": { ConvexHttpClient: class { setAuth() {} async mutation() { return true; } async query() { return { orgId: boardOrg, title: "PRIVATE BOARD TITLE" }; } } },
+    "../../../../convex/_generated/api": { api: { board: { get: "get" }, assist: { reserveRequest: "reserveRequest" } } },
     "@/lib/public-env": { publicEnv: { success: true, data: { NEXT_PUBLIC_CONVEX_URL: "https://example.convex.cloud" } } },
     "@/lib/server-env": { serverEnv: { success: true } },
   }, { fetch: fetcher, process: { env: { NODE_ENV: "production", AI_BASE_URL: "https://model.example/v1", AI_MODEL: "test-model", HERMES_BASE_URL: "https://hermes.example/v1", HERMES_API_KEY: "test-key", ...env } } })[method];
@@ -51,6 +51,18 @@ test("Hermes chat uses the dedicated server and returns plain text", async () =>
   assert.equal(response.status, 200);
   assert.equal(sent.url, "https://hermes.example/v1/chat/completions");
   assert.equal(JSON.parse(sent.body).model, "hermes-agent");
+});
+
+test("Hermes SSE remains streaming and propagates a cancellation signal upstream", async () => {
+  let sent;
+  const frames = 'data: {"choices":[{"delta":{"content":"Plan"}}]}\n\ndata: [DONE]\n\n';
+  const handler = route({ fetcher: async (url, options) => { sent = options; return new Response(frames, { headers: { "content-type": "text/event-stream" } }); } });
+  const response = await handler(new Request("https://flowboard.example/api/assist", { method: "POST", body: JSON.stringify({ boardId: "board_1", mode: "chat", stream: true, messages: [{ role: "user", content: "Plan" }] }) }));
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("content-type"), "text/event-stream");
+  assert.equal(await response.text(), frames);
+  assert.equal(JSON.parse(sent.body).stream, true);
+  assert.ok(sent.signal instanceof AbortSignal);
 });
 
 test("Assist capability discovery requires login and exposes no provider secrets", async () => {

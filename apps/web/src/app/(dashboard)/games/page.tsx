@@ -2,8 +2,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Gamepad2, Pause, Play, RotateCcw, Search, Trophy } from "lucide-react";
 import { games, Game, puzzleIds } from "@/lib/games";
-import { CanvasGame } from "./canvas-game";
-import { PuzzleGame } from "./puzzle-game";
+import dynamic from "next/dynamic";
+const CanvasGame = dynamic(() => import("./canvas-game").then(module => module.CanvasGame), { ssr: false });
+const PuzzleGame = dynamic(() => import("./puzzle-game").then(module => module.PuzzleGame), { ssr: false });
 import "./games.css";
 const categories = ["All games", "Action", "Sports", "Racing", "Adventure", "Classics", "Puzzle", "Strategy"];
 export default function GamesPage() {

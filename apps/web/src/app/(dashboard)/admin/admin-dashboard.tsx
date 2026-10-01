@@ -12,7 +12,7 @@ import "./admin-dashboard.css";
 import { createBoardCsv } from "@/lib/admin-report";
 
 export default function AdminDashboard({ orgId }: { orgId: string }) {
-  const { results, status, loadMore } = usePaginatedQuery(api.boards.list, { orgId }, { initialNumItems: 100 });
+  const { results, status, loadMore } = usePaginatedQuery(api.boards.adminList, { orgId }, { initialNumItems: 100 });
   const boards = status === "LoadingFirstPage" ? undefined : results;
   const [search, setSearch] = useState("");
   const [period, setPeriod] = useState("6");

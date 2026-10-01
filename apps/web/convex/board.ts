@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { mutation, query, internalMutation, internalAction, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getActiveOrganizationId } from "../src/lib/organization-claim";
+import { assertEditor } from "../src/lib/roles";
 
 const images = [
   "/placeholders/1.svg",
@@ -63,6 +64,7 @@ export const create = mutation({
     }
 
     const title = boardTitleSchema.parse(args.title);
+    assertEditor(identity);
     const randomImage = images[Math.floor(Math.random() * images.length)];
 
     const board = await ctx.db.insert("boards", {
@@ -90,6 +92,7 @@ export const remove = mutation({
     const board = await ctx.db.get(args.id);
     if (!board) return null;
     assertBoardOrganization(identity, board);
+    assertEditor(identity);
     await ctx.db.delete(args.id);
     await ctx.scheduler.runAfter(0, internal.board.cleanupFavourites, { id: args.id });
     const jobId = await ctx.db.insert("roomCleanup", { roomId: args.id, attempts: 0, status: "pending" });
@@ -163,6 +166,7 @@ export const update = mutation({
     if (!board) return null;
     assertBoardOrganization(identity, board);
     const title = boardTitleSchema.parse(args.title);
+    assertEditor(identity);
 
     await ctx.db.patch(args.id, {
       title,
@@ -188,6 +192,7 @@ export const favourite = mutation({
       throw new Error("Board not found");
     }
     assertBoardOrganization(identity, board);
+    assertEditor(identity);
     if (board.orgId !== args.orgId) {
       throw new Error("Board does not belong to this organization");
     }
@@ -230,6 +235,7 @@ export const unfavourite = mutation({
       throw new Error("Board not found");
     }
     assertBoardOrganization(identity, board);
+    assertEditor(identity);
 
     const userId = identity.subject;
 

@@ -6,6 +6,7 @@ import { Id } from "../../../../convex/_generated/dataModel";
 import { z } from "zod";
 import { publicEnv } from "@/lib/public-env";
 import { serverEnv } from "@/lib/server-env";
+import { canEdit, workspaceRole } from "@/lib/roles";
 
 const requestSchema = z.object({
   room: z.string().trim().min(1).max(128),
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
   const session = liveblocks.prepareSession(user.id, { userInfo });
 
   if (room) {
-    session.allow(room, session.FULL_ACCESS);
+    session.allow(room, canEdit(workspaceRole(authorization.orgRole)) ? session.FULL_ACCESS : session.READ_ACCESS);
   }
 
   const { status, body } = await session.authorize();

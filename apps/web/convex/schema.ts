@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { defineSchema, defineTable } from "convex/server";
 
 export default defineSchema({
+  assistQuota: defineTable({ orgId: v.string(), userId: v.string(), window: v.number(), count: v.number() }).index("by_org_user", ["orgId", "userId"]),
   roomCleanup: defineTable({
     roomId: v.string(),
     attempts: v.number(),

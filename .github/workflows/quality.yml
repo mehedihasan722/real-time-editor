@@ -33,7 +33,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - name: Install browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: Browser smoke tests
         run: npm run test:e2e
       - name: Upload browser test results

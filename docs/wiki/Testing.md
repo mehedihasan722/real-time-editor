@@ -30,7 +30,7 @@ The live suite creates a disposable board, edits a note, verifies it in a second
 
 ## Board files and bounds
 
-- Boards support 1,000 objects and explain when that limit is reached.
+- Boards support 5,000 objects with viewport culling and explain when that limit is reached.
 - Template and editable-file insertion is all-or-nothing when capacity is insufficient.
 - Editable files use versioned JSON, validate every layer, and must be at most 10 MB. Imports add objects rather than replacing existing content.
 - PNG/PDF exports include board objects, not comments or cursor presence. Images scale to fit a maximum 4,096-pixel export dimension.
@@ -38,3 +38,5 @@ The live suite creates a disposable board, edits a note, verifies it in a second
 - JSON imports reject active SVG image data, unsupported layer types, nonfinite/out-of-range coordinates, and unsafe note links.
 
 Verify mobile editing and exports on your supported browsers before announcing support for a new device family. Keep live test accounts separate from production workspaces.
+
+The fixture matrix includes Chromium, Firefox, WebKit and mobile Chromium. Install them with `npx playwright install chromium firefox webkit`. `npm run test:e2e -- --project=chromium` selects a project. The manual authenticated workflow and dedicated primary/peer/admin/member/guest sessions are described in [Enterprise architecture](Enterprise-Architecture).

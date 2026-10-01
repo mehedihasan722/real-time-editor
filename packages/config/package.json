@@ -1,0 +1,9 @@
+{
+  "name": "@flowboard/config",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./typescript": "./typescript.json",
+    "./tailwind": "./tailwind.ts"
+  }
+}

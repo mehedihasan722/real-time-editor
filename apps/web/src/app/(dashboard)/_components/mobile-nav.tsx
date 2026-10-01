@@ -1,5 +1,6 @@
 "use client";
 import { useAuth } from "@clerk/nextjs";
+import { canAdminister, workspaceRole } from "@/lib/roles";
 import Link from "next/link";
 import { Menu, LayoutDashboard, Shapes, BookOpen, Shield, Settings, Gamepad2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -12,7 +13,7 @@ export default function MobileNav() {
       <DropdownMenuItem asChild><Link href="/games"><Gamepad2 className="h-4 w-4 mr-2" />Games</Link></DropdownMenuItem>
       <DropdownMenuItem asChild><Link href="/guide"><BookOpen className="h-4 w-4 mr-2" />Guide</Link></DropdownMenuItem>
       <DropdownMenuItem asChild><Link href="/settings"><Settings className="h-4 w-4 mr-2" />Settings</Link></DropdownMenuItem>
-      {orgRole === "org:admin" && <DropdownMenuItem asChild><Link href="/admin"><Shield className="h-4 w-4 mr-2" />Admin</Link></DropdownMenuItem>}
+      {canAdminister(workspaceRole(orgRole)) && <DropdownMenuItem asChild><Link href="/admin"><Shield className="h-4 w-4 mr-2" />Admin</Link></DropdownMenuItem>}
     </DropdownMenuContent>
   </DropdownMenu>;
 }

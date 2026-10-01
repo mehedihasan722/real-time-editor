@@ -47,25 +47,35 @@ import useDisableScrollBounce from "@/hooks/use-disable-scroll-bounce";
 import { BoardStarter } from "./board-starter";
 import { BoardControls } from "./board-controls";
 import { getTemplateLayers, getWorkspaceType } from "@/lib/board-templates";
-import { TaskWorkspace } from "./task-workspace";
-import { RetrospectiveWorkspace } from "./retrospective-workspace";
-import { AIPlayground } from "./ai-playground";
-import { WeeklyWorkspace } from "./weekly-workspace";
+import dynamic from "next/dynamic";
+const TaskWorkspace = dynamic(() => import("./task-workspace").then(module => module.TaskWorkspace), { ssr: false });
+const RetrospectiveWorkspace = dynamic(() => import("./retrospective-workspace").then(module => module.RetrospectiveWorkspace), { ssr: false });
+const AIPlayground = dynamic(() => import("./ai-playground").then(module => module.AIPlayground), { ssr: false });
+const WeeklyWorkspace = dynamic(() => import("./weekly-workspace").then(module => module.WeeklyWorkspace), { ssr: false });
+const RequirementsWorkspace = dynamic(() => import("./requirements-workspace").then(module => module.RequirementsWorkspace), { ssr: false });
 import { createDiagramShapeLayer } from "@/lib/diagram-shapes";
 import { recognizeDrawing } from "@/lib/smart-drawing";
 import { DiagramShapeKind } from "@/types/canvas";
 import { BoardFiles } from "./board-files";
 import { MAX_LAYERS, getBoardBounds } from "@/lib/board-portability";
 import { toast } from "sonner";
+import { SpatialIndex } from "@flowboard/utils/spatial-index";
+import { ConnectionStatus } from "./connection-status";
+import { useFrameCallback } from "@flowboard/hooks/use-frame-callback";
+import { useLongTaskObserver } from "@flowboard/hooks/use-long-task-observer";
+import { recordDuration } from "@/lib/monitoring";
 
 interface CanvasProps {
   boardId: string;
 }
 const Canvas = ({ boardId }: CanvasProps) => {
+  useLongTaskObserver(useCallback(duration => recordDuration("canvas.longtask", duration), []));
   const layerIds = useStorage((root) => root.layerIds);
+  const canWrite = useSelf(me => me.canWrite) ?? false;
   const workspace = useStorage(root => root.workspace || (root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "To-do planning") ? "todo" : root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "Team retrospective") ? "retrospective" : root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "AI Playground") ? "playground" : null));
   const [showCanvas, setShowCanvas] = useState(false);
   const legacyWeekly = useStorage(root => root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "Weekly update"));
+  const legacyRequirements = useStorage(root => root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "Product requirements"));
   const roadmapCards = useStorage(root => root.layerIds.flatMap(id => {
     const layer = root.layers[id];
     return layer?.type === LayerType.Note && layer.roadmap ? [{ id, ...layer }] : [];
@@ -81,6 +91,22 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [exporting, setExporting] = useState(false);
+  const [viewport, setViewport] = useState({ width: 1920, height: 1080 });
+  const entries = useStorage(root => root.layerIds.map(id => [id, root.layers[id]] as const).filter((entry): entry is readonly [string, Layer] => Boolean(entry[1])));
+  const selection = useSelf(me => me.presence.selection);
+  const spatialIndex = useMemo(() => new SpatialIndex(entries), [entries]);
+  const visibleIds = useMemo(() => {
+    if (exporting) return layerIds;
+    const visible = spatialIndex.query({ x: (-camera.x - 200) / zoom, y: (-camera.y - 200) / zoom, width: (viewport.width + 400) / zoom, height: (viewport.height + 400) / zoom });
+    for (const id of selection || []) visible.add(id);
+    return layerIds.filter(id => visible.has(id));
+  }, [exporting, layerIds, spatialIndex, camera, zoom, viewport, selection]);
+  useEffect(() => {
+    const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
+    resize(); window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
   const flowBounds = useStorage(root => (root.workspace === "flowchart" || root.workspace === "roadmap") ? getBoardBounds(root.layerIds.map(id => root.layers[id]).filter(Boolean)) : null);
   const fittedFlow = useRef(false);
   useEffect(() => {
@@ -469,8 +495,10 @@ const Canvas = ({ boardId }: CanvasProps) => {
     }));
   }, [zoom]);
 
+  const publishCursor = useMutation(({ setMyPresence }, point: Point | null) => setMyPresence({ cursor: point }), []);
+  const scheduleCursor = useFrameCallback(publishCursor);
   const onPointerMove = useMutation(
-    ({ setMyPresence, storage }, e: React.PointerEvent) => {
+    ({ storage }, e: React.PointerEvent) => {
       e.preventDefault();
 
       if (panPointer.current?.id === e.pointerId) {
@@ -517,7 +545,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
             liveLayerIds.push(segmentId);
           }
         }
-        setMyPresence({ cursor: current });
+        scheduleCursor(current);
         return;
       }
 
@@ -532,7 +560,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       } else if (canvasState.mode === CanvasMode.Pencil) {
         continueDrawing(current, e);
       }
-      setMyPresence({ cursor: current });
+      scheduleCursor(current);
     },
     [
       canvasState,
@@ -543,12 +571,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
       startMultiSelection,
       updateSelectionNet,
       continueDrawing,
+      scheduleCursor,
     ]
   );
 
-  const onPointerLeave = useMutation(({ setMyPresence }) => {
-    setMyPresence({ cursor: null });
-  }, []);
+  const onPointerLeave = useCallback(() => scheduleCursor(null), [scheduleCursor]);
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -623,6 +650,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const onLayerPointerDown = useMutation(
     ({ storage, self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
+      if (!self.canWrite) return;
       if (e.button === 1) return;
 
       if (canvasState.mode === CanvasMode.Pencil && canvasState.tool === "eraser") {
@@ -676,6 +704,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
     function onKeyDown(e: KeyboardEvent) {
       const target = e.target as HTMLElement | null;
       if (target?.closest("input, textarea, [contenteditable=true]")) return;
+      if (!canWrite && ["Delete", "Backspace", "z", "y"].includes(e.key)) return;
 
       switch (e.key) {
         case "Delete":
@@ -731,12 +760,13 @@ const Canvas = ({ boardId }: CanvasProps) => {
     return () => {
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [deleteLayers, history, resetView, zoom, zoomTo]);
+  }, [deleteLayers, history, resetView, zoom, zoomTo, canWrite]);
 
-  if (workspace === "todo" && !showCanvas) return <TaskWorkspace onCanvas={() => setShowCanvas(true)} />;
-  if (workspace === "retrospective" && !showCanvas) return <RetrospectiveWorkspace onCanvas={() => setShowCanvas(true)} />;
-  if (workspace === "playground" && !showCanvas) return <AIPlayground boardId={boardId} onCanvas={() => setShowCanvas(true)} onGenerated={importLayers} />;
-  if ((workspace === "weekly" || (!workspace && legacyWeekly)) && !showCanvas) return <WeeklyWorkspace onCanvas={() => setShowCanvas(true)} />;
+  if (canWrite && workspace === "todo" && !showCanvas) return <TaskWorkspace onCanvas={() => setShowCanvas(true)} />;
+  if (canWrite && workspace === "retrospective" && !showCanvas) return <RetrospectiveWorkspace onCanvas={() => setShowCanvas(true)} />;
+  if (canWrite && workspace === "playground" && !showCanvas) return <AIPlayground boardId={boardId} onCanvas={() => setShowCanvas(true)} onGenerated={importLayers} />;
+  if (canWrite && (workspace === "weekly" || (!workspace && legacyWeekly)) && !showCanvas) return <WeeklyWorkspace onCanvas={() => setShowCanvas(true)} />;
+  if (canWrite && (workspace === "requirements" || (!workspace && legacyRequirements)) && !showCanvas) return <RequirementsWorkspace onCanvas={() => setShowCanvas(true)} />;
 
   return (
     <main className="h-full w-full relative board-canvas future-board touch-none" onPointerDownCapture={event => {
@@ -751,6 +781,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       {workspace === "todo" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open tasks</button>}
       {workspace === "retrospective" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open retrospective</button>}
       {workspace === "playground" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open AI Playground</button>}
+      {(workspace === "requirements" || (!workspace && legacyRequirements)) && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open product requirements</button>}
       {(workspace === "weekly" || (!workspace && legacyWeekly)) && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open weekly check-in</button>}
       {workspace === "flowchart" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => applyStarter("Flowchart")}>Add connected flowchart</button>}
       {workspace === "roadmap" && <aside className="absolute bottom-24 left-3 top-24 z-30 hidden w-48 overflow-auto rounded-xl border bg-background p-4 text-foreground shadow-sm lg:block">
@@ -764,9 +795,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
         {roadmapCards.map(card => <button key={card.id} className="mb-2 flex w-full items-start gap-2 rounded p-2 text-left text-xs hover:bg-muted" onClick={() => setCamera({ x: window.innerWidth / 2 - (card.x + card.width / 2) * zoom, y: window.innerHeight / 2 - (card.y + card.height / 2) * zoom })}><span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${card.status === "done" ? "bg-green-500" : card.status === "in-progress" ? "bg-blue-500" : "bg-slate-400"}`} /><span>{card.value}</span></button>)}
       </aside>}
       <Participants />
-      <BoardFiles boardId={boardId} onImport={importLayers} />
+      <ConnectionStatus />
+      <BoardFiles boardId={boardId} onImport={importLayers} onExportState={setExporting} />
       {layerIds.length >= MAX_LAYERS && <p role="status" className="absolute bottom-20 left-1/2 z-30 -translate-x-1/2 rounded bg-amber-100 px-4 py-2 text-sm text-amber-950">Board limit reached ({MAX_LAYERS} objects). Delete objects to add more.</p>}
-      <Toolbar
+      {!canWrite && <p role="status" className="absolute left-1/2 top-20 z-30 -translate-x-1/2 rounded-lg border bg-background px-4 py-2 text-sm">Read-only guest access</p>}
+      {canWrite && <Toolbar
         commentsOpen={commentsOpen}
         onOpenComments={() => { setCommentsOpen(open => !open); setPlacingComment(false); }}
         canvasState={canvasState}
@@ -782,10 +815,10 @@ const Canvas = ({ boardId }: CanvasProps) => {
         onDrawingColorChange={setLastUsedColor}
         onInsertFrame={insertFrame}
         onInsertSticker={insertSticker}
-      />
-      <SelectionTools camera={camera} zoom={zoom} setLastUsedColor={setLastUsedColor} />
+      />}
+      {canWrite && <SelectionTools camera={camera} zoom={zoom} setLastUsedColor={setLastUsedColor} />}
       <CommentSidebar open={commentsOpen} onClose={() => { setCommentsOpen(false); setPlacingComment(false); }} camera={camera} zoom={zoom} point={commentPoint} placing={placingComment} onPlace={() => { setCanvasState({ mode: CanvasMode.None }); setCommentPoint(null); setPlacingComment(true); }} onSubmitted={() => setCommentPoint(null)} onOpen={() => setCommentsOpen(true)} />
-      {starterOpen && (
+      {canWrite && starterOpen && (
         <BoardStarter
           boardId={boardId}
           onGenerated={importLayers}
@@ -821,8 +854,9 @@ const Canvas = ({ boardId }: CanvasProps) => {
             transformOrigin: "0 0",
           }}
         >
-          <g data-export-content>{layerIds.map((layerId) => (
-            <LayerPreview
+          <g data-export-content>{visibleIds.map((layerId) => (
+              <LayerPreview
+                readOnly={!canWrite}
               key={layerId}
               id={layerId}
               onLayerPointerDown={onLayerPointerDown}

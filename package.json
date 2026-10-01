@@ -2,17 +2,18 @@
   "name": "flowboard",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "dev": "turbo run dev --filter=@flowboard/web",
     "build": "turbo run build",
-    "lint": "turbo run lint",
+    "lint": "turbo run lint && eslint packages --config apps/web/eslint.config.mjs --rule \"@next/next/no-html-link-for-pages:off\"",
     "typecheck": "turbo run typecheck",
     "test": "node --test apps/web/tests/*.test.cjs",
     "start": "npm run start --workspace=@flowboard/web",
-    "test:e2e": "npm run test:e2e --workspace=@flowboard/web",
-    "test:e2e:live": "npm run test:e2e:live --workspace=@flowboard/web",
+    "test:e2e": "npm run test:e2e --workspace=@flowboard/web --",
+    "test:e2e:live": "npm run test:e2e:live --workspace=@flowboard/web --",
     "ai:setup": "node scripts/setup-ai.cjs"
   },
   "devDependencies": {

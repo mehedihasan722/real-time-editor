@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ["@flowboard/ui", "@flowboard/utils", "@flowboard/types", "@flowboard/hooks"],
   output: "standalone",
   poweredByHeader: false,
   async headers() {

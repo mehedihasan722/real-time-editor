@@ -6,17 +6,31 @@ test("create, edit, collaborate, export and delete a test board", async ({ page,
   await page.getByRole("button", { name: /Create new|New Board/i }).first().click();
   await expect(page).toHaveURL(/\/board\//);
   const boardUrl = page.url();
-  const second = await browser.newContext({ storageState: process.env.FLOWBOARD_E2E_AUTH_STATE });
+  const second = await browser.newContext({ storageState: process.env.FLOWBOARD_E2E_PEER_STATE ?? process.env.FLOWBOARD_E2E_AUTH_STATE });
   try {
     await expect(page.getByRole("button", { name: "Board files" })).toBeVisible();
     await page.getByRole("button", { name: "Plan roadmap", exact: true }).click();
-    const editor = page.locator('[contenteditable="true"]').first();
+    const editor = page.getByRole("textbox", { name: "Milestone title", exact: true }).first();
     await expect(editor).toBeVisible();
     const marker = `E2E collaboration ${Date.now()}`;
     await editor.fill(marker);
+    await editor.press("Tab");
     const peer = await second.newPage();
     await peer.goto(boardUrl);
-    await expect(peer.getByText(marker, { exact: true })).toBeVisible({ timeout: 20000 });
+    await expect(peer.getByRole("textbox", { name: "Milestone title", exact: true }).first()).toHaveValue(marker, { timeout: 20000 });
+    if (process.env.FLOWBOARD_E2E_PEER_STATE) {
+      const userId = (target: typeof page) => target.evaluate(() => (window as unknown as { Clerk: { user: { id: string } } }).Clerk.user.id);
+      expect(await userId(peer)).not.toBe(await userId(page));
+      await page.context().setOffline(true);
+      try {
+        await page.getByRole("textbox", { name: "Milestone tags", exact: true }).first().fill("offline-edit");
+        await page.getByRole("textbox", { name: "Milestone tags", exact: true }).first().press("Tab");
+        await peer.getByRole("textbox", { name: "Milestone description", exact: true }).first().fill("Peer remained online");
+        await peer.getByRole("textbox", { name: "Milestone description", exact: true }).first().press("Tab");
+      } finally { await page.context().setOffline(false); }
+      await expect(peer.getByRole("textbox", { name: "Milestone tags", exact: true }).first()).toHaveValue("offline-edit", { timeout: 20000 });
+      await expect(page.getByRole("textbox", { name: "Milestone description", exact: true }).first()).toHaveValue("Peer remained online", { timeout: 20000 });
+    }
     for (const format of ["editable board", "PNG", "PDF"]) {
       await page.getByRole("button", { name: "Board files" }).click();
       const pending = page.waitForEvent("download");

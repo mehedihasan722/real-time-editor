@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { LayerType, type Layer } from "@/types/canvas";
 
-export const MAX_LAYERS = 1000;
+export const MAX_LAYERS = 5000;
 export const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
 export const MAX_IMAGE_BYTES = 256 * 1024;
 const number = z.number().finite();
@@ -11,7 +11,7 @@ const common = {
   width: number.min(0).max(100000), height: number.min(0).max(100000),
   fill: color, value: z.string().max(20000).optional(),
 };
-const workspaceNote = { checkIn: z.object({ owner: z.string().max(200), week: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), mood: z.enum(["", "Amazing", "Happy", "Neutral", "Sad", "Not well"]), priorities: z.array(z.object({ text: z.string().max(500), done: z.boolean() })).max(30), achievements: z.array(z.string().max(500)).max(30), issues: z.string().max(2000), objectives: z.array(z.object({ title: z.string().max(200), progress: number.min(0).max(100), status: z.enum(["on-track", "at-risk", "off-track"]) })).max(20) }).optional(), roadmap: z.boolean().optional(), description: z.string().max(2000).optional(), tags: z.string().max(200).optional(), status: z.enum(["planned", "in-progress", "done"]).optional(), lane: z.enum(["positive", "improve", "action"]).optional(), completed: z.boolean().optional(), dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), project: z.string().max(100).optional() };
+const workspaceNote = { requirementSection: z.enum(["problem", "goals", "requirements", "metrics", "risks", "discussion"]).optional(), requirementPriority: z.enum(["must", "should", "could"]).optional(), checkIn: z.object({ owner: z.string().max(200), week: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), mood: z.enum(["", "Amazing", "Happy", "Neutral", "Sad", "Not well"]), priorities: z.array(z.object({ text: z.string().max(500), done: z.boolean() })).max(30), achievements: z.array(z.string().max(500)).max(30), issues: z.string().max(2000), objectives: z.array(z.object({ title: z.string().max(200), progress: number.min(0).max(100), status: z.enum(["on-track", "at-risk", "off-track"]) })).max(20) }).optional(), roadmap: z.boolean().optional(), description: z.string().max(2000).optional(), tags: z.string().max(200).optional(), status: z.enum(["planned", "in-progress", "done"]).optional(), lane: z.enum(["positive", "improve", "action"]).optional(), completed: z.boolean().optional(), dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), project: z.string().max(100).optional() };
 const shape = z.enum(["line", "arrow", "elbow-arrow", "block-arrow", "divider", "rectangle", "rounded", "circle", "triangle", "diamond", "star", "arrow-right", "arrow-left", "hexagon", "database", "cloud", "plus", "document", "parallelogram", "terminator", "actor", "server", "callout"]);
 export const layerSchema = z.discriminatedUnion("type", [
   z.object({ ...common, type: z.literal(LayerType.Rectangle) }),
