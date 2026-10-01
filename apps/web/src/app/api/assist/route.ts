@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     const response = await fetch(url, {
       method: "POST", redirect: "error", signal: AbortSignal.timeout(50000),
       headers: { "Content-Type": "application/json", ...(key ? { Authorization: `Bearer ${key}` } : {}) },
-      body: JSON.stringify({ model, stream: false, max_tokens: 1024, ...(mode === "generate" && process.env.AI_REASONING_EFFORT ? { reasoning_effort: process.env.AI_REASONING_EFFORT } : {}), messages: [
+      body: JSON.stringify({ model, stream: false, max_tokens: 1024, ...(mode === "generate" ? { response_format: { type: "json_object" } } : {}), ...(mode === "chat" ? { model_options: { reasoning: { enabled: false } } } : {}), ...(mode === "generate" && process.env.AI_REASONING_EFFORT ? { reasoning_effort: process.env.AI_REASONING_EFFORT } : {}), messages: [
         { role: "system", content: mode === "generate"
           ? 'Create useful board content. Return only JSON: {"title":"short title","notes":["note text"]}. Return 1 to 40 concise notes. No markup, tools, or external actions.'
           : "You are the Flowboard workspace assistant. Help with planning and brainstorming. You cannot change boards or execute external actions. Answer in plain text. Do not use tools." },

@@ -32,7 +32,7 @@ Library navigation, admin, notifications, and comments follow the app theme. The
 3. Create a Liveblocks project and copy its secret key.
 4. Copy .env.example to apps/web/.env.local for local Next.js development and Docker. Fill in every value. Keep this file private.
 5. In one terminal, run cd apps/web followed by npx convex dev. In another terminal at the repository root, run npm install followed by npm run dev.
-6. Open http://localhost:3000 and sign in. Create or select a Clerk organization to make boards.
+6. Open http://localhost:3030 and sign in. Create or select a Clerk organization to make boards. The development server uses port 3030 to avoid Windows/Docker reservations around port 3000.
 
 The Convex deployment, Clerk application, and Liveblocks project are external services. Without their credentials the site cannot load boards. A connected deployment is required to verify live collaboration and admin data end to end.
 

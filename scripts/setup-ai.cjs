@@ -13,7 +13,7 @@ if (!fs.existsSync(path.join(home, "config.yaml"))) fs.writeFileSync(path.join(h
   model: { provider: "custom", default: "qwen3.5:2b", ollama_num_ctx: 65536, base_url: "http://ollama:11434/v1", api_key: "local" },
   model_options: { reasoning: { enabled: false } },
   platform_toolsets: { api_server: ["no_mcp"], cli: ["no_mcp"] },
-  agent: { max_turns: 2, disabled_toolsets: ["terminal", "file", "code_execution", "browser", "web", "memory", "session_search", "delegation", "cronjob", "skills", "todo", "kanban", "connections", "context_engine", "clarify", "computer_use", "vision", "video", "image_gen", "video_gen", "tts", "stt", "x_search", "homeassistant", "spotify", "discord", "discord_admin", "yuanbao"] },
+  agent: { reasoning_effort: false, max_turns: 2, disabled_toolsets: ["terminal", "file", "code_execution", "browser", "web", "memory", "session_search", "delegation", "cronjob", "skills", "todo", "kanban", "connections", "context_engine", "clarify", "computer_use", "vision", "video", "image_gen", "video_gen", "tts", "stt", "x_search", "homeassistant", "spotify", "discord", "discord_admin", "yuanbao"] },
   mcp_servers: {},
 }, null, 2));
 const compose = ["compose", "--env-file", envFile, "-f", path.join(root, "compose.ai.yaml")];
@@ -45,7 +45,7 @@ async function main() {
   if (!toolsResponse.ok || !Array.isArray(tools.data) || tools.data.some(tool => tool.enabled)) throw new Error("Hermes tools must be disabled before connecting it to Flowboard.");
   const response = await fetch("http://127.0.0.1:8642/v1/chat/completions", {
     method: "POST", signal: AbortSignal.timeout(180000), headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ model: "hermes-agent", messages: [{ role: "user", content: "Reply with only: ready" }], stream: false, max_tokens: 20 }),
+    body: JSON.stringify({ model: "hermes-agent", model_options: { reasoning: { enabled: false } }, messages: [{ role: "user", content: "Reply with only: ready" }], stream: false, max_tokens: 20 }),
   });
   if (!response.ok || !(await response.json()).choices?.[0]?.message?.content) throw new Error("Hermes did not answer its readiness test. Check docker compose logs before enabling it.");
   const filename = path.join(root, "apps/web/.env.local");
