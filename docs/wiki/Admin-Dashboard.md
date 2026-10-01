@@ -2,7 +2,7 @@
 
 The `/admin` route is restricted to active Clerk organization owners and admins. Boards remain authorized and isolated by Convex organization checks.
 
-The dashboard follows a charcoal and warm orange style with native light mode, creation history, an ownership donut chart, contributors, a world outline and recent board creations. Reports and charts cover loaded board pages; load remaining pages for a complete report. Counts are not session analytics. Geographic member data is not collected, so the world outline has no activity hotspots.
+The dashboard uses Flowboard’s shared light/dark surfaces, text and border tokens with its blue brand accent, creation history, an ownership donut chart, contributors, a world outline and recent board creations. Reports and charts cover loaded board pages; load remaining pages for a complete report. Counts are not session analytics. Geographic member data is not collected, so the world outline has no activity hotspots.
 
 Board rows expose a visible Delete action with a permanent-deletion confirmation. The existing Convex deletion mutation removes the board and schedules collaboration storage cleanup.
 

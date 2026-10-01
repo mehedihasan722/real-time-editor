@@ -3,7 +3,7 @@ import { build } from "esbuild";
 import fs from "node:fs";
 import path from "node:path";
 
-const css = fs.readFileSync("src/app/(dashboard)/admin/admin-dashboard.css", "utf8");
+const css = ["src/app/globals.css", "src/app/(dashboard)/admin/admin-dashboard.css"].map(file => fs.readFileSync(file, "utf8").replace(/^@(?:config|import).*$/gm, "")).join("\n");
 const fixture = (await build({
   stdin: { contents: `import React from 'react'; import { createRoot } from 'react-dom/client'; import { AdminMembers, OwnershipChart, WorkspaceWorld } from './src/app/(dashboard)/admin/admin-visualizations'; createRoot(document.getElementById('root')).render(<div className="admin-intelligence"><AdminMembers/><OwnershipChart owners={[{name:'Taylor',count:3},{name:'Alex',count:1}]} loading={false}/><WorkspaceWorld/></div>);`, loader: "tsx", resolveDir: path.resolve(".") },
   bundle: true, write: false, format: "iife", platform: "browser", jsx: "automatic", alias: { "@": path.resolve("src") },
@@ -44,5 +44,17 @@ for (const dark of [true, false]) test(`admin controls and charts in ${dark ? "d
   await expect(page.getByRole("img", { name: /Board ownership: Taylor, 3; Alex, 1/ })).toBeVisible();
   await expect(page.locator(".ai-map-land").first()).toBeAttached();
   await expect(page.getByText(/member geolocation/)).toBeVisible();
+  expect(await page.evaluate(() => {
+    const token = document.createElement("div");
+    token.style.backgroundColor = "var(--clerk-surface)";
+    token.style.color = "var(--clerk-foreground)";
+    document.querySelector(".admin-intelligence")!.append(token);
+    const surface = getComputedStyle(token).backgroundColor;
+    const foreground = getComputedStyle(token).color;
+    const mismatchedPanels = Array.from(document.querySelectorAll(".ai-panel")).filter(panel => getComputedStyle(panel).backgroundColor !== surface).length;
+    const mismatchedControls = Array.from(document.querySelectorAll(".ai-control")).filter(control => getComputedStyle(control).backgroundColor !== surface || getComputedStyle(control).color !== foreground).length;
+    token.remove();
+    return { mismatchedPanels, mismatchedControls };
+  })).toEqual({ mismatchedPanels: 0, mismatchedControls: 0 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
