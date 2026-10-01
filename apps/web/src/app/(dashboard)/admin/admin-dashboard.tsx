@@ -1,10 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { usePaginatedQuery } from "convex/react";
+import { useMutation, usePaginatedQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { Activity, ArrowDownToLine, ArrowUpRight, BarChart3, ChevronRight, LayoutDashboard, MoreHorizontal, Search, Star, Users } from "lucide-react";
+import { Activity, ArrowDownToLine, ArrowUpRight, BarChart3, ChevronRight, LayoutDashboard, MoreHorizontal, Trash2, Search, Star, Users } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
+import ConfirmModal from "@/components/confirm-modal";
+import { AdminMembers, OwnershipChart, WorkspaceWorld } from "./admin-visualizations";
 import Actions from "@/components/actions";
 import NewBoardButton from "../_components/new-board-button";
 import InviteButton from "../_components/invite-button";
@@ -14,6 +17,8 @@ import { createBoardCsv } from "@/lib/admin-report";
 export default function AdminDashboard({ orgId }: { orgId: string }) {
   const { results, status, loadMore } = usePaginatedQuery(api.boards.adminList, { orgId }, { initialNumItems: 100 });
   const boards = status === "LoadingFirstPage" ? undefined : results;
+  const removeBoard = useMutation(api.board.remove);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [period, setPeriod] = useState("6");
   const stats = useMemo(() => {
@@ -72,8 +77,10 @@ export default function AdminDashboard({ orgId }: { orgId: string }) {
       <section className="ai-panel ai-contributors"><div className="ai-panel-header"><div><h2>Team contribution</h2><p>Boards grouped by creator</p></div><Users size={17} /></div><div className="ai-owner-list">{stats.owners.slice(0, 5).map((owner, index) => <div className="ai-owner" key={index}><span className="ai-avatar" style={{ background: ["#463a2c", "#303e38", "#3b354c", "#303d4c", "#4c3438"][index] }}>{owner.name.slice(0, 2).toUpperCase()}</span><div><div><span>{owner.name}</span><strong>{owner.count}</strong></div><div className="ai-owner-track"><i style={{ width: `${owner.count / Math.max(1, stats.all.length) * 100}%` }} /></div></div></div>)}{!stats.owners.length && <p className="ai-empty">{boards === undefined ? "Loading contributors…" : "Your first board will start the story."}</p>}</div></section>
     </div>
 
+    <div className="ai-main-grid"><WorkspaceWorld /><OwnershipChart owners={stats.owners} loading={boards === undefined} /></div>
+    <AdminMembers />
     <div className="ai-bottom-grid">
-      <section className="ai-panel ai-board-panel"><div className="ai-panel-header"><div><h2>Workspace boards <span className="ai-count">{stats.all.length}</span></h2><p>Manage the spaces where your team works</p></div><div className="ai-create"><NewBoardButton orgId={orgId} compact /></div></div><label className="ai-search"><Search size={15} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search boards or owners…" aria-label="Search admin boards" /><kbd>Search</kbd></label><div className="ai-table-scroll"><table><thead><tr><th>Board name</th><th>Owner</th><th>Created</th><th>Starred</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>{filteredBoards.map(board => <tr key={board._id}><td><Link href={`/board/${board._id}`}><span className="ai-board-symbol"><LayoutDashboard size={14} /></span>{board.title}<ArrowUpRight size={12} /></Link></td><td>{board.authorName}</td><td>{new Date(board._creationTime).toLocaleDateString("en", { month: "short", day: "numeric" })}</td><td>{board.isFavourite ? <Star size={14} fill="currentColor" className="ai-star" /> : <span className="ai-muted">—</span>}</td><td><Actions id={board._id} title={board.title}><button aria-label={`Manage ${board.title}`} className="ai-row-menu"><MoreHorizontal size={17} /></button></Actions></td></tr>)}</tbody></table></div>{!filteredBoards.length && <p className="ai-empty">{boards === undefined ? "Loading your workspace…" : search ? "No boards match your search." : "Create a board to begin collaborating."}</p>}</section>
+      <section className="ai-panel ai-board-panel"><div className="ai-panel-header"><div><h2>Workspace boards <span className="ai-count">{stats.all.length}</span></h2><p>Manage the spaces where your team works</p></div><div className="ai-create"><NewBoardButton orgId={orgId} compact /></div></div><label className="ai-search"><Search size={15} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search boards or owners…" aria-label="Search admin boards" /><kbd>Search</kbd></label><div className="ai-table-scroll"><table><thead><tr><th>Board name</th><th>Owner</th><th>Created</th><th>Starred</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>{filteredBoards.map(board => <tr key={board._id}><td><Link href={`/board/${board._id}`}><span className="ai-board-symbol"><LayoutDashboard size={14} /></span>{board.title}<ArrowUpRight size={12} /></Link></td><td>{board.authorName}</td><td>{new Date(board._creationTime).toLocaleDateString("en", { month: "short", day: "numeric" })}</td><td>{board.isFavourite ? <Star size={14} fill="currentColor" className="ai-star" /> : <span className="ai-muted">—</span>}</td><td><div className="ai-board-actions"><ConfirmModal header={`Delete “${board.title}”?`} description="This permanently deletes the board and its collaborative content for every member. This cannot be undone." disabled={deleting !== null} onConfirm={() => { setDeleting(board._id); void removeBoard({ id: board._id }).then(() => toast.success("Board deleted")).catch(() => toast.error("Could not delete the board. Check your access and try again.")).finally(() => setDeleting(null)); }}><button className="ai-delete" disabled={deleting !== null} aria-label={`Delete ${board.title}`}><Trash2 size={14} />{deleting === board._id ? "Deleting…" : "Delete"}</button></ConfirmModal><Actions id={board._id} title={board.title}><button aria-label={`Manage ${board.title}`} className="ai-row-menu"><MoreHorizontal size={17} /></button></Actions></div></td></tr>)}</tbody></table></div>{!filteredBoards.length && <p className="ai-empty">{boards === undefined ? "Loading your workspace…" : search ? "No boards match your search." : "Create a board to begin collaborating."}</p>}</section>
       <aside className="ai-panel ai-activity"><div className="ai-panel-header"><div><h2>Recent creations</h2><p>Latest workspace additions</p></div><Activity size={16} /></div>{stats.all.slice(0, 5).map(board => <Link key={board._id} href={`/board/${board._id}`} className="ai-activity-item"><span className="ai-activity-dot" /><div><strong>{board.title}</strong><p>Created by {board.authorName}</p><small>{new Date(board._creationTime).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</small></div><ArrowUpRight size={14} /></Link>)}{!stats.all.length && <p className="ai-empty">New boards will appear here.</p>}<Link href="/" className="ai-all-boards">View all boards <ArrowUpRight size={14} /></Link></aside>
     </div>
     <footer className="ai-footer"><span><BarChart3 size={13} /> Flowboard · Workspace intelligence</span><span>Built for your next big idea.</span></footer>
