@@ -1,0 +1,25 @@
+.home-carousel-host { container-type: inline-size; min-width: 0; }
+.home-carousel { display: flex; flex-direction: column; height: 420px; padding: 20px; }
+.home-carousel__stage { position: relative; flex: 1; min-height: 0; display: grid; grid-template-rows: 1fr 90px; gap: 10px; }
+.home-carousel__copy { min-width: 0; animation: carousel-enter .45s ease-out both; }
+.home-carousel__copy h1 { font-size: 24px; line-height: 1.15; }
+.home-carousel__copy p { line-height: 1.5; font-size: 13px; }
+.home-carousel__art { position: relative; height: 100%; overflow: hidden; min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; animation: carousel-art-enter .55s ease-out both; }
+.home-carousel__image { display: block; pointer-events: none; max-width: 100%; width: 380px; height: 100%; max-height: 230px; object-fit: contain; border-radius: 20px; filter: drop-shadow(0 12px 20px #6652b51a); animation: carousel-float 6s ease-in-out .6s infinite; }
+.home-carousel__controls { position: relative; z-index: 1; height: 44px; flex-shrink: 0; margin-top: 10px; padding-top: 8px; }
+@container (min-width: 480px) { .home-carousel { height: 420px; padding: 24px; } .home-carousel__copy h1 { font-size: 28px; } .home-carousel__stage { grid-template-rows: 1fr 110px; } }
+@container (min-width: 760px) { .home-carousel { height: 320px; padding: 24px; } .home-carousel__stage { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; align-items: center; gap: 32px; } .home-carousel__copy h1 { font-size: 28px; } }
+@keyframes carousel-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes carousel-art-enter { from { opacity: 0; transform: translateX(18px) scale(.96); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes carousel-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .home-carousel__copy,.home-carousel__art,.home-carousel__image { animation: none; } }
+.reduce-motion .home-carousel__copy,.reduce-motion .home-carousel__art,.reduce-motion .home-carousel__image { animation: none; }
+@media (max-width: 380px) { .home-carousel { height: 440px; padding: 16px; } .home-carousel__copy h1 { font-size: 22px; } }
+
+.home-carousel__copy h1 { margin-top: 12px; }
+.home-carousel__copy p { margin-top: 12px; }
+.home-carousel__copy a { margin-top: 14px; padding-top: 10px; padding-bottom: 10px; }
+
+.dark .home-carousel__image { filter: brightness(.85) saturate(.9) drop-shadow(0 12px 20px #00000030); }
+.home-carousel__copy h1 { max-width: 480px; }
+.home-carousel__art { padding: 8px; }

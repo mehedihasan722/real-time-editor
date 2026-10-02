@@ -11,12 +11,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
     <main className="min-h-screen future-dashboard">
       <Sidebar />
-      <div className="min-h-screen pl-[60px]">
+      <div className="min-h-screen sm:pl-[60px]">
         <div className="flex min-h-screen gap-x-3">
           <OrgSidebar />
           <div className="flex min-h-screen min-w-0 flex-1 flex-col">
             <Navbar />
-            <div className="flex-1">{children}</div>
+            <div className="min-w-0 flex-1">{children}</div>
             <DashboardFooter />
           </div>
         </div>

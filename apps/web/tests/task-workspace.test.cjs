@@ -7,20 +7,21 @@ const ts = require("typescript");
 const React = require("react");
 const { LiveMap, LiveList, LiveObject } = require("@liveblocks/client");
 
-test("adding a task reveals it in Inbox and subscribes to the board's ordered IDs", () => {
+for (const canWrite of [true, false]) test(canWrite ? "adding a task reveals it in Inbox and subscribes to ordered IDs" : "read-only tasks reject creation without changing storage", () => {
   const updates = [];
   const states = [new Date(2026, 9, 1), "Completed", "unmatched search", "New task", "", "", true];
   const layers = new LiveMap([]);
   const layerIds = new LiveList([]);
   const storage = new LiveObject({ layers, layerIds });
   let selector;
+  const mutations = [];
   const code = ts.transpileModule(fs.readFileSync(path.resolve(__dirname, "../src/app/board/[boardId]/_components/task-workspace.tsx"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   const exports = {};
   const mocks = {
     react: { useState: () => { const index = updates.length; const value = states[index]; updates.push([]); return [value, next => updates[index].push(next)]; } },
     "next/link": { default: "a" },
     "lucide-react": new Proxy({}, { get: () => "span" }),
-    "@liveblocks/react/suspense": { useStorage: callback => { selector = callback; return callback({ layers: {}, layerIds: [] }); }, useSelf: callback => callback({ info: { name: "Tester" } }), useMutation: callback => (...args) => callback({ storage }, ...args) },
+    "@liveblocks/react/suspense": { useStorage: callback => { selector = callback; return callback({ layers: {}, layerIds: [] }); }, useSelf: callback => callback({ canWrite, info: { name: "Tester" } }), useMutation: callback => { const mutate = (...args) => callback({ storage, self: { canWrite } }, ...args); mutations.push(mutate); return mutate; } },
     "@/components/ui/button": { Button: "button" },
     "@/components/ui/input": { Input: "input" },
     "@/types/canvas": { LayerType: { Note: 4 } },
@@ -34,6 +35,7 @@ test("adding a task reveals it in Inbox and subscribes to the board's ordered ID
     if (node.type === "form") return node;
     for (const child of React.Children.toArray(node.props.children)) { const found = find(child); if (found) return found; }
   };
+  if (!canWrite) { assert.equal(find(tree), undefined); mutations[0](); assert.equal(layerIds.length, 0); assert.equal(layers.size, 0); return; }
   find(tree).props.onSubmit({ preventDefault() {} });
   assert.equal(layerIds.length, 1);
   const id = layerIds.get(0);

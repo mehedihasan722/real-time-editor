@@ -3,6 +3,7 @@ import React, { use } from "react";
 import EmptyOrg from "./_components/empty-org";
 import { useOrganization } from "@clerk/nextjs";
 import BoardList from "./_components/board-list";
+import { HomeCarousel } from "./_components/home-carousel";
 
 interface DashBoardPageProps {
   searchParams: Promise<{ search?: string; favourites?: string }>;
@@ -12,18 +13,12 @@ const DashboardPage = ({ searchParams }: DashBoardPageProps) => {
   const { organization } = useOrganization();
 
   return (
-    <div className="min-h-[calc(100vh-80px)] p-6">
+    <div className="min-h-[calc(100vh-80px)] p-3 sm:p-6">
       {!organization ? (
         <EmptyOrg />
       ) : (
         <div>
-          {!resolvedSearchParams.favourites && !resolvedSearchParams.search && <section className="future-hero">
-            <div><span className="future-hero__eyebrow">YOUR CREATIVE SPACE</span>
-              <h1>Ideas without limits.</h1>
-              <p>Think together, map what matters, and turn your next big idea into a shared board.</p>
-            </div>
-            <div className="future-hero__art" aria-hidden="true"><i /><i /><i /></div>
-          </section>}
+          {!resolvedSearchParams.favourites && !resolvedSearchParams.search && <HomeCarousel />}
           <BoardList orgId={organization.id} query={resolvedSearchParams} />
         </div>
       )}

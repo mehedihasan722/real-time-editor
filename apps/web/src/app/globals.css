@@ -1,5 +1,6 @@
 @config "../../tailwind.config.ts";
 @import "tailwindcss";
+@import "./home-carousel.css";
 @source "../../../../packages/ui/src";
 
 html,

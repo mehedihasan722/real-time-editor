@@ -12,7 +12,7 @@ const sections = [
   { title: "10. Personalize Flowboard", body: "Open Settings to choose Light, Dark, or System appearance. Canvas preferences control the grid, contrast, and motion. The plus button opens a searchable Tools and Marketplace catalog. In Diagram & Shapes, click a +N shapes control to reveal exactly N insertable shapes from that pack." },
 ];
 export default function GuidePage() {
-  return <div className="px-6 pb-10 max-w-[1050px]">
+  return <div className="px-3 sm:px-6 pb-10 max-w-[1050px]">
     <p className="text-xs uppercase tracking-[.2em] font-bold text-orange-700 dark:text-orange-400">Help center</p><h1 className="text-3xl font-bold mt-1">Flowboard guide</h1><p className="text-sm text-muted-foreground mt-2 mb-7">Everything you need to get started and work with your team.</p>
     <div className="grid md:grid-cols-2 gap-4">{sections.map(section => <section key={section.title} className="rounded-xl border border-border bg-card p-6 shadow-sm"><h2 className="font-semibold">{section.title}</h2><p className="text-sm text-muted-foreground mt-3 leading-6">{section.body}</p></section>)}</div>
     <div className="mt-6 flex gap-3"><Link href="/templates" className="rounded-md bg-[#4262ff] px-4 py-2 text-white font-semibold text-sm">Explore templates</Link><Link href="/" className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold">Go to boards</Link></div>
