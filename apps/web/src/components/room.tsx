@@ -8,6 +8,7 @@ import { Layer } from "@/types/canvas";
 import { getTemplateLayers, getWorkspaceType } from "@/lib/board-templates";
 import { client } from "../../liveblocks.config";
 import { resolveCommentUsers, resolveCommentMentions } from "@/lib/comment-users";
+import { RoomHealth } from "./room-health";
 
 // Create the room context
 const { RoomProvider } = createRoomContext(client);
@@ -22,7 +23,7 @@ interface RoomProps {
 const Room = ({ children, roomId, template, fallback }: RoomProps) => {
   const templateLayers = getTemplateLayers(template);
   return (
-    <LiveblocksProvider throttle={16} authEndpoint="/api/liveblocks-auth" resolveUsers={resolveCommentUsers} resolveMentionSuggestions={resolveCommentMentions}>
+    <LiveblocksProvider throttle={50} authEndpoint="/api/liveblocks-auth" resolveUsers={resolveCommentUsers} resolveMentionSuggestions={resolveCommentMentions}>
       <RoomProvider
         id={roomId}
         initialPresence={{
@@ -39,6 +40,7 @@ const Room = ({ children, roomId, template, fallback }: RoomProps) => {
           layerIds: new LiveList(templateLayers.map(([id]) => id)),
         }}
       >
+        <RoomHealth />
         <ClientSideSuspense fallback={fallback}> {children}</ClientSideSuspense>
       </RoomProvider>
     </LiveblocksProvider>

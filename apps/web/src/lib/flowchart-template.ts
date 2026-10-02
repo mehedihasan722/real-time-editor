@@ -1,6 +1,8 @@
 import { Layer, LayerType, ShapeLayer } from "@/types/canvas";
 
-export function getFlowchartLayers(title = "Product delivery flow"): [string, Layer][] {
+export type FlowchartStyle = "delivery" | "linear" | "decision" | "swimlane" | "custom";
+export function getFlowchartLayers(title = "Product delivery flow", style: FlowchartStyle = "delivery", steps: string[] = []): [string, Layer][] {
+  if (style !== "delivery") return getStyledFlowchart(title, style, steps);
   const charcoal = { r: 52, g: 70, b: 76, a: 1 };
   const purple = { r: 70, g: 64, b: 180, a: 1 };
   const green = { r: 38, g: 133, b: 65, a: 1 };
@@ -41,4 +43,32 @@ export function getFlowchartLayers(title = "Product delivery flow"): [string, La
   node("input", "document", 885, 710, 280, 130, "INPUT\nDraft scope · Research\nStakeholder feedback", white);
   layers[layers.length - 1][1] = { ...layers[layers.length - 1][1], strokeColor: charcoal } as ShapeLayer;
   return layers;
+}
+
+function getStyledFlowchart(title: string, style: FlowchartStyle, steps: string[]): [string, Layer][] {
+  const ink = { r: 52, g: 70, b: 76, a: 1 };
+  const accent = { r: 80, g: 75, b: 190, a: 1 };
+  const labels = (style === "custom" ? steps : style === "linear" ? ["Start", "Research", "Design", "Build", "Review", "Launch"] : style === "swimlane" ? ["Product · Define scope", "Design · Prototype", "Engineering · Implement", "QA · Validate", "Product · Release"] : ["Start", "Evaluate request", "Approved?", "Deliver", "Revise"]).map(value => value.trim().slice(0, 120)).filter(Boolean).slice(0, 20);
+  if (!labels.length) throw new Error("Add at least one flowchart step.");
+  const nodes: [string, Layer][] = labels.map((value, index) => {
+    const x = style === "swimlane" ? 160 + index % 3 * 320 : style === "decision" && index === 4 ? 850 : 450;
+    const y = style === "decision" && index === 4 ? 540 : 180 + index * 180;
+    return ["node-" + index, { type: LayerType.Shape, shape: style === "decision" && index === 2 ? "diamond" : index === 0 || index === labels.length - 1 ? "terminator" : "rectangle", x, y, width: 260, height: 100, value, fill: index === 2 ? accent : ink, strokeColor: ink, strokeWidth: 2 }];
+  });
+  const edges: [string, Layer][] = nodes.slice(1).map(([, target], index) => {
+    const source = nodes[index][1];
+    const x1 = source.x + source.width / 2, y1 = source.y + source.height;
+    const x2 = target.x + target.width / 2, y2 = target.y;
+    const width = Math.hypot(x2 - x1, y2 - y1);
+    return ["edge-" + index, { type: LayerType.Shape, shape: "arrow", x: (x1 + x2) / 2 - width / 2, y: (y1 + y2) / 2 - 12, width, height: 24, rotation: Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI, fill: ink, strokeColor: ink, strokeWidth: 2 }];
+  });
+  if (style === "decision") {
+    edges.pop();
+    edges.push(["branch", { type: LayerType.Shape, shape: "arrow", x: 710, y: 578, width: 140, height: 24, fill: ink, strokeColor: ink, strokeWidth: 2 }]);
+  }
+  const lanes: [string, Layer][] = style === "swimlane" ? ["Product", "Design", "Engineering"].flatMap((value, index): [string, Layer][] => [
+    ["lane-" + index, { type: LayerType.Rectangle, x: 140 + index * 320, y: 140, width: 300, height: 1100, fill: { r: 239 - index * 4, g: 241 - index * 4, b: 248, a: 1 } }],
+    ["lane-label-" + index, { type: LayerType.Text, x: 160 + index * 320, y: 145, width: 260, height: 30, fill: ink, value }],
+  ]) : [];
+  return [...lanes, ["heading", { type: LayerType.Text, x: 150, y: 65, width: 1000, height: 70, fill: ink, value: title }], ...edges, ...nodes];
 }

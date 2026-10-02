@@ -1,0 +1,25 @@
+{
+  "name": "@flowboard/utils",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@flowboard/types": "0.0.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.7.0",
+    "perfect-freehand": "^1.2.3"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "@types/react": "^19.3.0"
+  }
+}

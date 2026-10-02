@@ -8,7 +8,7 @@ import {
 } from "@liveblocks/client";
 
 export const client = createClient({
-  throttle: 16,
+  throttle: 50,
   authEndpoint: "/api/liveblocks-auth",
   resolveUsers: resolveCommentUsers,
   resolveMentionSuggestions: resolveCommentMentions,
@@ -31,7 +31,7 @@ declare global {
 
     // The Storage tree for the room, for useMutation, useStorage, etc.
     Storage: {
-      workspace: "retrospective" | "playground" | "todo" | "flowchart" | "roadmap" | "weekly" | null;
+      workspace: "retrospective" | "playground" | "todo" | "flowchart" | "roadmap" | "weekly" | "requirements" | null;
       layers: LiveMap<string, LiveObject<Layer>>;
       layerIds: LiveList<string>;
       // Example, a conflict-free list

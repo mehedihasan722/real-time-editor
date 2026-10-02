@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { ArcadeWorld } from "@/lib/arcade-world";
 import { Game } from "@/lib/games";
 import type { ThreeArcade } from "@/lib/three-arcade";
+import { ArcadeEngine } from "@/lib/arcade-engine";
+import { reportFailure, recordDuration } from "@/lib/monitoring";
 export function CanvasGame({ game, paused, onPause, onFinish }: { game: Game; paused: boolean; onPause: () => void; onFinish: (score: number) => void }) {
   const canvas = useRef<HTMLCanvasElement>(null), world = useRef<ArcadeWorld | null>(null), keys = useRef(new Set<string>()), pointer = useRef<{ x: number; y: number } | null>(null), pause = useRef(paused);
   const [hud, setHud] = useState({ score: 0, lives: 3, time: 0, over: false, won: false });
@@ -13,21 +15,29 @@ export function CanvasGame({ game, paused, onPause, onFinish }: { game: Game; pa
     const state = new ArcadeWorld(game.id); world.current = state;
     const pressedKeys = keys.current;
     let cancelled = false;
-    let frame = 0, previous = 0, update = 0, reported = false;
+    let frame = 0, previous = 0, update = 0, measured = 0, reported = false;
+    const manager = new ArcadeEngine();
+    const element = canvas.current;
+    const lost = (event: Event) => { event.preventDefault(); cancelled = true; cancelAnimationFrame(frame); manager.dispose(); scene.current = null; setError("The graphics context was lost. Restart this game to recover."); reportFailure("webgl"); };
+    element?.addEventListener("webglcontextlost", lost);
     const loop = (now: number) => {
+      if (cancelled) return;
       const dt = previous ? Math.min(.035, (now - previous) / 1000) : 0; previous = now;
       if (!pause.current && !document.hidden) state.step(dt, keys.current, pointer.current);
-      if (!document.hidden && !pause.current && (!state.over || !reported)) scene.current?.update(state, pointer.current);
+      if (!document.hidden && !pause.current && (!state.over || !reported)) {
+        const start = performance.now();
+        try { scene.current?.update(state, pointer.current); } catch (error) { lost(new Event("webglcontextlost")); reportFailure("webgl", error); return; }
+        if (now - measured > 5000) { measured = now; recordDuration("webgl.frame", performance.now() - start); }
+      }
       if (now - update > 100) { update = now; setHud({ score: state.score, lives: state.lives, time: Math.floor(state.time), over: state.over, won: state.won }); }
       if (state.over && !reported) { reported = true; onFinish(state.score); }
       frame = requestAnimationFrame(loop);
     };
-    import("@/lib/three-arcade").then(({ ThreeArcade }) => {
-      if (cancelled || !canvas.current) return;
-      try { scene.current = new ThreeArcade(canvas.current, game.id); canvas.current.focus(); frame = requestAnimationFrame(loop); }
-      catch { setError("3D rendering could not start. Enable hardware acceleration in your browser, then restart the game."); }
-    }).catch(() => { if (!cancelled) setError("The 3D engine could not load. Check your connection and restart the game."); });
-    return () => { cancelled = true; cancelAnimationFrame(frame); scene.current?.dispose(); scene.current = null; world.current = null; pressedKeys.clear(); };
+    if (element) manager.mount(element, game.id).then(engine => {
+      if (cancelled || !engine) return;
+      scene.current = engine; element.focus(); frame = requestAnimationFrame(loop);
+    }).catch(error => { if (!cancelled) { reportFailure("webgl", error); setError("The 3D engine could not start. Check hardware acceleration and restart the game."); } });
+    return () => { cancelled = true; element?.removeEventListener("webglcontextlost", lost); cancelAnimationFrame(frame); manager.dispose(); scene.current = null; world.current = null; pressedKeys.clear(); };
   }, [game.id, onFinish]);
   useEffect(() => {
     const normalize = (key: string) => ({ a: "ArrowLeft", d: "ArrowRight", w: "ArrowUp", s: "ArrowDown" }[key.toLowerCase()] ?? key);

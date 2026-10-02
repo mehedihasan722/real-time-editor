@@ -3,6 +3,22 @@ import { query } from "./_generated/server";
 import { getActiveOrganizationId } from "../src/lib/organization-claim";
 import { paginationOptsValidator, paginationResultValidator } from "convex/server";
 import { boardWithFavourite } from "./boardValidators";
+import { canAdminister, identityRole } from "../src/lib/roles";
+
+export const adminList = query({
+  args: { orgId: v.string(), paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(boardWithFavourite),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || getActiveOrganizationId(identity) !== args.orgId || !canAdminister(identityRole(identity))) throw new Error("Administrator access required");
+    const result = await ctx.db.query("boards").withIndex("by_org", q => q.eq("orgId", args.orgId)).order("desc").paginate({ ...args.paginationOpts, numItems: Math.min(100, Math.max(1, args.paginationOpts.numItems)) });
+    const page = await Promise.all(result.page.map(async board => {
+      const favourite = await ctx.db.query("userFavourites").withIndex("by_user_board_org", q => q.eq("userId", identity.subject).eq("boardId", board._id).eq("orgId", args.orgId)).unique();
+      return { ...board, isFavourite: Boolean(favourite) };
+    }));
+    return { ...result, page };
+  },
+});
 
 export const get = query({
   args: {

@@ -3,6 +3,7 @@ import { connectionIdToColor } from "@/lib/utils";
 import { useOther } from "@liveblocks/react";
 import { MousePointer2 } from "lucide-react";
 import React, { memo } from "react";
+import { m } from "framer-motion";
 
 interface CursorProps {
   connectionId: number;
@@ -17,8 +18,10 @@ const Cursor = memo(({ connectionId }: CursorProps) => {
   const { x, y } = cursor;
 
   return (
-    <foreignObject
-      style={{ transform: `translateX(${x}px) translateY(${y}px)` }}
+    <m.foreignObject
+      initial={false}
+      animate={{ x, y }}
+      transition={{ duration: .08, ease: "linear" }}
       height={50}
       width={name.length * 10 + 24}
       className="relative drop-shadow-md"
@@ -36,7 +39,7 @@ const Cursor = memo(({ connectionId }: CursorProps) => {
       >
         {name}
       </div>
-    </foreignObject>
+    </m.foreignObject>
   );
 });
 

@@ -8,6 +8,7 @@ interface DiagramShapeProps {
   layer: ShapeLayer;
   onPointerDown: (event: React.PointerEvent, id: string) => void;
   selectionColor?: string;
+  readOnly?: boolean;
 }
 
 const starPoints = (width: number, height: number) =>
@@ -17,7 +18,7 @@ const starPoints = (width: number, height: number) =>
     return `${width / 2 + Math.cos(angle) * width * radius},${height / 2 + Math.sin(angle) * height * radius}`;
   }).join(" ");
 
-const DiagramShape = ({ id, layer, onPointerDown, selectionColor }: DiagramShapeProps) => {
+const DiagramShape = ({ id, layer, onPointerDown, selectionColor, readOnly = false }: DiagramShapeProps) => {
   const { width: w, height: h, shape } = layer;
   const fill = colorToCss(layer.fill);
   const stroke = selectionColor || (layer.strokeColor ? colorToCss(layer.strokeColor) : "#202840");
@@ -57,7 +58,7 @@ const DiagramShape = ({ id, layer, onPointerDown, selectionColor }: DiagramShape
     }
   })();
 
-  return <g transform={`translate(${layer.x} ${layer.y}) rotate(${layer.rotation || 0} ${w / 2} ${h / 2})`} onPointerDown={(event) => onPointerDown(event, id)} className="drop-shadow-sm">{content}{connector ? layer.value && <text x={4} y={-7} fill={stroke} fontSize={12} fontWeight={700}>{layer.value}</text> : <foreignObject x={shape === "diamond" ? w * .22 : 10} y={shape === "diamond" ? h * .22 : 8} width={shape === "diamond" ? w * .56 : w - 20} height={shape === "diamond" ? h * .56 : h - 16}><div ref={editor} contentEditable suppressContentEditableWarning role="textbox" aria-label="Shape label" onInput={event => updateValue(event.currentTarget.textContent || "")} onPaste={event => { event.preventDefault(); document.execCommand("insertText", false, event.clipboardData.getData("text/plain")); }} className="flex h-full w-full items-center justify-center whitespace-pre-wrap break-words text-center font-sans font-semibold outline-none focus:ring-2 focus:ring-blue-400" style={{ color: labelColor, fontSize: Math.max(10, Math.min(16, h * .2)) }} /></foreignObject>}</g>;
+  return <g transform={`translate(${layer.x} ${layer.y}) rotate(${layer.rotation || 0} ${w / 2} ${h / 2})`} onPointerDown={(event) => onPointerDown(event, id)} className="drop-shadow-sm">{content}{connector ? layer.value && <text x={4} y={-7} fill={stroke} fontSize={12} fontWeight={700}>{layer.value}</text> : <foreignObject x={shape === "diamond" ? w * .22 : 10} y={shape === "diamond" ? h * .22 : 8} width={shape === "diamond" ? w * .56 : w - 20} height={shape === "diamond" ? h * .56 : h - 16}><div ref={editor} contentEditable={!readOnly} suppressContentEditableWarning role="textbox" aria-label="Shape label" onInput={event => updateValue(event.currentTarget.textContent || "")} onPaste={event => { event.preventDefault(); document.execCommand("insertText", false, event.clipboardData.getData("text/plain")); }} className="flex h-full w-full items-center justify-center whitespace-pre-wrap break-words text-center font-sans font-semibold outline-none focus:ring-2 focus:ring-blue-400" style={{ color: labelColor, fontSize: Math.max(10, Math.min(16, h * .2)) }} /></foreignObject>}</g>;
 };
 
 export default DiagramShape;

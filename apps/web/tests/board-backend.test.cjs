@@ -4,11 +4,21 @@ const load = require("./helpers/load-ts.cjs");
 const register = config => config;
 const mocks = {
   "./_generated/server": { query: register, mutation: register, internalQuery: register, internalMutation: register, internalAction: register },
-  "./_generated/api": { internal: { board: { cleanupFavourites: "cleanupFavourites", cleanupRoom: "cleanupRoom", getCleanupJob: "getCleanupJob", finishCleanup: "finishCleanup" } } },
+  "./_generated/api": { internal: { vector: { cleanupLayers: "cleanupLayers" }, board: { cleanupFavourites: "cleanupFavourites", cleanupRoom: "cleanupRoom", getCleanupJob: "getCleanupJob", finishCleanup: "finishCleanup" } } },
 };
 const board = load("convex/board.ts", mocks);
 const boards = load("convex/boards.ts", mocks);
-const identity = { subject: "user_1", org_id: "org_1" };
+const identity = { subject: "user_1", org_id: "org_1", org_role: "org:member" };
+
+test("guests cannot change board metadata, create boards or delete boards", async () => {
+  const ctx = { auth: { getUserIdentity: async () => ({ ...identity, org_role: "org:guest" }) }, db: { get: async () => ({ orgId: "org_1" }) } };
+  await assert.rejects(() => board.create.handler(ctx, { orgId: "org_1", title: "Guest board" }), /member role/);
+  await assert.rejects(() => board.update.handler(ctx, { id: "board_1", title: "Guest edit" }), /member role/);
+  await assert.rejects(() => board.remove.handler(ctx, { id: "board_1" }), /member role/);
+});
+test("admin reporting denies members and administrators from other tenants", async () => {
+  for (const claims of [identity, { ...identity, org_role: "org:admin", org_id: "other" }]) await assert.rejects(() => boards.adminList.handler({ auth: { getUserIdentity: async () => claims } }, { orgId: "org_1", paginationOpts: { cursor: null, numItems: 10 } }), /Administrator access/);
+});
 
 test("paginated boards preserve cursor metadata and enforce organization access", async () => {
   let options;
@@ -27,8 +37,9 @@ test("board deletion schedules durable room and favourite cleanup atomically", a
   await board.remove.handler(ctx, { id: "board_1" });
   assert.equal(deleted[0], "board_1");
   assert.equal(inserted[0].table, "roomCleanup");
-  assert.equal(scheduled.length, 2);
-  assert.equal(scheduled[1][1], "cleanupRoom");
+  assert.equal(scheduled.length, 3);
+  assert.equal(scheduled[1][1], "cleanupLayers");
+  assert.equal(scheduled[2][1], "cleanupRoom");
 });
 test("room cleanup retries failure and retains exhausted jobs for operations", async () => {
   let patch, scheduled = 0, deleted = 0;

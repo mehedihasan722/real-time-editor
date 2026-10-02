@@ -76,6 +76,9 @@ const Info = ({ boardId }: InfoProps) => {
         </Button>
       </Hint>
       <TabSepartor />
+      <Hint label="Open Canvas 2D workspace" side="bottom" sideOffset={10}>
+        <Button variant="board" asChild><Link href={`/board/${boardId}/engine`}>Canvas 2D</Link></Button>
+      </Hint>
       <Hint label={data.isFavourite ? "Remove from favourites" : "Mark as favourite"} side="bottom" sideOffset={10}>
         <Button size="icon" variant="board" disabled={favouritePending} onClick={toggleFavourite} aria-label={data.isFavourite ? "Remove from favourites" : "Mark as favourite"}>
           <Star className={data.isFavourite ? "size-4 fill-indigo-500 text-indigo-500" : "size-4"} />

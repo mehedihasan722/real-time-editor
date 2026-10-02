@@ -3,6 +3,8 @@ import { v } from "convex/values";
 import { mutation, query, internalMutation, internalAction, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getActiveOrganizationId } from "../src/lib/organization-claim";
+import { assertEditor } from "../src/lib/roles";
+import { boardFields } from "./boardValidators";
 
 const images = [
   "/placeholders/1.svg",
@@ -17,15 +19,7 @@ const images = [
   "/placeholders/10.svg",
 ];
 
-const boardValidator = v.object({
-  _id: v.id("boards"),
-  _creationTime: v.number(),
-  title: v.string(),
-  orgId: v.string(),
-  authorId: v.string(),
-  authorName: v.string(),
-  imageUrl: v.string(),
-});
+const boardValidator = v.object(boardFields);
 
 const displayName = (identity: {
   name?: string;
@@ -63,6 +57,7 @@ export const create = mutation({
     }
 
     const title = boardTitleSchema.parse(args.title);
+    assertEditor(identity);
     const randomImage = images[Math.floor(Math.random() * images.length)];
 
     const board = await ctx.db.insert("boards", {
@@ -71,6 +66,11 @@ export const create = mutation({
       authorId: identity.subject,
       authorName: displayName(identity),
       imageUrl: randomImage,
+      createdBy: identity.subject,
+      createdAt: Date.now(),
+      lastModified: Date.now(),
+      canvasLayerCount: 0,
+      canvasRecordCount: 0,
     });
 
     return board;
@@ -90,13 +90,17 @@ export const remove = mutation({
     const board = await ctx.db.get(args.id);
     if (!board) return null;
     assertBoardOrganization(identity, board);
+    assertEditor(identity);
     await ctx.db.delete(args.id);
     await ctx.scheduler.runAfter(0, internal.board.cleanupFavourites, { id: args.id });
+    await ctx.scheduler.runAfter(0, internal.vector.cleanupLayers, { boardId: args.id });
     const jobId = await ctx.db.insert("roomCleanup", { roomId: args.id, attempts: 0, status: "pending" });
     await ctx.scheduler.runAfter(0, internal.board.cleanupRoom, { jobId });
     return null;
   },
 });
+
+export const createBoard = create;
 
 export const cleanupFavourites = internalMutation({
   args: { id: v.id("boards") },
@@ -139,10 +143,12 @@ export const cleanupRoom = internalAction({
     try {
       const secret = process.env.LIVEBLOCKS_SECRET_KEY;
       if (!secret) throw new Error("LIVEBLOCKS_SECRET_KEY is not configured on Convex");
-      const response = await fetch(`https://api.liveblocks.io/v2/rooms/${encodeURIComponent(job.roomId)}`, {
+      for (const roomId of [job.roomId, `vector:${job.roomId}`]) {
+      const response = await fetch(`https://api.liveblocks.io/v2/rooms/${encodeURIComponent(roomId)}`, {
         method: "DELETE", headers: { Authorization: `Bearer ${secret}` }, signal: AbortSignal.timeout(15000),
       });
       if (!response.ok && response.status !== 404) throw new Error(`Liveblocks deletion failed: HTTP ${response.status}`);
+      }
     } catch (cause) { error = cause instanceof Error ? cause.message : "Room cleanup failed"; }
     await ctx.runMutation(internal.board.finishCleanup, { jobId, ...(error ? { error } : {}) });
     return null;
@@ -163,9 +169,11 @@ export const update = mutation({
     if (!board) return null;
     assertBoardOrganization(identity, board);
     const title = boardTitleSchema.parse(args.title);
+    assertEditor(identity);
 
     await ctx.db.patch(args.id, {
       title,
+      lastModified: Date.now(),
     });
 
     return null;
@@ -188,6 +196,7 @@ export const favourite = mutation({
       throw new Error("Board not found");
     }
     assertBoardOrganization(identity, board);
+    assertEditor(identity);
     if (board.orgId !== args.orgId) {
       throw new Error("Board does not belong to this organization");
     }
@@ -230,6 +239,7 @@ export const unfavourite = mutation({
       throw new Error("Board not found");
     }
     assertBoardOrganization(identity, board);
+    assertEditor(identity);
 
     const userId = identity.subject;
 
@@ -253,13 +263,7 @@ export const unfavourite = mutation({
 export const get = query({
   args: { id: v.id("boards") },
   returns: v.union(v.object({
-    _id: v.id("boards"),
-    _creationTime: v.number(),
-    title: v.string(),
-    orgId: v.string(),
-    authorId: v.string(),
-    authorName: v.string(),
-    imageUrl: v.string(),
+    ...boardFields,
     isFavourite: v.boolean(),
   }), v.null()),
   handler: async (ctx, args) => {

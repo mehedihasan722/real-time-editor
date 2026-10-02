@@ -5,5 +5,5 @@ const rules=load('game-rules',{}),{ArcadeWorld}=load('arcade-world',{'./game-rul
 for(const id of ['fps','football','race','runner','egg','plane','snake','pong','breakout','invaders','flappy','asteroids','catch','dodge','aim','reaction'])test(`${id} creates actual 3D geometry and disposes its renderer`,()=>{
  const game=new ThreeArcade({clientWidth:360},id),world=new ArcadeWorld(id);
  let meshes=0;game.scene.traverse(node=>{if(node instanceof THREE.Mesh){meshes++;assert.ok(node.geometry instanceof THREE.BufferGeometry);}});assert.ok(meshes>0);assert.equal(game.renderer.ratio,1.25);assert.equal(game.renderer.shadowMap.enabled,false);
- world.step(.1,new Set(),null);game.update(world,null);assert.equal(game.renderer.renderCount,1);const renderer=game.renderer;game.dispose();assert.equal(renderer.disposed,true);assert.equal(renderer.lost,true);
+ world.step(.1,new Set(),null);game.update(world,null);assert.equal(game.renderer.renderCount,1);const renderer=game.renderer;game.dispose();game.dispose();assert.equal(renderer.disposed,true);assert.equal(renderer.lost,true);assert.equal(game.geometries.size,0);assert.equal(game.materials.size,0);assert.equal(game.objects.size,0);
 });

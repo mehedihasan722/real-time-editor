@@ -1,0 +1,15 @@
+{
+  "name": "@flowboard/types",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./canvas": "./src/canvas.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "@types/react": "^19.3.0"
+  }
+}

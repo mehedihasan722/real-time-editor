@@ -1,5 +1,5 @@
 import React from "react";
-import Canvas from "./_components/canvas";
+import Canvas from "./_components/lazy-canvas";
 import Room from "@/components/room";
 import CanvasLoading from "./loading";
 

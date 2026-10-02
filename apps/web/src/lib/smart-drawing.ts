@@ -35,10 +35,10 @@ const sampledTemplates = templates.map(template => ({ ...template, points: sampl
 export function recognizeDrawing(points: number[][], strokeColor: Color, strokeWidth: number): ShapeLayer | null {
   if (points.length < 4 || points.some(point => !Number.isFinite(point[0]) || !Number.isFinite(point[1]))) return null;
   const raw: XY[] = points.map(point => [point[0], point[1]]);
-  const x = Math.min(...raw.map(point => point[0]));
-  const y = Math.min(...raw.map(point => point[1]));
-  const width = Math.max(...raw.map(point => point[0])) - x;
-  const height = Math.max(...raw.map(point => point[1])) - y;
+  let x = Infinity, y = Infinity, right = -Infinity, bottom = -Infinity;
+  for (const [px, py] of raw) { x = Math.min(x, px); y = Math.min(y, py); right = Math.max(right, px); bottom = Math.max(bottom, py); }
+  const width = right - x;
+  const height = bottom - y;
   const diagonal = Math.hypot(width, height);
   const direct = distance(raw[0], raw.at(-1)!);
   const travelled = raw.slice(1).reduce((sum, point, i) => sum + distance(raw[i], point), 0);
