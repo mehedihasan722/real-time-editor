@@ -13,6 +13,7 @@ import { boardFileSchema, MAX_IMAGE_BYTES, MAX_IMPORT_BYTES, parseBoardFile } fr
 import { createBoardPdf, renderBoardPng } from "@/lib/board-export";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { BoardCloudServices } from "@/components/board-cloud-services";
 
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
@@ -78,6 +79,7 @@ export function BoardFiles({ boardId, onImport, onExportState }: { boardId: stri
     <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" disabled={busy || !permitted}>{busy ? "Exporting…" : "Board files"}</Button></DropdownMenuTrigger>
       <DropdownMenuContent><DropdownMenuItem onClick={() => void exportBoard("png")}>Export PNG</DropdownMenuItem><DropdownMenuItem onClick={() => void exportBoard("pdf")}>Export PDF</DropdownMenuItem><DropdownMenuItem onClick={() => void exportBoard("json")}>Export editable board</DropdownMenuItem><DropdownMenuItem onClick={() => boardInput.current?.click()}>Import editable board</DropdownMenuItem><DropdownMenuItem onClick={() => imageInput.current?.click()}>Upload image</DropdownMenuItem></DropdownMenuContent>
     </DropdownMenu>
+    {permitted && <BoardCloudServices boardId={boardId} snapshot={layers} />}
     <input ref={boardInput} className="hidden" type="file" accept="application/json,.json" aria-label="Import board file" onChange={event => { void importFile(event.target.files?.[0]); event.target.value = ""; }} />
     <input ref={imageInput} className="hidden" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Upload board image" onChange={event => { void importImage(event.target.files?.[0]); event.target.value = ""; }} />
   </div>;

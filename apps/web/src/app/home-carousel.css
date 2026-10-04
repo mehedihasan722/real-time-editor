@@ -23,3 +23,5 @@
 .dark .home-carousel__image { filter: brightness(.85) saturate(.9) drop-shadow(0 12px 20px #00000030); }
 .home-carousel__copy h1 { max-width: 480px; }
 .home-carousel__art { padding: 8px; }
+.home-carousel__model { position:absolute; inset:0; pointer-events:none; }
+.home-carousel__art[data-model-loaded="true"] .home-carousel__image { opacity:0; }

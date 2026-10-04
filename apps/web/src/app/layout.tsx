@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { WorkspacePreferencesProvider } from "@/providers/workspace-preferences-provider";
 import { MotionProvider } from "@/providers/motion-provider";
 import { WorkspaceCommand } from "@/components/workspace-command";
+import { WorkspaceAnalytics } from "@/components/workspace-analytics";
 
 
 export const metadata: Metadata = {
@@ -40,6 +41,7 @@ export default function RootLayout({
                 <Toaster />
                 <ModalProvider />
                 <WorkspaceCommand />
+                <WorkspaceAnalytics />
                 {children}
               </ConvexClientProvider>
             </Suspense>

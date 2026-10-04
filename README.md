@@ -6,6 +6,8 @@ Production operations and integration setup are maintained in [the Wiki source](
 
 See the [production readiness review](docs/Production-readiness-2026-10-04.md) for verified checks, current dependency findings, and remaining launch conditions.
 
+Optional [workspace services and Blender visuals](docs/wiki/Workspace-Services.md) add private Supabase snapshots, Resend board-link emails, Cloudflare Turnstile, consent-based PostHog events, Upstash rate limits, and Pinecone title search alongside Clerk and Sentry. These features require your service accounts and environment variables. The 3D website models are original Blender assets and work without service credentials.
+
 ## Features
 
 - Create blank boards or starter boards with editable notes and headings.

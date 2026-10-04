@@ -40,3 +40,13 @@ The live suite creates a disposable board, edits a note, verifies it in a second
 Verify mobile editing and exports on your supported browsers before announcing support for a new device family. Keep live test accounts separate from production workspaces.
 
 The fixture matrix includes Chromium, Firefox, WebKit and mobile Chromium. Install them with `npx playwright install chromium firefox webkit`. `npm run test:e2e -- --project=chromium` selects a project. The manual authenticated workflow and dedicated primary/peer/admin/member/guest sessions are described in [Enterprise architecture](Enterprise-Architecture).
+
+## Cloud services and Blender previews
+
+The regression suite covers Supabase private-bucket enforcement and organization object paths, atomic Upstash quotas, Cloudflare token hostname/action checks, Pinecone organization namespaces and current-board reauthorization, verified-self email delivery, and PostHog consent/privacy boundaries. Upstream services are mocked: account provisioning, paid requests, email delivery, and live vendor behavior are not verified without credentials.
+
+Browser fixtures exercise the cloud dialog's explicit email/index/backup actions and backup confirmation. GLB checks load real Blender-generated assets, switch models, and verify canvas removal; static model/poster requests also run without service credentials. Windows WebKit skips the WebGL fixture but retains poster and carousel checks; Linux CI attempts the fixture normally.
+
+Firefox skips only the service-worker offline emulation check because Playwright's worker network controls are [supported on Chromium](https://playwright.dev/docs/service-workers) and the CI Firefox worker continued reaching the live origin under offline emulation. The recovery HTML and retry controls are checked on all browser projects. This does not assert real Firefox offline behavior; verify it on an actual offline device before release.
+
+Responsive carousel tests establish reduced-motion media before navigation so Windows WebKit does not retain stale computed animation styles after late media emulation. Preference changes and model removal retain their separate runtime checks.

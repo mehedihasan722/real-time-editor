@@ -43,6 +43,9 @@ test("saved preferences survive Strict Mode and blocked storage remains usable",
 
 for (const width of [320, 375, 768, 1024, 1440]) test(`carousel holds its height and images fit at ${width}px`, async ({ page }, testInfo) => {
   await page.setViewportSize({ width, height: 900 });
+  // Initialize media before navigation: Windows WebKit can retain an animated
+  // computed style when emulation changes after an active CSS animation.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await page.evaluate(() => { document.body.removeAttribute("style"); document.body.innerHTML = '<div id="root"></div>'; }); await page.addStyleTag({ content: carouselCss });
   await page.addScriptTag({ content: fixture });
@@ -61,6 +64,6 @@ for (const width of [320, 375, 768, 1024, 1440]) test(`carousel holds its height
   if (width === 1440 || width === 375) await page.screenshot({ path: path.resolve(`../../.local-tools/carousel-dark-${testInfo.project.name}-${width}.png`) });
   const art = await page.locator(".home-carousel__art").boundingBox(); const controls = await page.locator(".home-carousel__controls").boundingBox();
   expect(art!.y + art!.height).toBeLessThanOrEqual(controls!.y + 1);
-  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
   await expect.poll(() => page.getByRole("img").evaluate(image => getComputedStyle(image).animationName)).toBe("none");
 });

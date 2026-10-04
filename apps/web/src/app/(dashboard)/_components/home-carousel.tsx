@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { ArrowRight, ChevronLeft, ChevronRight, GitBranch, ListTodo, Sparkles } from "lucide-react";
 
 const slides = [
@@ -10,6 +11,9 @@ const slides = [
   { title: "Make room for focused work.", description: "Turn plans into tasks, organize priorities, and see what comes next in one shared space.", label: "Explore task templates", icon: ListTodo, image: "/carousel/tasks.svg", alt: "Organized task workspace with colorful priority cards" },
   { title: "Start with a spark. Build something together.", description: "Explore collaborative templates for brainstorming, diagrams, and your team's next breakthrough.", label: "Find your starting point", icon: Sparkles, image: "/carousel/ideas.svg", alt: "Colorful brainstorming notes connected around a creative spark" },
 ];
+
+const ThreePreview = dynamic(() => import("./three-template-preview"), { ssr: false });
+const models = ["roadmap", "tasks", "ideas"] as const;
 
 export function HomeCarousel() {
   const [index, setIndex] = useState(0);
@@ -27,7 +31,8 @@ export function HomeCarousel() {
         <Link href="/templates" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">{slide.label}<ArrowRight size={16} aria-hidden="true" /></Link>
       </div>
       <div key={`art-${index}`} className="home-carousel__art">
-        <Image unoptimized src={slide.image} alt={slide.alt} width={720} height={460} className="home-carousel__image" />
+        <Image unoptimized src={`/models/${models[index]}.png`} alt={slide.alt} width={720} height={460} className="home-carousel__image" />
+        <div className="home-carousel__model"><ThreePreview model={models[index]} /></div>
       </div>
     </div>
     <div className="home-carousel__controls relative flex items-center justify-between border-t border-border">

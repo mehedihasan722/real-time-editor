@@ -4,7 +4,8 @@ import { api } from "../../../../convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Workflow, ListTodo, Map, LayoutGrid, Sparkles, PenTool, FileText, CalendarDays } from "lucide-react";
-import ThreeTemplatePreview from "./three-template-preview";
+import dynamic from "next/dynamic";
+const ThreeTemplatePreview = dynamic(() => import("./three-template-preview"), { ssr: false });
 
 const templates = [
   { name: "AI Playground", icon: Sparkles, style: "bg-[#ece9ff]", three: true },

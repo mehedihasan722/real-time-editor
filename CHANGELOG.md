@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- ✨ Add private Supabase snapshots, verified-self Resend board emails, Cloudflare Turnstile, Upstash limits, and tenant-scoped Pinecone title search.
+- 📊 Add opt-in anonymous PostHog events and integration configuration status alongside existing Clerk and Sentry support.
+- 🎨 Replace procedural template cards with original Blender models and animate the home carousel with lazy GLB previews and rendered fallbacks.
+- 📝 Document account activation, privacy, retention, and Blender asset rebuilding.
+
 - 🛡️ Bound upstream AI JSON responses and cancel oversized reads before parsing.
 - ✅ Stabilize WebKit reduced-motion assertions and verify 127 regressions and 75 distinct browser checks.
 - 👷 Audit production dependencies in CI; persist GitHub/gitmoji synchronization rules in root AGENTS.md.
