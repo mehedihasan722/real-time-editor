@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- 🛡️ Bound upstream AI JSON responses and cancel oversized reads before parsing.
+- ✅ Stabilize WebKit reduced-motion assertions and verify 127 regressions and 75 distinct browser checks.
+- 👷 Audit production dependencies in CI; persist GitHub/gitmoji synchronization rules in root AGENTS.md.
+- 📝 Document production readiness, remaining launch requirements, and the development-only braces advisory; correct the development Docker port.
+
 - ✨ Add collaborative To-do, Retrospective, and Weekly Check-in workspaces with editable saved entries.
 - 🎨 Add AI Playground conversation layout, connected flowchart templates, and editable roadmap milestone cards.
 - 🐛 Reveal newly added tasks and preserve workspace metadata in editable exports.

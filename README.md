@@ -4,6 +4,8 @@ Flowboard is a collaborative visual workspace built with Next.js, Convex, Clerk,
 
 Production operations and integration setup are maintained in [the Wiki source](docs/wiki/Home.md): [Vercel and GitHub automation](docs/wiki/Production.md), [Hermes and AI generation](docs/wiki/AI-Assistant.md), and [release testing](docs/wiki/Testing.md). See [CHANGELOG.md](CHANGELOG.md) for recent changes.
 
+See the [production readiness review](docs/Production-readiness-2026-10-04.md) for verified checks, current dependency findings, and remaining launch conditions.
+
 ## Features
 
 - Create blank boards or starter boards with editable notes and headings.
@@ -52,7 +54,7 @@ The `/api/health` endpoint reports HTTP 200 only when public and server service 
 
 ## Docker development
 
-Copy .env.example to apps/web/.env.local. Run npx convex dev from apps/web on the host to connect the Convex deployment, then run docker compose up --build at the repository root. Open http://localhost:3000.
+Copy .env.example to apps/web/.env.local. Run npx convex dev from apps/web on the host to connect the Convex deployment, then run docker compose up --build at the repository root. Open http://localhost:3031 (or the port set by `FLOWBOARD_DOCKER_PORT`).
 
 Docker Compose mounts source files for hot reload. Start Docker Desktop before building the image. Environment values come from apps/web/.env.local and are excluded from the Docker build context.
 

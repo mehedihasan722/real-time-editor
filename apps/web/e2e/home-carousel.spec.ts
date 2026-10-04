@@ -62,5 +62,5 @@ for (const width of [320, 375, 768, 1024, 1440]) test(`carousel holds its height
   const art = await page.locator(".home-carousel__art").boundingBox(); const controls = await page.locator(".home-carousel__controls").boundingBox();
   expect(art!.y + art!.height).toBeLessThanOrEqual(controls!.y + 1);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  expect(await page.getByRole("img").evaluate(image => getComputedStyle(image).animationName)).toBe("none");
+  await expect.poll(() => page.getByRole("img").evaluate(image => getComputedStyle(image).animationName)).toBe("none");
 });

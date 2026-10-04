@@ -25,6 +25,18 @@ function route({ user = "user_1", org = "org_1", boardOrg = "org_1", fetcher = a
 }
 const request = (mode = "generate") => new Request("https://flowboard.example/api/assist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ boardId: "board_1", mode, messages: [{ role: "user", content: "Make a launch plan" }] }) });
 
+test("AI route cancels oversized upstream JSON before parsing it", async () => {
+  for (const declared of [false, true]) {
+    let cancelled = false;
+    const handler = route({ fetcher: async () => new Response(new ReadableStream({
+      pull(controller) { controller.enqueue(new Uint8Array(600_000)); },
+      cancel() { cancelled = true; },
+    }), { headers: declared ? { "content-length": "2000000" } : {} }) });
+    assert.equal((await handler(request())).status, 502);
+    assert.equal(cancelled, true);
+  }
+});
+
 test("AI route blocks signed-out users and cross-organization board access", async () => {
   let calls = 0;
   const fetcher = async () => { calls++; throw new Error("must not run"); };

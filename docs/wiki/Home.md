@@ -48,7 +48,7 @@ The repository also runs these checks in `.github/workflows/quality.yml` for eve
 
 Production images use the Dockerfile's final non-root standalone server. Docker Compose selects the development target for hot reload. Only the two `NEXT_PUBLIC_*` values belong in Docker build arguments; provide Clerk and Liveblocks secrets when the container starts.
 
-Open `http://localhost:3000/sign-in`. Clerk development instances may first redirect through their account-domain handshake and then return to the local sign-in page.
+Open `http://localhost:3030/sign-in` for host development, or `http://localhost:3031/sign-in` for development Compose (unless FLOWBOARD_DOCKER_PORT overrides it). Clerk development instances may first redirect through their account-domain handshake and then return to the local sign-in page.
 
 ## Board workspace controls
 
@@ -82,6 +82,8 @@ Open `http://localhost:3000/sign-in`. Clerk development instances may first redi
 
 
 ## Production operations
+
+- [Production readiness review](Production-Readiness)
 
 - [Production and Vercel automation](Production)
 - [Hermes Agent and AI generation](AI-Assistant)

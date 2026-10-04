@@ -8,6 +8,7 @@ import { serverEnv } from "@/lib/server-env";
 
 import { assistProviders, configuredProviders } from "@/lib/assist-providers";
 import { attachedMessages } from "@/lib/assist-attachments";
+import { boundedJson } from "@/lib/bounded-json";
 
 export const maxDuration = 60;
 
@@ -97,10 +98,7 @@ export async function POST(request: Request) {
       const parts = typeof last === "string" ? [{ text: last }] : last.map(part => part.type === "text" && "text" in part ? { text: part.text } : "image_url" in part ? { inlineData: { mimeType: part.image_url.url.split(";")[0].slice(5), data: part.image_url.url.split(",")[1] } } : { text: "" });
       const response = await fetch(url, { method: "POST", redirect: "error", signal: AbortSignal.any([request.signal, AbortSignal.timeout(50000)]), headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { responseModalities: ["TEXT", "IMAGE"] } }) });
       if (!response.ok || !response.body) throw new Error("Image generation unavailable");
-      const reader = response.body.getReader(); const chunks: Uint8Array[] = []; let size = 0;
-      try { while (true) { const { done, value } = await reader.read(); if (done) break; size += value.byteLength; if (size > 14_000_000) throw new Error("Image response too large"); chunks.push(value); } } finally { await reader.cancel(); }
-      const bytes = new Uint8Array(size); let offset = 0; for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-      const result = JSON.parse(new TextDecoder().decode(bytes)) as { candidates?: { content?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] } }[] };
+      const result = await boundedJson(response, 14_000_000) as { candidates?: { content?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] } }[] };
       const image = result.candidates?.[0]?.content?.parts?.find(part => part.inlineData)?.inlineData;
       if (!image?.data || !["image/png", "image/jpeg", "image/webp"].includes(image.mimeType || "") || !/^[A-Za-z0-9+/=]+$/.test(image.data)) throw new Error("No valid generated image");
       return Response.json({ image: `data:${image.mimeType};base64,${image.data}`, message: "Generated with Nano Banana" }, { headers: { "Cache-Control": "no-store" } });
@@ -123,7 +121,7 @@ export async function POST(request: Request) {
       const bounded = response.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({ transform(chunk, controller) { bytes += chunk.byteLength; if (bytes > 1_000_000) controller.error(new Error("Response exceeded limit")); else controller.enqueue(chunk); } }));
       return new Response(bounded, { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-store, no-transform", "X-Accel-Buffering": "no" } });
     }
-    const completion = await response.json();
+    const completion = await boundedJson(response, 1_000_000);
     const content = completion?.choices?.[0]?.message?.content;
     if (typeof content !== "string" || !content.trim() || content.length > 50000) throw new Error("Invalid response");
     return Response.json(mode === "generate" ? { board: parseGeneratedBoard(content) } : { message: content }, { headers: { "Cache-Control": "no-store" } });
