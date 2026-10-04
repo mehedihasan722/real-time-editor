@@ -42,6 +42,16 @@ The home carousel and template gallery use original sticky-note, task-board, and
 
 Three.js loads the GLB models lazily, caps pixel ratio, stops rendering off-screen or when the tab is hidden, respects system/app reduced-motion settings, cancels pending loads, and disposes geometry/material/renderer resources on unmount. Posters remain the fallback when WebGL or model loading is unavailable. There are no third-party textures or licensed model assets.
 
+The first home slide now shows an original isometric planning studio inspired by the owner's Sendoso video reference: a large dashboard, a task-card workflow lane, a Kanban tower, laptop stations, and four teammates. Blender-authored clips animate cards, progress bars, and gestures in an approximately eight-second loop. The reference clip is not shipped as a website asset. Rebuild `assets/blender/workspace.blend`, `workspace.glb`, and its poster with:
+
+```powershell
+& 'C:/Program Files/Blender Foundation/Blender 5.1/blender.exe' --background --python scripts/create-workspace-studio.py
+```
+
+The browser plays exported clips through Three.js AnimationMixer and freezes a representative frame when reduced motion is enabled. Off-screen/hidden scenes pause without advancing their timeline, and mixers are released on removal.
+
+The studio GLB is about 2.1 MB and contains 32 clips with 52 animation channels. The production build, TypeScript, and lint pass; focused browser checks verify the scene, fallback assets, and hero layouts from 320 to 1440 pixels. Real-device performance remains part of the launch checks in issue #7.
+
 ## Development verification
 
 TypeScript, ESLint, the optimized production build, and 138 regression tests passed. Across the full and focused local browser runs, 86 distinct checks passed on Chromium, WebKit, and mobile; Windows WebKit skipped the GLB WebGL fixture. Both Compose configurations validated and the runtime dependency audit reported zero known vulnerabilities. These results cover local fixtures and mocked vendor boundaries; live service activation is tracked in [issue #7](https://github.com/mehedihasan722/real-time-editor/issues/7).

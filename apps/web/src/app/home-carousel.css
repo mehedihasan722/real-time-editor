@@ -25,3 +25,10 @@
 .home-carousel__art { padding: 8px; }
 .home-carousel__model { position:absolute; inset:0; pointer-events:none; }
 .home-carousel__art[data-model-loaded="true"] .home-carousel__image { opacity:0; }
+
+/* Give the miniature studio enough room to read at every breakpoint. */
+.home-carousel { height: 560px; }
+.home-carousel__stage { grid-template-rows: 1fr 210px; }
+.home-carousel__image { width: 620px; max-height: 420px; }
+@container (min-width: 480px) { .home-carousel { height: 580px; } .home-carousel__stage { grid-template-rows: 1fr 250px; } }
+@container (min-width: 760px) { .home-carousel { height: 470px; } .home-carousel__stage { grid-template-columns: .85fr 1.15fr; grid-template-rows: 1fr; gap: 12px; } .home-carousel__copy h1 { font-size: 34px; } }

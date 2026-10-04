@@ -9,3 +9,4 @@
 - Never print credentials or commit local environment files. If any GitHub surface cannot be updated, finish the accessible updates and report the exact limitation.
 - Optional cloud services use server-side REST calls with Clerk/Convex board authorization; preserve tenant namespaces and fail-closed Upstash limits. Keep PostHog consent explicit and workspace content out of telemetry.
 - Rebuild website 3D assets through scripts/create-workspace-models.py with Blender. Commit editable .blend sources, GLB assets, and fallback PNGs; preserve reduced-motion, off-screen pause, and GPU cleanup behavior.
+- Rebuild the animated isometric home studio with scripts/create-workspace-studio.py. Preserve exported Blender animation clips, a reduced-motion still frame, and mixer cleanup in the shared preview.

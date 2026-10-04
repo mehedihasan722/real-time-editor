@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ideas" | "tasks" | "roadmap" }) {
+export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ideas" | "tasks" | "roadmap" | "workspace" }) {
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = host.current;
@@ -33,7 +33,8 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
     light.shadow.bias = -0.001; scene.add(light);
     const pivot = new THREE.Group(); scene.add(pivot);
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let frame = 0, disposed = false, visible = true, radius = 3, loaded = false;
+    let frame = 0, disposed = false, visible = true, radius = 3, loaded = false, previousTime = 0;
+    let mixer: THREE.AnimationMixer | undefined;
     const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
     const collect = (object: THREE.Object3D) => object.traverse(child => {
       if (child instanceof THREE.Mesh) { child.castShadow = true; child.receiveShadow = true; geometries.add(child.geometry); for (const material of Array.isArray(child.material) ? child.material : [child.material]) materials.add(material); }
@@ -43,16 +44,19 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
     const draw = (time: number) => {
       frame = 0;
       if (disposed || !visible || document.hidden || !loaded) return;
-      pivot.rotation.y = reduced() ? 0 : Math.sin(time * 0.00035) * 0.12;
-      pivot.rotation.z = reduced() ? 0 : Math.sin(time * 0.00025) * 0.025;
+      pivot.rotation.y = reduced() || model === "workspace" ? 0 : Math.sin(time * 0.00035) * 0.12;
+      pivot.rotation.z = reduced() || model === "workspace" ? 0 : Math.sin(time * 0.00025) * 0.025;
+      if (reduced()) mixer?.setTime(2);
+      else mixer?.update(previousTime ? Math.min((time - previousTime) / 1000, 0.05) : 0);
+      previousTime = time;
       renderer.render(scene, camera);
       if (!reduced()) frame = requestAnimationFrame(draw);
     };
-    const resume = () => { cancelAnimationFrame(frame); frame = 0; if (!disposed && visible && !document.hidden && loaded) frame = requestAnimationFrame(draw); };
+    const resume = () => { cancelAnimationFrame(frame); frame = 0; previousTime = 0; if (!disposed && visible && !document.hidden && loaded) frame = requestAnimationFrame(draw); };
     const resize = () => {
       const { width, height } = element.getBoundingClientRect();
       renderer.setSize(Math.max(width, 1), Math.max(height, 1)); camera.aspect = width / Math.max(height, 1);
-      camera.position.copy(new THREE.Vector3(5.4, 8.4, 7.3).normalize().multiplyScalar(radius * 2.4 / Math.min(camera.aspect, 1)));
+      camera.position.copy(new THREE.Vector3(5.4, 8.4, 7.3).normalize().multiplyScalar(radius * (model === "workspace" ? 3.3 : 2.4) / Math.min(camera.aspect, 1)));
       camera.lookAt(0, 0, 0); camera.updateProjectionMatrix(); resume();
     };
     const controller = new AbortController();
@@ -62,6 +66,11 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
       const bounds = new THREE.Box3().setFromObject(gltf.scene);
       gltf.scene.position.sub(bounds.getCenter(new THREE.Vector3())); radius = bounds.getBoundingSphere(new THREE.Sphere()).radius;
       pivot.add(gltf.scene); loaded = true; resize(); renderer.domElement.style.opacity = "1";
+      if (gltf.animations.length) {
+        mixer = new THREE.AnimationMixer(gltf.scene);
+        gltf.animations.forEach(clip => mixer!.clipAction(clip).play());
+        mixer.setTime(2);
+      }
       element.style.backgroundImage = "none";
       if (art) art.dataset.modelLoaded = "true";
     }).catch(() => { /* Rendered Blender posters remain available when WebGL or model loading fails. */ });
@@ -75,6 +84,8 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
       disposed = true; controller.abort(); cancelAnimationFrame(frame); observer.disconnect(); visibility.disconnect(); preferences.disconnect();
       if (art) delete art.dataset.modelLoaded;
       media.removeEventListener("change", resume); document.removeEventListener("visibilitychange", resume); renderer.domElement.removeEventListener("webglcontextlost", lost);
+      mixer?.stopAllAction();
+      if (mixer) mixer.uncacheRoot(mixer.getRoot());
       disposeModel(); light.shadow.dispose(); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
     };
   }, [model]);

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- 🎨 Add an original Blender-authored isometric planning studio inspired by the supplied Sendoso motion reference, with moving task cards, teammate gestures, and animated dashboard bars.
+- ♿ Play exported Blender clips with visibility pause, reduced-motion still frames, and animation-resource cleanup; expand the home hero for the studio illustration.
+
 - ✨ Add private Supabase snapshots, verified-self Resend board emails, Cloudflare Turnstile, Upstash limits, and tenant-scoped Pinecone title search.
 - 📊 Add opt-in anonymous PostHog events and integration configuration status alongside existing Clerk and Sentry support.
 - 🎨 Replace procedural template cards with original Blender models and animate the home carousel with lazy GLB previews and rendered fallbacks.
