@@ -1,9 +1,8 @@
-import { SignUp } from "@clerk/nextjs";
+import { AuthExperience } from "@/components/auth/auth-experience";
+import { publicEnv } from "@/lib/public-env";
+
+export const dynamic = "force-dynamic";
 
 export default function SignUpPage() {
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
-      <SignUp />
-    </main>
-  );
+  return <AuthExperience mode="sign-up" configured={publicEnv.success && Boolean(process.env.CLERK_SECRET_KEY)} />;
 }

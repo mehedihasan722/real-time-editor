@@ -345,7 +345,7 @@ export default function CanvasWorkspace({ boardId }: { boardId: Id<"boards"> }) 
   const selected = selectedEntry?.[1];
   const changeSelected = (patch: Partial<VectorLayer>) => { if (selectedEntry && writable && !busy.current) void save([[selectedEntry[0], { ...selectedEntry[1], ...patch }]]); };
   const glass = "border border-slate-300 bg-white/90 text-slate-900 shadow-lg backdrop-blur-md dark:border-slate-600 dark:bg-slate-900/90 dark:text-slate-100";
-  return <div ref={hostRef} className="relative h-dvh w-full overflow-hidden bg-slate-50 dark:bg-slate-950">
+  return <div ref={hostRef} className="spatial-engine relative h-dvh w-full overflow-hidden bg-slate-50 dark:bg-slate-950">
     <canvas ref={canvasRef} tabIndex={0} aria-label="Collaborative infinite canvas. Use V to select, R for rectangle, O for ellipse, N for sticky note, T for text, P for pencil. Page Up and Page Down select layers. Hold Space and drag to pan. Use the mouse wheel to zoom." onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelGesture} onLostPointerCapture={cancelGesture} onPointerLeave={() => { if (!gesture.current) queuedCursor.current = null; }} className="h-full w-full touch-none outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500" style={{ cursor: tool === "select" ? "default" : "crosshair" }} />
     <p aria-live="polite" className="sr-only">{selected ? `Selected ${selected.type}: ${selected.text || "Untitled layer"}` : "No layer selected"}</p>
     <header className={`absolute left-4 right-4 top-4 flex items-center justify-between gap-3 rounded-2xl px-3 py-2 ${glass}`}>

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- 🎨 Add an original electric-blue Blender cloud scene and a navy, illuminated sign-in/sign-up experience inspired by the supplied motion reference.
+- ✨ Extend shared 3D banners, depth styling, and interaction motion across dashboard routes and board controls while preserving flat editing hit planes.
+- ♿ Add explicit scene pause/play controls and retain reduced-motion, hidden-tab/off-screen pause, image fallbacks, and GPU cleanup.
+- 🛡️ Allow public authentication artwork before service setup with a configuration notice; protected pages and APIs still fail closed.
+
 - 🎨 Add an original Blender-authored isometric planning studio inspired by the supplied Sendoso motion reference, with moving task cards, teammate gestures, and animated dashboard bars.
 - ♿ Play exported Blender clips with visibility pause, reduced-motion still frames, and animation-resource cleanup; expand the home hero for the studio illustration.
 

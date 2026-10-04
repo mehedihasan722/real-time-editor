@@ -10,3 +10,4 @@
 - Optional cloud services use server-side REST calls with Clerk/Convex board authorization; preserve tenant namespaces and fail-closed Upstash limits. Keep PostHog consent explicit and workspace content out of telemetry.
 - Rebuild website 3D assets through scripts/create-workspace-models.py with Blender. Commit editable .blend sources, GLB assets, and fallback PNGs; preserve reduced-motion, off-screen pause, and GPU cleanup behavior.
 - Rebuild the animated isometric home studio with scripts/create-workspace-studio.py. Preserve exported Blender animation clips, a reduced-motion still frame, and mixer cleanup in the shared preview.
+- Rebuild the blue cloud scene with scripts/create-cloud-scene.py. Use shared SpatialScene for public/authentication and dashboard artwork, preserve pause controls and reduced motion, and keep 3D transforms off editable canvas hit planes. Authentication previews may render before setup; protected pages and APIs must keep failing closed.

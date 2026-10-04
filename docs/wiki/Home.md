@@ -1,5 +1,7 @@
 # Flowboard development setup
 
+See [Spatial design](Spatial-Design) for the animated website and branded authentication experience.
+
 Flowboard is a Turborepo. The Next.js application and its local environment file live in `apps/web`.
 
 See [Enterprise architecture](Enterprise-Architecture) for shared packages, role enforcement, export workers, monitoring and release prerequisites.

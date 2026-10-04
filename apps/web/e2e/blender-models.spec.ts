@@ -47,14 +47,14 @@ test("Blender models animate with WebGL or use their rendered fallback", async (
 });
 
 test("Blender posters and GLB assets are available without external services", async ({ request }) => {
-  for (const model of ["ideas", "tasks", "roadmap", "workspace"]) {
+  for (const model of ["ideas", "tasks", "roadmap", "workspace", "cloud"]) {
     const poster = await request.get(`/models/${model}.png`); expect(poster.ok()).toBe(true);
     const glb = await request.get(`/models/${model}.glb`); expect(glb.ok()).toBe(true);
     const bytes = await glb.body(); expect(bytes.subarray(0, 4).toString()).toBe("glTF"); expect(bytes.readUInt32LE(4)).toBe(2);
-    if (model === "workspace") {
+    if (model === "workspace" || model === "cloud") {
       const json = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString());
       expect(json.animations.length).toBeGreaterThan(0);
-      expect(json.animations.flatMap((clip: { channels: unknown[] }) => clip.channels).length).toBeGreaterThan(10);
+      expect(json.animations.flatMap((clip: { channels: unknown[] }) => clip.channels).length).toBeGreaterThan(model === "workspace" ? 10 : 3);
     }
   }
 });

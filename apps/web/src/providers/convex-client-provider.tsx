@@ -11,9 +11,11 @@ import {
 import Loading from "@/components/auth/loading";
 import { publicEnv, setupMessage } from "@/lib/public-env";
 import { useTheme } from "next-themes";
+import { usePathname } from "next/navigation";
 
 interface ConvexClientProviderProps {
   children: React.ReactNode;
+  authConfigured: boolean;
 }
 
 const convex = publicEnv.success
@@ -22,10 +24,13 @@ const convex = publicEnv.success
 
 export const ConvexClientProvider = ({
   children,
+  authConfigured,
 }: ConvexClientProviderProps) => {
   const { resolvedTheme } = useTheme();
+  const pathname = usePathname();
   const dark = resolvedTheme === "dark";
-  if (!publicEnv.success || !convex) {
+  if (!authConfigured || !publicEnv.success || !convex) {
+    if (/^\/sign-(in|up)(\/|$)/.test(pathname)) return <>{children}</>;
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 p-8 text-slate-100">
         <section className="max-w-xl space-y-4 rounded-2xl border border-cyan-400/30 p-8">

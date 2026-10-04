@@ -25,6 +25,9 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
     return NextResponse.next();
   }
   if (!publicEnv.success || !serverEnv.success) {
+    // Public authentication artwork is available before account provisioning;
+    // its page renders an honest setup notice. Protected routes still fail closed.
+    if (/^\/sign-(in|up)(\/|$)/.test(request.nextUrl.pathname)) return NextResponse.next();
     const headers = { "Cache-Control": "no-store" };
     if (/^\/(api|trpc)(\/|$)/.test(request.nextUrl.pathname)) {
       return NextResponse.json(

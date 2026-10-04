@@ -8,6 +8,8 @@ See the [production readiness review](docs/Production-readiness-2026-10-04.md) f
 
 Optional [workspace services and Blender visuals](docs/wiki/Workspace-Services.md) add private Supabase snapshots, Resend board-link emails, Cloudflare Turnstile, consent-based PostHog events, Upstash rate limits, and Pinecone title search alongside Clerk and Sentry. These features require your service accounts and environment variables. The 3D website models are original Blender assets and work without service credentials.
 
+The [spatial design guide](docs/wiki/Spatial-Design.md) covers the animated cloud artwork, branded sign-in/sign-up pages, dashboard scene banners, pause controls, and Blender rebuild commands. Authentication artwork is available before account setup; protected pages and APIs remain blocked until configuration is complete.
+
 ## Features
 
 - Create blank boards or starter boards with editable notes and headings.

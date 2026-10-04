@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ideas" | "tasks" | "roadmap" | "workspace" }) {
+export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ideas" | "tasks" | "roadmap" | "workspace" | "cloud" }) {
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = host.current;
@@ -40,23 +40,27 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
       if (child instanceof THREE.Mesh) { child.castShadow = true; child.receiveShadow = true; geometries.add(child.geometry); for (const material of Array.isArray(child.material) ? child.material : [child.material]) materials.add(material); }
     });
     const disposeModel = () => { geometries.forEach(value => value.dispose()); materials.forEach(value => value.dispose()); };
+    const pauseControl = element.closest<HTMLElement>("[data-scene-paused]");
     const reduced = () => media.matches || document.documentElement.classList.contains("reduce-motion");
+    const paused = () => pauseControl?.dataset.scenePaused === "true";
     const draw = (time: number) => {
       frame = 0;
       if (disposed || !visible || document.hidden || !loaded) return;
-      pivot.rotation.y = reduced() || model === "workspace" ? 0 : Math.sin(time * 0.00035) * 0.12;
-      pivot.rotation.z = reduced() || model === "workspace" ? 0 : Math.sin(time * 0.00025) * 0.025;
+      if (!paused() || reduced()) {
+        pivot.rotation.y = reduced() || model === "workspace" || model === "cloud" ? 0 : Math.sin(time * 0.00035) * 0.12;
+        pivot.rotation.z = reduced() || model === "workspace" || model === "cloud" ? 0 : Math.sin(time * 0.00025) * 0.025;
+      }
       if (reduced()) mixer?.setTime(2);
-      else mixer?.update(previousTime ? Math.min((time - previousTime) / 1000, 0.05) : 0);
+      else if (!paused()) mixer?.update(previousTime ? Math.min((time - previousTime) / 1000, 0.05) : 0);
       previousTime = time;
       renderer.render(scene, camera);
-      if (!reduced()) frame = requestAnimationFrame(draw);
+      if (!reduced() && !paused()) frame = requestAnimationFrame(draw);
     };
     const resume = () => { cancelAnimationFrame(frame); frame = 0; previousTime = 0; if (!disposed && visible && !document.hidden && loaded) frame = requestAnimationFrame(draw); };
     const resize = () => {
       const { width, height } = element.getBoundingClientRect();
       renderer.setSize(Math.max(width, 1), Math.max(height, 1)); camera.aspect = width / Math.max(height, 1);
-      camera.position.copy(new THREE.Vector3(5.4, 8.4, 7.3).normalize().multiplyScalar(radius * (model === "workspace" ? 3.3 : 2.4) / Math.min(camera.aspect, 1)));
+      camera.position.copy(new THREE.Vector3(5.4, model === "cloud" ? 5.6 : 8.4, 7.3).normalize().multiplyScalar(radius * (model === "workspace" || model === "cloud" ? 3.3 : 2.4) / Math.min(camera.aspect, 1)));
       camera.lookAt(0, 0, 0); camera.updateProjectionMatrix(); resume();
     };
     const controller = new AbortController();
@@ -77,6 +81,7 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
     const observer = new ResizeObserver(resize); observer.observe(element);
     const visibility = new IntersectionObserver(entries => { visible = entries[0].isIntersecting; resume(); }); visibility.observe(element);
     const preferences = new MutationObserver(resume); preferences.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    if (pauseControl) preferences.observe(pauseControl, { attributes: true, attributeFilter: ["data-scene-paused"] });
     media.addEventListener("change", resume); document.addEventListener("visibilitychange", resume);
     const lost = (event: Event) => { event.preventDefault(); renderer.domElement.style.opacity = "0"; element.style.backgroundImage = `url(/models/${model}.png)`; if (art) delete art.dataset.modelLoaded; loaded = false; resume(); };
     renderer.domElement.addEventListener("webglcontextlost", lost); resize();

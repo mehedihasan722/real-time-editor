@@ -7,13 +7,13 @@ import dynamic from "next/dynamic";
 import { ArrowRight, ChevronLeft, ChevronRight, GitBranch, ListTodo, Sparkles } from "lucide-react";
 
 const slides = [
-  { title: "Give your next big idea a clear direction.", description: "Connect milestones, map dependencies, and keep your team moving together.", label: "Plan your roadmap", icon: GitBranch, alt: "Isometric Flowboard studio with a live dashboard, moving task cards, and collaborating teammates" },
+  { title: "Give your next big idea a clear direction.", description: "Connect milestones, map dependencies, and keep your team moving together.", label: "Plan your roadmap", icon: GitBranch, alt: "An illuminated blue Flowboard cloud connecting ideas across a shared workspace" },
   { title: "Make room for focused work.", description: "Turn plans into tasks, organize priorities, and see what comes next in one shared space.", label: "Explore task templates", icon: ListTodo, image: "/carousel/tasks.svg", alt: "Organized task workspace with colorful priority cards" },
   { title: "Start with a spark. Build something together.", description: "Explore collaborative templates for brainstorming, diagrams, and your team's next breakthrough.", label: "Find your starting point", icon: Sparkles, image: "/carousel/ideas.svg", alt: "Colorful brainstorming notes connected around a creative spark" },
 ];
 
 const ThreePreview = dynamic(() => import("./three-template-preview"), { ssr: false });
-const models = ["workspace", "tasks", "ideas"] as const;
+const models = ["cloud", "tasks", "workspace"] as const;
 
 export function HomeCarousel() {
   const [index, setIndex] = useState(0);

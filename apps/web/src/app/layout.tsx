@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./spatial-design.css";
 import { ConvexClientProvider } from "@/providers/convex-client-provider";
 import { Toaster } from "@/components/ui/sonner";
 import ModalProvider from "@/providers/modal-provider";
@@ -11,6 +12,7 @@ import { WorkspacePreferencesProvider } from "@/providers/workspace-preferences-
 import { MotionProvider } from "@/providers/motion-provider";
 import { WorkspaceCommand } from "@/components/workspace-command";
 import { WorkspaceAnalytics } from "@/components/workspace-analytics";
+import { publicEnv } from "@/lib/public-env";
 
 
 export const metadata: Metadata = {
@@ -30,6 +32,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const authConfigured = publicEnv.success && Boolean(process.env.CLERK_SECRET_KEY);
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
@@ -37,9 +40,9 @@ export default function RootLayout({
           <WorkspacePreferencesProvider><MotionProvider>
             <PwaRegister />
             <Suspense fallback={<Loading />}>
-              <ConvexClientProvider>
+              <ConvexClientProvider authConfigured={authConfigured}>
                 <Toaster />
-                <ModalProvider />
+                {authConfigured && <ModalProvider />}
                 <WorkspaceCommand />
                 <WorkspaceAnalytics />
                 {children}
