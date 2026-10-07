@@ -12,6 +12,7 @@
 - ♿ Adapt authentication, Clerk controls, route banners, and carousel navigation to Light/Dark themes; strengthen muted and destructive text contrast.
 - 🐛 Release GLB textures and image bitmaps during preview cleanup and keep camera sizing finite in collapsed containers.
 
+- 🎨 Add a device-framed community review section below the home board list with sliding glass cards, lime accents, keyboard navigation, and clearly labeled sample content.
 - 🎨 Redesign the home carousel as expanding purple, blue, and green product panels with numbered selectors and vertical titles.
 - ✨ Add original Blender roadmap-rocket, task-card, and idea-bulb sculptures with exported animation clips, editable scenes, and transparent fallbacks.
 - ♿ Preserve keyboard selection, responsive fixed height, explicit pause, reduced motion, and one active GPU scene.

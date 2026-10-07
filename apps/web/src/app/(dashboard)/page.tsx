@@ -5,6 +5,7 @@ import { useOrganization } from "@clerk/nextjs";
 import BoardList from "./_components/board-list";
 import { HomeCarousel } from "./_components/home-carousel";
 import { WorkflowShowcase } from "@/components/workflow-showcase";
+import { HomeReviews } from "./_components/home-reviews";
 
 interface DashBoardPageProps {
   searchParams: Promise<{ search?: string; favourites?: string }>;
@@ -23,7 +24,7 @@ const DashboardPage = ({ searchParams }: DashBoardPageProps) => {
           <BoardList orgId={organization.id} query={resolvedSearchParams} />
         </div>
       )}
-      {!resolvedSearchParams.favourites && !resolvedSearchParams.search && <WorkflowShowcase />}
+      {!resolvedSearchParams.favourites && !resolvedSearchParams.search && <><HomeReviews /><WorkflowShowcase /></>}
     </div>
   );
 };

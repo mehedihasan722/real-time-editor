@@ -55,10 +55,11 @@ The studio fixture checks changing canvas pixels during Blender clip playback, s
 
 The spatial-design suite tests real unconfigured sign-in/sign-up pages across mobile, tablet, and desktop widths, mobile form ordering, scene controls, navigation, and protected-route/API refusal. A mock Clerk form checks keyboard input access; shared dashboard fixtures cover all five destination banners while retaining page content. The complete local Chromium/WebKit/mobile run passed 107 checks with one Windows WebKit GLB skip. Live Clerk authentication and actual-device performance remain launch requirements.
 
-## Carousel design
+## Carousel and review design
 
 The home carousel layout fixtures use rendered Blender posters, keeping keyboard and responsive checks independent of GPU availability. The dedicated GLB fixture checks real studio and carousel-sculpture playback, reduced-motion pixels, model switching, and GPU removal. It allows 60 seconds for shader compilation, screenshots, and multiple GPU cleanups on software renderers.
 
+Review-section fixtures verify explicit sample-content labels, previous/next wrapping, keyboard selection, template navigation, mobile sizing, stable section height, and reduced-motion transitions. No customer endorsements, aggregate scores, or verified-review claims are established by these tests.
 
 
 ## Editorial landing and workflow validation
