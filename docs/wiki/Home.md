@@ -85,6 +85,8 @@ Open `http://localhost:3030/sign-in` for host development, or `http://localhost:
 
 ## Production operations
 
+- [Games and documentation](Games-and-Guide)
+
 - [Workspace services and Blender visuals](Workspace-Services)
 
 - [Production readiness review](Production-Readiness)

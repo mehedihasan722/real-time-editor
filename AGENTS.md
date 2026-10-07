@@ -13,4 +13,6 @@
 - Rebuild the blue cloud scene with scripts/create-cloud-scene.py. Use shared SpatialScene for public/authentication and dashboard artwork, preserve pause controls and reduced motion, and keep 3D transforms off editable canvas hit planes. Authentication previews may render before setup; protected pages and APIs must keep failing closed.
 - Rebuild the expanding home carousel sculptures with scripts/create-carousel-models.py. Keep one active WebGL scene, static posters in collapsed panels, keyboard panel selection, fixed responsive height, and explicit scene pause controls.
 
-- Rebuild the pre-footer workflow factory with `scripts/create-workflow-factory.py`; commit `assets/blender/workflow.blend` and its GLB/PNG exports. Keep `/welcome` public without mounting authenticated workspace dialogs; protected routes and APIs must remain fail-closed.
+- Rebuild the pre-footer workflow factory with `scripts/create-workflow-factory.py`; commit `assets/blender/workflow.blend` and its GLB/PNG exports. Keep the workflow inside the workspace; protected routes and APIs must remain fail-closed.
+
+- Rebuild game-library screenshots with `node scripts/create-game-covers.cjs`. They must depict actual game engines; keep games keyboard/touch accessible, and verify pause, restart, context-loss recovery, and disposal before merging.

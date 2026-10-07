@@ -60,9 +60,9 @@ Authentication uses shared CSS variables for Clerk surfaces, inputs, and text so
 The new carousel sculptures are retained after visual inspection. They are approximately 276–409 KiB and 13,096–18,024 triangles per GLB, with static posters for collapsed panels and failed WebGL. No higher-poly replacement is needed for these small hero previews. The shared renderer now also disposes textures and closes image bitmaps, and keeps camera aspect ratios positive when a host collapses to zero width. Live provider authentication and long-running performance on physical low-end devices remain launch checks.
 
 
-## Editorial landing page and workflow factory
+## Workspace workflow factory
 
-The public `/welcome` route uses original Flowboard content and an editorial layout inspired by the supplied Afternow reference: oversized typography, quiet surfaces, pastel project art, and a dark footer with a large wordmark. Light and dark themes pair text with explicit surfaces. The dashboard retains its working board list and uses the same workflow section and footer.
+The separate welcome site has been removed. The workspace keeps the editorial footer and animated workflow section. The footer home link returns to the board library.
 
 The pre-footer factory is original Blender artwork: planning dashboard, moving idea parcels, conveyor stations, template shelves, collaborators, and a dispatch cart. Rebuild with:
 
@@ -72,4 +72,4 @@ The pre-footer factory is original Blender artwork: planning dashboard, moving i
 
 Commit `assets/blender/workflow.blend`, `apps/web/public/models/workflow.glb`, and `apps/web/public/models/workflow.png`. Shared `SpatialScene` mounts WebGL only near the viewport; the renderer preserves exported animation clips, explicit pause, reduced-motion still frames, hidden/off-screen pause, context-loss fallback, and resource disposal. The PNG remains available when GPU rendering fails.
 
-Public marketing does not require Clerk or Convex. Board-editing modals mount inside the authenticated provider. Protected pages and APIs continue to reject requests when service configuration is missing. The footer links to implemented workspace destinations and the repository; it does not offer a nonfunctional newsletter form.
+Board-editing modals mount inside the authenticated provider. Protected pages and APIs continue to reject requests when service configuration is missing. The footer links to implemented workspace destinations and the repository; it does not offer a nonfunctional newsletter form.

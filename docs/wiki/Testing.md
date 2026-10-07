@@ -62,11 +62,11 @@ The home carousel layout fixtures use rendered Blender posters, keeping keyboard
 Review-section fixtures verify explicit sample-content labels, previous/next wrapping, keyboard selection, template navigation, mobile sizing, stable section height, and reduced-motion transitions. No customer endorsements, aggregate scores, or verified-review claims are established by these tests.
 
 
-## Editorial landing and workflow validation
+## Games, documentation, and workflow validation
 
-`editorial-design.spec.ts` tests the real `/welcome` route at 320, 768, and 1440 pixels in both themes: no horizontal overflow, appearance controls, anchors, footer destinations, sampled 4.5:1 text contrast, reduced-motion skip-link focus, and protected-page/API refusal. The GLB fixture also verifies the workflow factory changes pixels during playback, stays still under reduced motion, and falls back to its PNG after GPU context loss.
+`games-guide.spec.ts` covers all 22 game launch/restart/library flows, keyboard scope, GPU-loss recovery, distinct artwork, filters, and documentation search in both themes. The standalone welcome route and its tests have been removed. Blender workflow playback and poster fallback remain in the GLB fixture.
 
 Playwright starts `scripts/start-standalone.cjs` directly so npm workspace forwarding cannot consume the port and hostname flags. Build first; use one worker on memory-constrained Windows hosts. Fixture tests do not establish live Clerk, Convex, Liveblocks, AI, or email behavior.
 
 
-Validation on 7 October 2026: optimized build and TypeScript, ESLint, 138 unit regressions, and a production dependency audit passed. The complete local Chromium/WebKit/mobile matrix passed 158 checks with one expected Windows WebKit WebGL skip. Of these, 143 passing checks belong to this revision; 15 cover pre-existing review-section edits that remain outside the commit. Firefox is delegated to Linux CI. Live authenticated services and physical-device performance are not certified by fixture tests.
+Validation on 7 October 2026: optimized build, TypeScript, ESLint, 138 unit regressions, and the production dependency audit passed (zero production vulnerabilities). The targeted Games/Guide matrix passed 11 checks with one Windows WebKit GPU-loss skip. The earlier complete suite passed 158 checks before the welcome route was removed; review-section changes are now included in the integration branch. Final integration matrix and Linux CI results are recorded with the merge. Live authenticated services and physical-device performance are not certified by fixture tests.

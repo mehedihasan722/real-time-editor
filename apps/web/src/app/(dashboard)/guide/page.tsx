@@ -1,4 +1,8 @@
+"use client";
 import Link from "next/link";
+import { useState } from "react";
+import { ArrowUpRight, BookOpen, Search, Rocket, MousePointer2, Users, ShieldCheck, Download, Palette, Layers3, Sparkles, Settings, Keyboard, Gamepad2 } from "lucide-react";
+import "./guide.css";
 const sections = [
   { title: "1. Set up your workspace", body: "Sign in, create or join an organization, and choose it from the left sidebar. The organization keeps your team's boards together." },
   { title: "2. Create a board", body: "Choose Blank board or a starter template. On an empty board, describe a goal in Flowboard Assist or use a quick suggestion. AI chat and board generation require a configured provider. Generated content remains editable. You can stop a streaming response; if the provider is unavailable, use starter templates." },
@@ -11,10 +15,14 @@ const sections = [
   { title: "9. Install the app", body: "On a supported mobile or desktop browser, use Install app or Add to Home Screen from the browser menu. Boards still need an internet connection." },
   { title: "10. Personalize Flowboard", body: "Open Settings to choose Light, Dark, or System appearance. Canvas preferences control the grid, contrast, and motion. The plus button opens a searchable Tools and Marketplace catalog. In Diagram & Shapes, click a +N shapes control to reveal exactly N insertable shapes from that pack." },
 ];
+
+const icons = [Users, Rocket, MousePointer2, Layers3, Users, ShieldCheck, Layers3, ShieldCheck, Download, Palette];
 export default function GuidePage() {
-  return <div className="px-3 sm:px-6 pb-10 max-w-[1050px]">
-    <p className="text-xs uppercase tracking-[.2em] font-bold text-orange-700 dark:text-orange-400">Help center</p><h1 className="text-3xl font-bold mt-1">Flowboard guide</h1><p className="text-sm text-muted-foreground mt-2 mb-7">Everything you need to get started and work with your team.</p>
-    <div className="grid md:grid-cols-2 gap-4">{sections.map(section => <section key={section.title} className="rounded-xl border border-border bg-card p-6 shadow-sm"><h2 className="font-semibold">{section.title}</h2><p className="text-sm text-muted-foreground mt-3 leading-6">{section.body}</p></section>)}</div>
-    <div className="mt-6 flex gap-3"><Link href="/templates" className="rounded-md bg-[#4262ff] px-4 py-2 text-white font-semibold text-sm">Explore templates</Link><Link href="/" className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold">Go to boards</Link></div>
+  const [query, setQuery] = useState("");
+  const filtered = sections.map((section,index) => ({...section,index})).filter(section => `${section.title} ${section.body}`.toLowerCase().includes(query.trim().toLowerCase()));
+  return <div className="docs-center">
+    <header className="docs-hero"><div><p className="docs-eyebrow"><BookOpen size={16} aria-hidden="true" /> FLOWBOARD DOCUMENTATION</p><h1>Find your flow.</h1><p>From your first idea to a shared workspace. Practical guides for every step.</p></div><label className="docs-search"><Search size={20} aria-hidden="true" /><input value={query} onChange={event => setQuery(event.target.value)} aria-label="Search documentation" placeholder="Search tools, roles, shortcuts…" />{query && <button onClick={() => setQuery("")} aria-label="Clear documentation search">Clear</button>}</label></header>
+    <div className="docs-quick-links">{[{href:"/templates",icon:Sparkles,title:"Start with a template",copy:"Skip the blank canvas."},{href:"/settings",icon:Settings,title:"Make it yours",copy:"Appearance and preferences."},{href:"/games",icon:Gamepad2,title:"Take a creative break",copy:"Explore the arcade."}].map(({href,icon:Icon,title,copy})=><Link key={href} href={href}><Icon size={22} aria-hidden="true" /><div><strong>{title}</strong><p>{copy}</p></div><ArrowUpRight size={17} aria-hidden="true" /></Link>)}</div>
+    <div className="docs-layout"><aside><p className="docs-eyebrow">IN THIS GUIDE</p><nav aria-label="Documentation topics">{filtered.map(section=><a key={section.index} href={`#topic-${section.index}`}>{section.title.replace(/^\d+\. /,"")}</a>)}</nav><div className="docs-tip"><Keyboard size={20} aria-hidden="true" /><strong>Work at your own pace</strong><p>Use Settings to reduce motion or increase canvas contrast.</p></div></aside><div className="docs-articles"><p className="docs-results" role="status">{filtered.length} {filtered.length === 1 ? "topic" : "topics"}{query ? ` matching “${query}”` : " to explore"}</p>{filtered.map(section=>{const Icon=icons[section.index];return <article id={`topic-${section.index}`} key={section.index}><details open={query ? true : undefined}><summary><span className="docs-topic-icon"><Icon size={21} aria-hidden="true" /></span><h2>{section.title.replace(/^\d+\. /,"")}</h2><span className="docs-expand" aria-hidden="true">+</span></summary><p>{section.body}</p></details></article>})}{!filtered.length && <div className="docs-empty"><Search size={30} aria-hidden="true" /><h2>No matching topics</h2><p>Try “canvas”, “roles”, or “share”.</p><button onClick={()=>setQuery("")}>Show all topics</button></div>}<section className="docs-shortcuts"><h2><Keyboard size={20} aria-hidden="true" /> Everyday shortcuts</h2><dl>{[["Undo","Ctrl / ⌘ + Z"],["Pan canvas","Space + drag"],["Delete selection","Delete / Backspace"],["Find a destination","Ctrl / ⌘ + K"]].map(([label,key])=><div key={label}><dt>{label}</dt><dd><kbd>{key}</kbd></dd></div>)}</dl></section></div></div>
   </div>;
 }

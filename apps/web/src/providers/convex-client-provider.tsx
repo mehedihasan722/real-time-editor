@@ -30,7 +30,6 @@ export const ConvexClientProvider = ({
   const { resolvedTheme } = useTheme();
   const pathname = usePathname();
   const dark = resolvedTheme === "dark";
-  if (pathname === "/welcome") return <>{children}</>;
   if (!authConfigured || !publicEnv.success || !convex) {
     if (/^\/sign-(in|up)(\/|$)/.test(pathname)) return <>{children}</>;
     return (

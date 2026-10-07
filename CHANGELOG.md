@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- 🎮 Redesign the arcade with 22 real game previews, distinct SVG icons, improved vehicles and environments, isolated input, stopped idle animation loops, and restartable errors.
+- 📚 Replace the Guide cards with searchable documentation, topic navigation, expandable articles, and keyboard shortcuts.
+- 🧹 Remove the standalone welcome site; keep the shared footer and Blender workflow in the workspace.
+- 🔀 Integrate dependency branches; retain TypeScript 6 and ESLint 9 after incompatible major-version checks.
+
 - 🔒 Patch transitive `source-map-js` to 1.2.2; production dependency audit is clean.
 - ✅ Correct optional catch-all route auditing and launch Playwright directly through the standalone server to preserve port arguments.
 

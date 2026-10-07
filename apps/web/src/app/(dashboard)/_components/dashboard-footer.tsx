@@ -14,7 +14,7 @@ export const DashboardFooter = () => (
       <div><p className="editorial-kicker">A LITTLE SPACE. YOUR NEXT BIG IDEA.</p><h2>Make room<br />for what’s next<span>.</span></h2><Link className="editorial-pill" href="/templates">Find your starting point <ArrowUpRight size={18} aria-hidden="true" /></Link></div>
       <div className="editorial-footer__directory"><p className="editorial-kicker">KEEP EXPLORING</p><nav aria-label="Footer navigation">{destinations.map(({href,label,icon:Icon}) => <Link key={href} href={href}><Icon size={16} aria-hidden="true" />{label}<ArrowUpRight size={15} aria-hidden="true" /></Link>)}</nav><a href="https://github.com/mehedihasan722/real-time-editor" target="_blank" rel="noopener noreferrer" className="editorial-footer__source"><Code2 size={17} aria-hidden="true" /> Follow the project <span className="sr-only">(opens in a new tab)</span><ArrowUpRight size={15} aria-hidden="true" /></a></div>
     </div>
-    <Link href="/welcome" className="editorial-footer__wordmark" aria-label="Flowboard product home">flowboard<span aria-hidden="true"><Asterisk size="1em" strokeWidth={1.2} /></span></Link>
+    <Link href="/" className="editorial-footer__wordmark" aria-label="Flowboard workspace">flowboard<span aria-hidden="true"><Asterisk size="1em" strokeWidth={1.2} /></span></Link>
     <div className="editorial-footer__bottom"><span>© {new Date().getFullYear()} Flowboard</span><span>Imagine. Connect. Create.</span><Link href="/settings">Privacy &amp; appearance settings <ArrowUpRight size={13} aria-hidden="true" /></Link></div>
   </footer>
 );
