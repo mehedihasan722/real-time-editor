@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- ✅ Initialize authentication contrast fixtures through saved theme preferences before hydration.
+
 - 🎮 Redesign the arcade with 22 real game previews, distinct SVG icons, improved vehicles and environments, isolated input, stopped idle animation loops, and restartable errors.
 - 📚 Replace the Guide cards with searchable documentation, topic navigation, expandable articles, and keyboard shortcuts.
 - 🧹 Remove the standalone welcome site; keep the shared footer and Blender workflow in the workspace.

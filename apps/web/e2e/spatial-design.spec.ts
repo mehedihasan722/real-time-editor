@@ -74,9 +74,10 @@ test("shared 3D banners cover every dashboard destination and preserve page cont
 });
 
 for (const dark of [false, true]) test(`${dark ? "dark" : "light"} authentication text meets normal-text contrast`, async ({ page }, testInfo) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.emulateMedia({ reducedMotion: "reduce", colorScheme: dark ? "dark" : "light" });
+  await page.addInitScript(theme => localStorage.setItem("theme", theme), dark ? "dark" : "light");
   await page.goto("/sign-in");
-  await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), dark);
+  await expect(page.locator('.auth-experience')).toHaveCSS('color-scheme', dark ? 'dark' : 'light');
   const failures = await page.evaluate(() => {
     const rgb = (value: string) => (value.match(/[\d.]+/g) || []).map(Number);
     const blend = (front: number[], back: number[]) => front.slice(0, 3).map((c, i) => c * (front[3] ?? 1) + back[i] * (1 - (front[3] ?? 1)));
