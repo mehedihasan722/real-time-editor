@@ -13,15 +13,29 @@ test("AI command output becomes editable notes only after validation", () => {
 });
 
 function route({ user = "user_1", org = "org_1", boardOrg = "org_1", fetcher = async () => Response.json({ choices: [{ message: { content: '{"title":"Plan","notes":["First step"]}' } }] }), env = {}, method = "POST" } = {}) {
+  const environment = { NODE_ENV: "production", AI_BASE_URL: "https://model.example/v1", AI_MODEL: "test-model", HERMES_BASE_URL: "https://hermes.example/v1", HERMES_API_KEY: "test-key", ...env };
   return load("src/app/api/assist/route.ts", {
+    "@/lib/assist-providers": load("src/lib/assist-providers.ts", {}, { process: { env: environment } }),
     "@clerk/nextjs/server": { auth: async () => ({ userId: user, orgId: org, sessionClaims: { aud: "convex" }, getToken: async () => "private-clerk-token" }) },
-    "convex/browser": { ConvexHttpClient: class { setAuth() {} async query() { return { orgId: boardOrg, title: "PRIVATE BOARD TITLE" }; } } },
-    "../../../../convex/_generated/api": { api: { board: { get: "get" } } },
+    "convex/browser": { ConvexHttpClient: class { setAuth() {} async mutation() { return true; } async query() { return { orgId: boardOrg, title: "PRIVATE BOARD TITLE" }; } } },
+    "../../../../convex/_generated/api": { api: { board: { get: "get" }, assist: { reserveRequest: "reserveRequest" } } },
     "@/lib/public-env": { publicEnv: { success: true, data: { NEXT_PUBLIC_CONVEX_URL: "https://example.convex.cloud" } } },
     "@/lib/server-env": { serverEnv: { success: true } },
   }, { fetch: fetcher, process: { env: { NODE_ENV: "production", AI_BASE_URL: "https://model.example/v1", AI_MODEL: "test-model", HERMES_BASE_URL: "https://hermes.example/v1", HERMES_API_KEY: "test-key", ...env } } })[method];
 }
 const request = (mode = "generate") => new Request("https://flowboard.example/api/assist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ boardId: "board_1", mode, messages: [{ role: "user", content: "Make a launch plan" }] }) });
+
+test("AI route cancels oversized upstream JSON before parsing it", async () => {
+  for (const declared of [false, true]) {
+    let cancelled = false;
+    const handler = route({ fetcher: async () => new Response(new ReadableStream({
+      pull(controller) { controller.enqueue(new Uint8Array(600_000)); },
+      cancel() { cancelled = true; },
+    }), { headers: declared ? { "content-length": "2000000" } : {} }) });
+    assert.equal((await handler(request())).status, 502);
+    assert.equal(cancelled, true);
+  }
+});
 
 test("AI route blocks signed-out users and cross-organization board access", async () => {
   let calls = 0;
@@ -53,9 +67,54 @@ test("Hermes chat uses the dedicated server and returns plain text", async () =>
   assert.equal(JSON.parse(sent.body).model, "hermes-agent");
 });
 
+test("Hermes SSE remains streaming and propagates a cancellation signal upstream", async () => {
+  let sent;
+  const frames = 'data: {"choices":[{"delta":{"content":"Plan"}}]}\n\ndata: [DONE]\n\n';
+  const handler = route({ fetcher: async (url, options) => { sent = options; return new Response(frames, { headers: { "content-type": "text/event-stream" } }); } });
+  const response = await handler(new Request("https://flowboard.example/api/assist", { method: "POST", body: JSON.stringify({ boardId: "board_1", mode: "chat", stream: true, messages: [{ role: "user", content: "Plan" }] }) }));
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("content-type"), "text/event-stream");
+  assert.equal(await response.text(), frames);
+  assert.equal(JSON.parse(sent.body).stream, true);
+  assert.ok(sent.signal instanceof AbortSignal);
+});
+
 test("Assist capability discovery requires login and exposes no provider secrets", async () => {
   assert.equal((await route({ user: null, method: "GET" })()).status, 401);
   const response = await route({ method: "GET", env: { HERMES_API_KEY: "private-secret", AI_BASE_URL: "" } })();
-  assert.deepEqual(await response.json(), { generate: false, chat: true });
+  const capabilities = await response.json();
+  assert.equal(capabilities.generate, false); assert.equal(capabilities.chat, true);
+  assert.equal(capabilities.image, false); assert.equal(capabilities.providers.hermes, true);
+  assert.ok(!JSON.stringify(capabilities).includes("private-secret"));
   assert.equal(response.headers.get("Cache-Control"), "no-store");
+});
+
+for (const [provider, key, base] of [["gemini", "GEMINI_API_KEY", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"], ["grok", "XAI_API_KEY", "https://api.x.ai/v1/chat/completions"], ["deepseek", "DEEPSEEK_API_KEY", "https://api.deepseek.com/chat/completions"]]) test(`${provider} uses its own configured credentials`, async () => {
+  let sent;
+  const handler = route({ env: { [key]: "provider-secret" }, fetcher: async (url, options) => { sent = { url: String(url), ...options }; return Response.json({ choices: [{ message: { content: "Plan" } }] }); } });
+  const response = await handler(new Request("https://flowboard.example/api/assist", { method: "POST", body: JSON.stringify({ boardId: "board_1", mode: "chat", provider, messages: [{ role: "user", content: "Plan" }] }) }));
+  assert.equal(response.status, 200); assert.equal(sent.url, base); assert.equal(sent.headers.Authorization, "Bearer provider-secret");
+  assert.ok(!JSON.stringify(await response.json()).includes("provider-secret"));
+  assert.equal(JSON.parse(sent.body).model_options, undefined);
+});
+test("Nano Banana sends a native image request and returns a bounded image", async () => {
+  let sent;
+  const handler = route({ env: { GEMINI_API_KEY: "image-secret" }, fetcher: async (url, options) => { sent = { url: String(url), ...options }; return Response.json({ candidates: [{ content: { parts: [{ inlineData: { mimeType: "image/png", data: "aGVsbG8=" } }] } }] }); } });
+  const response = await handler(new Request("https://flowboard.example/api/assist", { method: "POST", body: JSON.stringify({ boardId: "board_1", mode: "image", messages: [{ role: "user", content: "Draw a rocket" }] }) }));
+  assert.equal(response.status, 200); assert.match(sent.url, /gemini-2.5-flash-image:generateContent$/); assert.equal(sent.headers["x-goog-api-key"], "image-secret");
+  assert.equal((await response.json()).image, "data:image/png;base64,aGVsbG8=");
+});
+
+test("Assist forwards validated file contents, not local paths or credentials", async () => {
+  let sent;
+  const handler = route({ fetcher: async (url, options) => { sent = JSON.parse(options.body); return Response.json({ choices: [{ message: { content: "Summary" } }] }); } });
+  const response = await handler(new Request("https://flowboard.example/api/assist", { method: "POST", body: JSON.stringify({ boardId: "board_1", mode: "chat", attachments: [{ kind: "text", name: "project/plan.md", content: "Launch checklist" }], messages: [{ role: "user", content: "Summarize the attached files" }] }) }));
+  assert.equal(response.status, 200); assert.match(sent.messages.at(-1).content, /Launch checklist/);
+  assert.ok(!JSON.stringify(sent).includes("private-clerk-token"));
+});
+test("malformed images fail validation before calling the provider", async () => {
+  let called = false;
+  const handler = route({ fetcher: async () => { called = true; throw new Error(); } });
+  const response = await handler(new Request("https://flowboard.example/api/assist", { method: "POST", body: JSON.stringify({ boardId: "board_1", mode: "chat", attachments: [{ kind: "image", name: "fake.png", content: "data:image/png;base64,PGh0bWw+" }], messages: [{ role: "user", content: "Analyze this" }] }) }));
+  assert.equal(response.status, 400); assert.equal(called, false);
 });

@@ -23,15 +23,19 @@ const PreferencesContext = createContext<PreferencesContextValue | null>(null);
 
 export const WorkspacePreferencesProvider = ({ children }: { children: ReactNode }) => {
   const [preferences, setPreferences] = useState(defaults);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(storageKey);
-      if (!saved) return;
-      const parsed = preferencesSchema.safeParse(JSON.parse(saved));
-      if (parsed.success) setPreferences(parsed.data);
+      if (saved) {
+        const parsed = preferencesSchema.safeParse(JSON.parse(saved));
+        if (parsed.success) setPreferences(parsed.data);
+      }
     } catch {
-      window.localStorage.removeItem(storageKey);
+      // Browser storage can be unavailable; preferences still work in memory.
+    } finally {
+      setHydrated(true);
     }
   }, []);
 
@@ -40,8 +44,14 @@ export const WorkspacePreferencesProvider = ({ children }: { children: ReactNode
     root.classList.toggle("hide-board-grid", !preferences.showGrid);
     root.classList.toggle("reduce-motion", preferences.reducedMotion);
     root.classList.toggle("high-contrast-canvas", preferences.highContrastCanvas);
-    window.localStorage.setItem(storageKey, JSON.stringify(preferences));
-  }, [preferences]);
+    if (hydrated) {
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify(preferences));
+      } catch {
+        // Keep the current session usable when persistence is denied.
+      }
+    }
+  }, [preferences, hydrated]);
 
   const updatePreference: PreferencesContextValue["updatePreference"] = (key, value) => {
     setPreferences((current) => ({ ...current, [key]: value }));

@@ -14,12 +14,12 @@ import { NotificationsMenu } from "./notifications-menu";
 export const Navbar = () => {
   const { organization } = useOrganization();
   return (
-    <div className="flex items-center gap-x-3 p-4 md:p-5 min-w-0">
+    <div><div className="flex items-center gap-x-2 sm:gap-x-3 p-3 sm:p-4 md:p-5 min-w-0">
       <MobileNav />
       <div className="hidden lg:flex lg:flex-1">
         <SearchInput />
       </div>
-      <div className="block lg:hidden flex-1">
+      <div className="block lg:hidden min-w-0 flex-1">
         <OrganizationSwitcher
           hidePersonal
           appearance={{
@@ -48,10 +48,10 @@ export const Navbar = () => {
         />
       </div>
       {organization && <div className="hidden sm:block"><InviteButton /></div>}
-      <span className="hidden rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 md:inline">Free plan</span>
+      <span className="hidden rounded-full border border-border bg-background px-3 py-1.5 text-xs font-bold text-muted-foreground md:inline">Workspace</span>
       <NotificationsMenu />
       <ThemeToggle />
       <UserButton />
-    </div>
+    </div><div className="px-4 pb-4 lg:hidden"><SearchInput /></div></div>
   );
 };

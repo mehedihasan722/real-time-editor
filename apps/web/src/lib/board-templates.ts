@@ -56,7 +56,8 @@ const escapeMarkup = (value: string) => value
   .replaceAll('"', "&quot;")
   .replaceAll("'", "&#039;");
 
-export function getWorkspaceType(template?: string): "retrospective" | "playground" | "todo" | "flowchart" | "roadmap" | "weekly" | null {
+export function getWorkspaceType(template?: string): "retrospective" | "playground" | "todo" | "flowchart" | "roadmap" | "weekly" | "requirements" | null {
+  if (template === "Product requirements") return "requirements";
   if (template === "Weekly update") return "weekly";
   if (template === "Roadmap") return "roadmap";
   if (template === "Retrospective") return "retrospective";
@@ -86,7 +87,7 @@ export function getTemplateLayers(template?: string, prompt?: string, author = "
       })
     : selected.notes;
   const heading: Layer = { type: LayerType.Text, x: 190, y: 110, width: 720, height: 80, fill: { r: 30, g: 41, b: 59, a: 1 }, value: headingValue };
-  if ((template === "To-do planning" || template === "Retrospective" || template === "Weekly update") && !request) return [["template-heading", heading]];
+  if ((template === "To-do planning" || template === "Retrospective" || template === "Weekly update" || template === "Product requirements") && !request) return [["template-heading", heading]];
   const notes: [string, Layer][] = generatedNotes.map((value, index) => [`template-note-${index}`, { type: LayerType.Note, x: 190 + (index % 4) * 250, y: 240 + Math.floor(index / 4) * 210, width: 210, height: 180, fill: palette[index % palette.length], value, author }]);
   return [["template-heading", heading], ...notes];
 }

@@ -1,5 +1,7 @@
 @config "../../tailwind.config.ts";
 @import "tailwindcss";
+@import "./home-carousel.css";
+@source "../../../../packages/ui/src";
 
 html,
 body,
@@ -24,10 +26,10 @@ body,
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted-foreground: 215.4 16.3% 40%;
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 72% 42%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 215 16% 55%;
@@ -444,7 +446,7 @@ html.dark { color-scheme:dark; }
 .board-starter__suggestions button { padding:8px 13px; border:1px solid #dce2ee; border-radius:999px; color:#34405f; font-size:12px; font-weight:600; background:#fff; }
 .board-starter__suggestions button:hover { border-color:#8b91ef; color:#5147ce; background:#f5f4ff; }
 .board-starter__modes { display:flex; flex-wrap:wrap; justify-content:center; gap:22px; margin-top:22px; color:#697493; font-size:11px; font-weight:700; }
-.board-starter__modes button { display:flex; align-items:center; gap:6px; padding:6px; border-radius:6px; }
+.board-starter__modes button { display:flex; align-items:center; gap:6px; padding:6px; border-radius:6px; color:inherit; background:transparent; }
 .board-starter__modes button:hover { color:#4338ca; background:#eef2ff; }
 .board-starter__modes button:focus-visible { outline:2px solid #4f46e5; outline-offset:3px; }
 .board-starter--skeleton { min-height:365px; }

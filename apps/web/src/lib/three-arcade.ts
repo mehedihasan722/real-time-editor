@@ -15,13 +15,15 @@ export class ThreeArcade {
   private player = new THREE.Group();
   private keeper = new THREE.Group();
   private ball = new THREE.Group();
-  private observer: ResizeObserver;
+  private observer?: ResizeObserver;
   private shotTime = -10;
   private shotX = 0;
   private reactionPanel: THREE.Mesh | null = null;
   private lastScore = 0;
+  private disposed = false;
   constructor(private canvas: HTMLCanvasElement, private id: GameId) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+    try {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth < 768 ? 1.25 : 1.5));
     this.renderer.shadowMap.enabled = window.innerWidth >= 768;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -35,6 +37,7 @@ export class ThreeArcade {
     this.buildScene();
     this.observer = new ResizeObserver(() => { const width = Math.max(1, canvas.clientWidth); this.renderer.setSize(width, width * 440 / 720, false); this.camera.aspect = 720 / 440; this.camera.updateProjectionMatrix(); });
     this.observer.observe(canvas); this.renderer.setSize(Math.max(1, canvas.clientWidth), Math.max(1, canvas.clientWidth) * 440 / 720, false);
+    } catch (error) { this.dispose(); throw error; }
   }
   private material(color: number) { if (!this.materials.has(color)) this.materials.set(color, new THREE.MeshStandardMaterial({ color, roughness: .55, metalness: .15 })); return this.materials.get(color)!; }
   private mesh(group: THREE.Group, geometry: THREE.BufferGeometry, color: number, x = 0, y = 0, z = 0) {
@@ -46,8 +49,14 @@ export class ThreeArcade {
     const group = new THREE.Group();
     if (kind === "car") {
       this.box(group, 1.45, .5, 2.8, color, 0, .65); this.box(group, 1.18, .55, 1.2, 0x263c50, 0, 1.12, .15);
-      this.box(group, 1.4, .12, .15, 0xfef3c7, 0, .78, -1.42); this.box(group, 1.3, .12, .15, 0xef4444, 0, .75, 1.42);
-      for (const x of [-.75, .75]) for (const z of [-.85, .85]) { const wheel = this.mesh(group, new THREE.CylinderGeometry(.32, .32, .2, 12), 0x141820, x, .38, z); wheel.rotation.z = Math.PI / 2; }
+      this.box(group, 1.4, .12, .15, 0xfef3c7, 0, .78, -1.42);
+      this.box(group, 1.48, .14, 2.95, 0x172332, 0, .35);
+      this.box(group, 1.08, .42, .05, 0x7298ae, 0, 1.08, -.48);
+      this.box(group, 1.08, .36, .05, 0x476579, 0, 1.08, .78);
+      this.box(group, .22, .025, 2.55, 0xe9edf2, 0, .915);
+      for (const side of [-1,1]) { this.box(group, .22, .13, .24, color, side * .78, .98, -.22); this.box(group, .04, .26, .95, 0x7298ae, side * .6, 1.1, .14); }
+ this.box(group, 1.3, .12, .15, 0xef4444, 0, .75, 1.42);
+      for (const x of [-.75, .75]) for (const z of [-.85, .85]) { const wheel = this.mesh(group, new THREE.CylinderGeometry(.32, .32, .2, 12), 0x141820, x, .38, z); wheel.rotation.z = Math.PI / 2; const hub = this.mesh(group, new THREE.CylinderGeometry(.17, .17, .215, 12), 0x94a3b8, x, .38, z); hub.rotation.z = Math.PI / 2; }
     } else if (kind === "person") {
       this.box(group, .6, .9, .4, color, 0, 1.15); this.sphere(group, .23, 0xd7a47c, 0, 1.85);
       for (const x of [-.2, .2]) { this.box(group, .18, .8, .22, 0x26364a, x, .4); this.box(group, .18, .75, .18, color, x * 2, 1.1); }
@@ -59,6 +68,8 @@ export class ThreeArcade {
       this.box(group, 2, .1, .15, 0x475569); for (const x of [-.85, .85]) this.mesh(group, new THREE.TorusGeometry(.35, .07, 6, 16), 0x94a3b8, x, .1).rotation.x = Math.PI / 2;
     } else if (kind === "egg") { const egg = this.sphere(group, .36, color); egg.scale.y = 1.25; }
     else if (kind === "coin") this.mesh(group, new THREE.TorusGeometry(.32, .12, 8, 16), 0xffce51);
+    else if (kind === "target") { this.mesh(group, new THREE.CylinderGeometry(.7,.7,.18,32), 0xf8fafc).rotation.x=Math.PI/2; this.mesh(group,new THREE.TorusGeometry(.46,.09,8,32),0xe85c55,0,0,.12); this.sphere(group,.16,0xe85c55,0,0,.14); }
+    else if (kind === "basket") { this.box(group,1.8,.15,1,0xb47c42); for(const side of [-1,1]){this.box(group,1.8,.45,.12,0xd7a560,0,.25,side*.5);this.box(group,.12,.45,1,0xd7a560,side*.9,.25);} }
     else if (kind === "rock") this.mesh(group, new THREE.DodecahedronGeometry(.7), 0x74818d);
     else if (kind === "bird") { this.sphere(group, .38, 0xffc531); this.sphere(group, .18, 0xf1f5f9, .22, .1, -.18); this.mesh(group, new THREE.ConeGeometry(.13, .35, 6), 0xf97316, .42).rotation.z = -Math.PI / 2; }
     else if (kind === "ball") { this.sphere(group, .3, 0xf1f5f9); for (let i = 0; i < 6; i++) this.sphere(group, .085, 0x182232, Math.sin(i) * .26, Math.cos(i) * .26, .1); }
@@ -70,6 +81,8 @@ export class ThreeArcade {
     const chase = this.id === "race" || this.id === "runner";
     if (chase) {
       this.box(environment, 11, .2, 100, 0x252b34, 0, -.1, -28);
+      for (const side of [-1,1]) { this.box(environment,.15,.55,100,0x65798c,side*5.3,.4,-28); this.box(environment,.1,.025,100,0xffce73,side*4.7,.02,-28); for(let i=0;i<12;i++){this.box(environment,.12,4,.12,0x475569,side*6.4,2,-i*8);this.box(environment,1.2,.12,.3,0xf6d89d,side*6,4,-i*8);} }
+
       for (let i = 0; i < 25; i++) { const group = new THREE.Group(); for (const x of [-1.5, 1.5]) this.box(group, .08, .02, 1.5, 0xe2e8f0, x); group.position.z = -i * 4; this.scene.add(group); this.scenery.push(group); }
       for (let i = 0; i < 20; i++) for (const side of [-1, 1]) { const height = 5 + i % 6 * 2; this.box(environment, 5, height, 5, 0x263449 + i % 3 * 0x070707, side * (10 + i % 3), height / 2, -i * 6); for (let floor = 1; floor < height; floor += 2) this.box(environment, 3, .2, .05, 0x84a8bd, side * (10 + i % 3), floor, -i * 6 + 2.55); }
       this.player = this.model(this.id === "race" ? "car" : "person"); this.scene.add(this.player);
@@ -98,7 +111,7 @@ export class ThreeArcade {
     } else {
       this.camera.position.set(0, 14, 20); this.camera.lookAt(0, 0, 0);
       this.box(environment, 24, .4, 16, 0x16273a, 0, -.5); this.box(environment, 25, .2, .25, 0x527894, 0, -.3, -8);
-      this.player = this.model(this.id === "flappy" ? "bird" : this.id === "asteroids" ? "plane" : this.id === "egg" ? "egg" : "cube", 0xa78bfa); this.scene.add(this.player);
+      this.player = this.model(this.id === "flappy" ? "bird" : this.id === "asteroids" ? "plane" : this.id === "egg" ? "egg" : this.id === "catch" ? "basket" : this.id === "invaders" || this.id === "dodge" ? "plane" : "cube", 0xa78bfa); this.scene.add(this.player);
       if (this.id === "reaction") this.reactionPanel = this.box(environment, 15, .2, 8, 0xbe123c);
     }
   }
@@ -129,16 +142,16 @@ export class ThreeArcade {
     } else if (this.id === "fps") {
       this.camera.position.x = (world.x - 360) / 100 + (pointer ? (pointer.x - 360) / 600 : 0);
       this.camera.lookAt(this.camera.position.x, 2.8, -15); this.player.position.z = Math.exp(-Math.max(0, world.time - this.shotTime) * 15) * .2;
-    } else if (this.id === "pong") { this.player.visible = false; }
+    } else if (this.id === "pong" || this.id === "snake") { this.player.visible = false; }
     else if (this.id === "breakout") { this.player.position.copy(this.boardPoint(world.angle, 405)); this.player.scale.set(3.4, .45, .4); }
     else if (this.id === "egg") { this.player.position.copy(this.boardPoint(360, 400)); this.player.scale.set(1, 1, 1); this.player.traverse(child => { if (child instanceof THREE.Mesh) child.material = this.material(palette[world.egg]); }); }
     else if (this.id === "reaction") { this.player.visible = false; if (this.reactionPanel) this.reactionPanel.material = this.material(world.ready ? 0x059669 : 0xbe123c); }
-    else { this.place(this.player, world.x, world.y); if (this.id === "asteroids") this.player.rotation.y = -world.angle - Math.PI / 2; if (this.id === "catch") this.player.scale.set(2.4, .6, .7); }
+    else { this.place(this.player, world.x, world.y); if (this.id === "asteroids") this.player.rotation.y = -world.angle - Math.PI / 2; if (this.id === "catch") this.player.scale.set(1.2, 1, 1); }
     const seen = new Set<object>();
     for (const object of world.objects) {
       seen.add(object); let mesh = this.objects.get(object);
       if (!mesh) {
-        mesh = this.model(this.id === "race" ? "car" : this.id === "plane" ? "plane" : this.id === "fps" || this.id === "invaders" ? "drone" : this.id === "asteroids" ? "rock" : (this.id === "runner" && object.kind === 2) || (this.id === "catch" && object.kind === 0) ? "coin" : "cube", 0xf56c62);
+        mesh = this.model(this.id === "race" ? "car" : this.id === "aim" ? "target" : this.id === "plane" ? "plane" : this.id === "fps" || this.id === "invaders" ? "drone" : this.id === "asteroids" ? "rock" : (this.id === "runner" && object.kind === 2) || (this.id === "catch" && object.kind === 0) ? "coin" : "cube", 0xf56c62);
         this.scene.add(mesh); this.objects.set(object, mesh);
       }
       this.place(mesh, object.x, object.y); mesh.userData.point = { x: object.x, y: object.y };
@@ -177,5 +190,20 @@ export class ThreeArcade {
     else world.click(x, y);
   }
   private releaseGroup(group: THREE.Group) { group.traverse(child => { if (child instanceof THREE.Mesh) { child.geometry.dispose(); this.geometries.delete(child.geometry); } }); }
-  dispose() { this.observer.disconnect(); this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.renderer.dispose(); this.renderer.forceContextLoss(); this.scene.clear(); }
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.observer?.disconnect();
+    this.scene.traverse(object => {
+      if (object instanceof THREE.Light && "shadow" in object) (object as THREE.DirectionalLight).shadow?.dispose();
+      if (object instanceof THREE.Mesh) {
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        for (const material of materials) for (const value of Object.values(material)) if (value instanceof THREE.Texture) value.dispose();
+      }
+    });
+    this.geometries.forEach(geometry => geometry.dispose()); this.geometries.clear();
+    this.materials.forEach(material => material.dispose()); this.materials.clear();
+    this.objects.clear(); this.tiles.clear(); this.scenery.length = 0;
+    this.renderer.dispose(); this.renderer.forceContextLoss(); this.scene.clear();
+  }
 }

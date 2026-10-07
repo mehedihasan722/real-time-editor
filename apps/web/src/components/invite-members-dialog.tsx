@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useOrganization } from "@clerk/nextjs";
 import { Building2, Link2, Loader2, Mail, Send, Users } from "lucide-react";
 import { toast } from "sonner";
+import { canAdminister, workspaceRole } from "@/lib/roles";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +22,7 @@ const parseEmails = (value: string) =>
   Array.from(new Set(value.split(/[\s,;]+/).map((email) => email.trim().toLowerCase()).filter(Boolean)));
 
 export const InviteMembersDialog = ({ children }: InviteMembersDialogProps) => {
-  const { organization } = useOrganization();
+  const { organization, membership } = useOrganization();
   const [emails, setEmails] = useState("");
   const [role, setRole] = useState<"org:member" | "org:admin">("org:member");
   const [pending, setPending] = useState(false);
@@ -56,6 +57,7 @@ export const InviteMembersDialog = ({ children }: InviteMembersDialogProps) => {
       return;
     }
 
+    if (!canAdminister(workspaceRole(membership?.role))) { toast.error("Only owners and administrators can invite members."); return; }
     setPending(true);
     const results = await Promise.allSettled(
       validEmails.map((emailAddress) => organization.inviteMember({ emailAddress, role })),

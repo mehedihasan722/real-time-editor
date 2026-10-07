@@ -25,6 +25,9 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
     return NextResponse.next();
   }
   if (!publicEnv.success || !serverEnv.success) {
+    // Public authentication artwork is available before account provisioning;
+    // its page renders an honest setup notice. Protected routes still fail closed.
+    if (/^\/sign-(in|up)(\/|$)/.test(request.nextUrl.pathname)) return NextResponse.next();
     const headers = { "Cache-Control": "no-store" };
     if (/^\/(api|trpc)(\/|$)/.test(request.nextUrl.pathname)) {
       return NextResponse.json(
@@ -43,7 +46,7 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|glb|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     // Always run for API routes
     "/(api|trpc)(.*)",
     // Clerk's frontend API proxy routes

@@ -18,9 +18,10 @@ interface TextProps {
   layer: TextLayer;
   onPointerDown: (e: React.PointerEvent, id: string) => void;
   selectionColor?: string;
+  readOnly?: boolean;
 }
 
-const Text = ({ layer, onPointerDown, id, selectionColor }: TextProps) => {
+const Text = ({ layer, onPointerDown, id, selectionColor, readOnly = false }: TextProps) => {
   const { x, y, width, height, fill, value } = layer;
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +57,7 @@ const Text = ({ layer, onPointerDown, id, selectionColor }: TextProps) => {
     >
       <div
         ref={editorRef}
-        contentEditable
+        contentEditable={!readOnly}
         suppressContentEditableWarning
         onInput={(event) => {
           setHasModified(true);

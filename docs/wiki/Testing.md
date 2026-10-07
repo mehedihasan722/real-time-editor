@@ -30,7 +30,7 @@ The live suite creates a disposable board, edits a note, verifies it in a second
 
 ## Board files and bounds
 
-- Boards support 1,000 objects and explain when that limit is reached.
+- Boards support 5,000 objects with viewport culling and explain when that limit is reached.
 - Template and editable-file insertion is all-or-nothing when capacity is insufficient.
 - Editable files use versioned JSON, validate every layer, and must be at most 10 MB. Imports add objects rather than replacing existing content.
 - PNG/PDF exports include board objects, not comments or cursor presence. Images scale to fit a maximum 4,096-pixel export dimension.
@@ -38,3 +38,37 @@ The live suite creates a disposable board, edits a note, verifies it in a second
 - JSON imports reject active SVG image data, unsupported layer types, nonfinite/out-of-range coordinates, and unsafe note links.
 
 Verify mobile editing and exports on your supported browsers before announcing support for a new device family. Keep live test accounts separate from production workspaces.
+
+The fixture matrix includes Chromium, Firefox, WebKit and mobile Chromium. Install them with `npx playwright install chromium firefox webkit`. `npm run test:e2e -- --project=chromium` selects a project. The manual authenticated workflow and dedicated primary/peer/admin/member/guest sessions are described in [Enterprise architecture](Enterprise-Architecture).
+
+## Cloud services and Blender previews
+
+The regression suite covers Supabase private-bucket enforcement and organization object paths, atomic Upstash quotas, Cloudflare token hostname/action checks, Pinecone organization namespaces and current-board reauthorization, verified-self email delivery, and PostHog consent/privacy boundaries. Upstream services are mocked: account provisioning, paid requests, email delivery, and live vendor behavior are not verified without credentials.
+
+Browser fixtures exercise the cloud dialog's explicit email/index/backup actions and backup confirmation. GLB checks load real Blender-generated assets, switch models, and verify canvas removal; static model/poster requests also run without service credentials. Windows WebKit skips the WebGL fixture but retains poster and carousel checks; Linux CI attempts the fixture normally.
+
+Firefox skips only the service-worker offline emulation check because Playwright's worker network controls are [supported on Chromium](https://playwright.dev/docs/service-workers) and the CI Firefox worker continued reaching the live origin under offline emulation. The recovery HTML and retry controls are checked on all browser projects. This does not assert real Firefox offline behavior; verify it on an actual offline device before release.
+
+Responsive carousel tests establish reduced-motion media before navigation so Windows WebKit does not retain stale computed animation styles after late media emulation. Preference changes and model removal retain their separate runtime checks.
+
+The studio fixture checks changing canvas pixels during Blender clip playback, stable pixels under reduced motion, model switching, and cleanup. When a headless browser cannot create WebGL2 (as observed in Linux CI Firefox), it asserts the rendered-poster fallback instead; GLB animation channels are checked independently. This keeps software-rendered playback checks separate from unavailable-GPU behavior.
+
+The spatial-design suite tests real unconfigured sign-in/sign-up pages across mobile, tablet, and desktop widths, mobile form ordering, scene controls, navigation, and protected-route/API refusal. A mock Clerk form checks keyboard input access; shared dashboard fixtures cover all five destination banners while retaining page content. The complete local Chromium/WebKit/mobile run passed 107 checks with one Windows WebKit GLB skip. Live Clerk authentication and actual-device performance remain launch requirements.
+
+## Carousel and review design
+
+The home carousel layout fixtures use rendered Blender posters, keeping keyboard and responsive checks independent of GPU availability. The dedicated GLB fixture checks real studio and carousel-sculpture playback, reduced-motion pixels, model switching, and GPU removal. It allows 60 seconds for shader compilation, screenshots, and multiple GPU cleanups on software renderers.
+
+Review-section fixtures verify explicit sample-content labels, previous/next wrapping, keyboard selection, template navigation, mobile sizing, stable section height, and reduced-motion transitions. No customer endorsements, aggregate scores, or verified-review claims are established by these tests.
+
+
+## Games, documentation, and workflow validation
+
+`games-guide.spec.ts` covers all 22 game launch/restart/library flows, keyboard scope, GPU-loss recovery, distinct artwork, filters, and documentation search in both themes. The standalone welcome route and its tests have been removed. Blender workflow playback and poster fallback remain in the GLB fixture.
+
+Playwright starts `scripts/start-standalone.cjs` directly so npm workspace forwarding cannot consume the port and hostname flags. Build first; use one worker on memory-constrained Windows hosts. Fixture tests do not establish live Clerk, Convex, Liveblocks, AI, or email behavior.
+
+
+Validation on 7 October 2026: optimized build, TypeScript, ESLint, 138 unit regressions, and the production dependency audit passed (zero production vulnerabilities). The complete Chromium/WebKit/mobile integration matrix passed 142 checks, with two expected Windows WebKit skips for unavailable GPU fixtures. All 22 game launch/restart/library flows, both themes, documentation search, board controls, exports, and navigation passed. Linux CI includes Firefox. Live authenticated services and physical-device performance are not certified by fixture tests.
+
+The game GPU test probes WebGL2 before requiring renderer focus. On headless runners without WebGL2, it checks the explicit engine-unavailable notice, Restart, and return-to-library cleanup instead. Capable runners still exercise keyboard scope and graphics-context loss.

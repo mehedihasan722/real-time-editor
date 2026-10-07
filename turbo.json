@@ -1,9 +1,10 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["packages/config/**"],
   "tasks": {
     "build": {
       "dependsOn": [
-        "^build"
+        "^build", "^typecheck"
       ],
       "outputs": [
         ".next/**",
@@ -15,7 +16,7 @@
       ]
     },
     "lint": {},
-    "typecheck": {},
+    "typecheck": { "dependsOn": ["^typecheck"] },
     "dev": {
       "cache": false,
       "persistent": true
@@ -29,6 +30,6 @@
     "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL",
     "NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL",
     "CLERK_SECRET_KEY",
-    "LIVEBLOCKS_SECRET_KEY"
+    "LIVEBLOCKS_SECRET_KEY", "NEXT_PUBLIC_SENTRY_DSN", "SENTRY_DSN"
   ]
 }

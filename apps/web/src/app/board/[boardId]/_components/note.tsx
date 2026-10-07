@@ -13,9 +13,10 @@ interface NoteProps {
   layer: NoteLayer;
   onPointerDown: (e: React.PointerEvent, id: string) => void;
   selectionColor?: string;
+  readOnly?: boolean;
 }
 
-const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) => {
+const Note = ({ layer, onPointerDown, id, selectionColor, readOnly = false }: NoteProps) => {
   const { x, y, width, height, fill, value, author, fontFamily = "calibri", fontSize = "small", bold, strike, list, link, rotation = 0 } = layer;
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +60,7 @@ const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) => {
       >
         <div
           ref={editorRef}
-          contentEditable
+          contentEditable={!readOnly}
           suppressContentEditableWarning
           onInput={(event) => updateValue(event.currentTarget.textContent ?? "")}
           aria-label="Sticky note text"

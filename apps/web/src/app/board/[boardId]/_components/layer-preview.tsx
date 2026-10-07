@@ -16,10 +16,11 @@ interface LayerPreviewProps {
   id: string;
   onLayerPointerDown: (e: React.PointerEvent, layerId: string) => void;
   selectionColor: string;
+  readOnly?: boolean;
 }
 
 const LayerPreview = memo(
-  ({ id, onLayerPointerDown, selectionColor }: LayerPreviewProps) => {
+  ({ id, onLayerPointerDown, selectionColor, readOnly = false }: LayerPreviewProps) => {
     const layer = useStorage((root) => root.layers[id]);
 
     if (!layer) {
@@ -32,7 +33,7 @@ const LayerPreview = memo(
       case LayerType.Sticker:
         return <StickerLayerView id={id} layer={layer} onPointerDown={onLayerPointerDown} selectionColor={selectionColor} />;
       case LayerType.Shape:
-        return <DiagramShape id={id} layer={layer} onPointerDown={onLayerPointerDown} selectionColor={selectionColor} />;
+        return <DiagramShape id={id} layer={layer} onPointerDown={onLayerPointerDown} selectionColor={selectionColor} readOnly={readOnly} />;
       case LayerType.Path:
         return (
           <Path
@@ -48,9 +49,10 @@ const LayerPreview = memo(
           />
         );
       case LayerType.Note:
-        if (layer.roadmap) return <RoadmapCard id={id} layer={layer} onPointerDown={onLayerPointerDown} selected={!!selectionColor} />;
+        if (layer.roadmap) return <RoadmapCard id={id} layer={layer} onPointerDown={onLayerPointerDown} selected={!!selectionColor} readOnly={readOnly} />;
         return (
           <Note
+            readOnly={readOnly}
             id={id}
             layer={layer}
             onPointerDown={onLayerPointerDown}
@@ -60,6 +62,7 @@ const LayerPreview = memo(
       case LayerType.Text:
         return (
           <Text
+            readOnly={readOnly}
             id={id}
             layer={layer}
             onPointerDown={onLayerPointerDown}

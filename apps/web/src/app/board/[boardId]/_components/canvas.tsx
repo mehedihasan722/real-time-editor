@@ -1,4 +1,6 @@
 "use client";
+import { FlowchartPicker } from "./flowchart-picker";
+import { getFlowchartLayers, type FlowchartStyle } from "@/lib/flowchart-template";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Info from "./info";
@@ -47,25 +49,35 @@ import useDisableScrollBounce from "@/hooks/use-disable-scroll-bounce";
 import { BoardStarter } from "./board-starter";
 import { BoardControls } from "./board-controls";
 import { getTemplateLayers, getWorkspaceType } from "@/lib/board-templates";
-import { TaskWorkspace } from "./task-workspace";
-import { RetrospectiveWorkspace } from "./retrospective-workspace";
-import { AIPlayground } from "./ai-playground";
-import { WeeklyWorkspace } from "./weekly-workspace";
+import dynamic from "next/dynamic";
+const TaskWorkspace = dynamic(() => import("./task-workspace").then(module => module.TaskWorkspace), { ssr: false });
+const RetrospectiveWorkspace = dynamic(() => import("./retrospective-workspace").then(module => module.RetrospectiveWorkspace), { ssr: false });
+const AIPlayground = dynamic(() => import("./ai-playground").then(module => module.AIPlayground), { ssr: false });
+const WeeklyWorkspace = dynamic(() => import("./weekly-workspace").then(module => module.WeeklyWorkspace), { ssr: false });
+const RequirementsWorkspace = dynamic(() => import("./requirements-workspace").then(module => module.RequirementsWorkspace), { ssr: false });
 import { createDiagramShapeLayer } from "@/lib/diagram-shapes";
 import { recognizeDrawing } from "@/lib/smart-drawing";
 import { DiagramShapeKind } from "@/types/canvas";
 import { BoardFiles } from "./board-files";
 import { MAX_LAYERS, getBoardBounds } from "@/lib/board-portability";
 import { toast } from "sonner";
+import { SpatialIndex } from "@flowboard/utils/spatial-index";
+import { ConnectionStatus } from "./connection-status";
+import { useFrameCallback } from "@flowboard/hooks/use-frame-callback";
+import { useLongTaskObserver } from "@flowboard/hooks/use-long-task-observer";
+import { recordDuration } from "@/lib/monitoring";
 
 interface CanvasProps {
   boardId: string;
 }
 const Canvas = ({ boardId }: CanvasProps) => {
+  useLongTaskObserver(useCallback(duration => recordDuration("canvas.longtask", duration), []));
   const layerIds = useStorage((root) => root.layerIds);
+  const canWrite = useSelf(me => me.canWrite) ?? false;
   const workspace = useStorage(root => root.workspace || (root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "To-do planning") ? "todo" : root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "Team retrospective") ? "retrospective" : root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "AI Playground") ? "playground" : null));
   const [showCanvas, setShowCanvas] = useState(false);
   const legacyWeekly = useStorage(root => root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "Weekly update"));
+  const legacyRequirements = useStorage(root => root.layerIds.some(id => root.layers[id]?.type === LayerType.Text && root.layers[id]?.value === "Product requirements"));
   const roadmapCards = useStorage(root => root.layerIds.flatMap(id => {
     const layer = root.layers[id];
     return layer?.type === LayerType.Note && layer.roadmap ? [{ id, ...layer }] : [];
@@ -81,6 +93,22 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [exporting, setExporting] = useState(false);
+  const [viewport, setViewport] = useState({ width: 1920, height: 1080 });
+  const entries = useStorage(root => root.layerIds.map(id => [id, root.layers[id]] as const).filter((entry): entry is readonly [string, Layer] => Boolean(entry[1])));
+  const selection = useSelf(me => me.presence.selection);
+  const spatialIndex = useMemo(() => new SpatialIndex(entries), [entries]);
+  const visibleIds = useMemo(() => {
+    if (exporting) return layerIds;
+    const visible = spatialIndex.query({ x: (-camera.x - 200) / zoom, y: (-camera.y - 200) / zoom, width: (viewport.width + 400) / zoom, height: (viewport.height + 400) / zoom });
+    for (const id of selection || []) visible.add(id);
+    return layerIds.filter(id => visible.has(id));
+  }, [exporting, layerIds, spatialIndex, camera, zoom, viewport, selection]);
+  useEffect(() => {
+    const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
+    resize(); window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
   const flowBounds = useStorage(root => (root.workspace === "flowchart" || root.workspace === "roadmap") ? getBoardBounds(root.layerIds.map(id => root.layers[id]).filter(Boolean)) : null);
   const fittedFlow = useRef(false);
   useEffect(() => {
@@ -94,7 +122,10 @@ const Canvas = ({ boardId }: CanvasProps) => {
   const [placingComment, setPlacingComment] = useState(false);
   const [commentPoint, setCommentPoint] = useState<Point | null>(null);
   const [isPanning, setIsPanning] = useState(false);
+  const [flowPicker, setFlowPicker] = useState(false);
+  const flowPrompt = useRef<string | undefined>(undefined);
   const panPointer = useRef<{ id: number; x: number; y: number } | null>(null);
+  const drawingPointer = useRef<number | null>(null);
   const [starterOpen, setStarterOpen] = useState(() => layerIds.length === 0);
   const [lastUsedColor, setLastUsedColor] = useState<Color>({
     r: 0,
@@ -106,6 +137,15 @@ const Canvas = ({ boardId }: CanvasProps) => {
   useDisableScrollBounce();
   
   const history = useHistory();
+  const cancelDrawing = useMutation(({ setMyPresence }) => {
+    drawingPointer.current = null;
+    setMyPresence({ pencilDraft: null });
+    history.resume();
+  }, [history]);
+  const drawingTool = canvasState.mode === CanvasMode.Pencil ? canvasState.tool : null;
+  useEffect(() => {
+    if (drawingPointer.current !== null) cancelDrawing();
+  }, [drawingTool, canWrite, cancelDrawing]);
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
 
@@ -140,11 +180,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
     storage.get("layerIds").push(id);
   }, [camera, zoom, info?.name]);
 
-  const applyStarter = useMutation(
-    ({ storage, setMyPresence }, template: string, prompt?: string) => {
+  const insertStarter = useMutation(
+    ({ storage, setMyPresence }, template: string, prompt?: string, flowStyle?: FlowchartStyle, steps?: string[]) => {
       const liveLayers = storage.get("layers");
       const liveLayerIds = storage.get("layerIds");
-      const templateLayers = getTemplateLayers(template, prompt, info?.name || "Flowboard Assist");
+      const templateLayers = template === "Flowchart" && flowStyle ? getFlowchartLayers(prompt || "Flowchart", flowStyle, steps) : getTemplateLayers(template, prompt, info?.name || "Flowboard Assist");
       if (liveLayers.size + templateLayers.length > MAX_LAYERS) {
         toast.error(`This template would exceed the ${MAX_LAYERS}-object limit. Delete some objects first.`);
         return;
@@ -174,6 +214,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
     },
     [camera, info?.name, zoom]
   );
+
+  const applyStarter = (template: string, prompt?: string) => {
+    if (template === "Flowchart") { flowPrompt.current = prompt; setFlowPicker(true); }
+    else insertStarter(template, prompt);
+  };
 
   const insertLayer = useMutation(
     (
@@ -297,7 +342,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
       if (
         canvasState.mode !== CanvasMode.Pencil ||
-        e.buttons !== 1 ||
+        (e.buttons & 1) === 0 ||
+        drawingPointer.current !== e.pointerId ||
         pencilDraft == null
       ) {
         return;
@@ -306,11 +352,9 @@ const Canvas = ({ boardId }: CanvasProps) => {
       setMyPresence({
         cursor: point,
         pencilDraft:
-          pencilDraft.length === 1 &&
-          pencilDraft[0][0] === point.x &&
-          pencilDraft[0][1] === point.y
+          Math.hypot(pencilDraft[pencilDraft.length - 1][0] - point.x, pencilDraft[pencilDraft.length - 1][1] - point.y) < .75
             ? pencilDraft
-            : [...pencilDraft, [point.x, point.y, e.pressure]],
+            : [...(pencilDraft.length >= 4096 ? pencilDraft.filter((_, index) => index % 2 === 0) : pencilDraft), [point.x, point.y, e.pressure]],
       });
     },
     [canvasState.mode]
@@ -355,6 +399,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
         pencilDraft.length < 2 ||
         liveLayers.size >= MAX_LAYERS
       ) {
+        if (liveLayers.size >= MAX_LAYERS) toast.error(`Board limit reached (${MAX_LAYERS} objects). Delete objects to draw more.`);
         setMyPresence({ pencilDraft: null });
         return;
       }
@@ -363,6 +408,20 @@ const Canvas = ({ boardId }: CanvasProps) => {
       const recognized = canvasState.mode === CanvasMode.Pencil && canvasState.tool === "style"
         ? recognizeDrawing(pencilDraft, lastUsedColor, canvasState.width)
         : null;
+      if (recognized) {
+        for (const previousId of [...storage.get("layerIds").toJSON()].reverse()) {
+          const previous = liveLayers.get(previousId)?.toJSON();
+          if (!previous || previous.type !== LayerType.Path) continue;
+          const intersection = Math.max(0, Math.min(previous.x + previous.width, recognized.x + recognized.width) - Math.max(previous.x, recognized.x)) * Math.max(0, Math.min(previous.y + previous.height, recognized.y + recognized.height) - Math.max(previous.y, recognized.y));
+          const union = previous.width * previous.height + recognized.width * recognized.height - intersection;
+          if (union <= 0 || intersection / union < .65) continue;
+          const previousShape = recognizeDrawing(previous.points.map(([x, y, pressure]) => [x + previous.x, y + previous.y, pressure]), lastUsedColor, recognized.strokeWidth || 8);
+          if (previousShape?.shape !== recognized.shape) continue;
+          liveLayers.set(previousId, new LiveObject({ ...recognized, x: previousShape.x, y: previousShape.y, width: previousShape.width, height: previousShape.height }));
+          setMyPresence({ pencilDraft: null, selection: [previousId] });
+          return;
+        }
+      }
       liveLayers.set(
         id,
         new LiveObject(
@@ -469,8 +528,10 @@ const Canvas = ({ boardId }: CanvasProps) => {
     }));
   }, [zoom]);
 
+  const publishCursor = useMutation(({ setMyPresence }, point: Point | null) => setMyPresence({ cursor: point }), []);
+  const scheduleCursor = useFrameCallback(publishCursor);
   const onPointerMove = useMutation(
-    ({ setMyPresence, storage }, e: React.PointerEvent) => {
+    ({ storage }, e: React.PointerEvent) => {
       e.preventDefault();
 
       if (panPointer.current?.id === e.pointerId) {
@@ -488,6 +549,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       if (
         canvasState.mode === CanvasMode.Pencil &&
         canvasState.tool.includes("eraser") &&
+        drawingPointer.current === e.pointerId &&
         (e.buttons & 1) === 1
       ) {
         const liveLayers = storage.get("layers");
@@ -517,7 +579,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
             liveLayerIds.push(segmentId);
           }
         }
-        setMyPresence({ cursor: current });
+        scheduleCursor(current);
         return;
       }
 
@@ -532,7 +594,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
       } else if (canvasState.mode === CanvasMode.Pencil) {
         continueDrawing(current, e);
       }
-      setMyPresence({ cursor: current });
+      scheduleCursor(current);
     },
     [
       canvasState,
@@ -543,12 +605,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
       startMultiSelection,
       updateSelectionNet,
       continueDrawing,
+      scheduleCursor,
     ]
   );
 
-  const onPointerLeave = useMutation(({ setMyPresence }) => {
-    setMyPresence({ cursor: null });
-  }, []);
+  const onPointerLeave = useCallback(() => scheduleCursor(null), [scheduleCursor]);
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -567,13 +628,18 @@ const Canvas = ({ boardId }: CanvasProps) => {
       }
 
       if (canvasState.mode === CanvasMode.Pencil) {
+        if (!canWrite || e.button !== 0 || drawingPointer.current !== null) return;
+        e.preventDefault();
+        drawingPointer.current = e.pointerId;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        history.pause();
         startDrawing(point, e.pressure);
         return;
       }
 
       setCanvasState({ origin: point, mode: CanvasMode.Pressing });
     },
-    [camera, zoom, canvasState.mode, setCanvasState, startDrawing]
+    [camera, zoom, canvasState.mode, setCanvasState, startDrawing, history, canWrite]
   );
 
   const onPointerUp = useMutation(
@@ -597,7 +663,10 @@ const Canvas = ({ boardId }: CanvasProps) => {
           mode: CanvasMode.None,
         });
       } else if (canvasState.mode === CanvasMode.Pencil) {
+        if (drawingPointer.current !== e.pointerId) return;
         insertPath();
+        drawingPointer.current = null;
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
       } else if (canvasState.mode === CanvasMode.Inserting) {
         insertLayer(canvasState.layerType, point);
       } else {
@@ -623,10 +692,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const onLayerPointerDown = useMutation(
     ({ storage, self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
+      if (!self.canWrite) return;
       if (e.button === 1) return;
 
       if (canvasState.mode === CanvasMode.Pencil && canvasState.tool === "eraser") {
-        e.stopPropagation();
+        history.pause();
         const liveLayers = storage.get("layers");
         if (liveLayers.has(layerId)) {
           const liveLayerIds = storage.get("layerIds");
@@ -676,6 +746,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
     function onKeyDown(e: KeyboardEvent) {
       const target = e.target as HTMLElement | null;
       if (target?.closest("input, textarea, [contenteditable=true]")) return;
+      if (!canWrite && ["Delete", "Backspace", "z", "y"].includes(e.key)) return;
 
       switch (e.key) {
         case "Delete":
@@ -731,12 +802,13 @@ const Canvas = ({ boardId }: CanvasProps) => {
     return () => {
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [deleteLayers, history, resetView, zoom, zoomTo]);
+  }, [deleteLayers, history, resetView, zoom, zoomTo, canWrite]);
 
-  if (workspace === "todo" && !showCanvas) return <TaskWorkspace onCanvas={() => setShowCanvas(true)} />;
-  if (workspace === "retrospective" && !showCanvas) return <RetrospectiveWorkspace onCanvas={() => setShowCanvas(true)} />;
-  if (workspace === "playground" && !showCanvas) return <AIPlayground boardId={boardId} onCanvas={() => setShowCanvas(true)} onGenerated={importLayers} />;
-  if ((workspace === "weekly" || (!workspace && legacyWeekly)) && !showCanvas) return <WeeklyWorkspace onCanvas={() => setShowCanvas(true)} />;
+  if (canWrite && workspace === "todo" && !showCanvas) return <TaskWorkspace onCanvas={() => setShowCanvas(true)} />;
+  if (canWrite && workspace === "retrospective" && !showCanvas) return <RetrospectiveWorkspace onCanvas={() => setShowCanvas(true)} />;
+  if (canWrite && workspace === "playground" && !showCanvas) return <AIPlayground boardId={boardId} onCanvas={() => setShowCanvas(true)} onGenerated={importLayers} />;
+  if (canWrite && (workspace === "weekly" || (!workspace && legacyWeekly)) && !showCanvas) return <WeeklyWorkspace onCanvas={() => setShowCanvas(true)} />;
+  if (canWrite && (workspace === "requirements" || (!workspace && legacyRequirements)) && !showCanvas) return <RequirementsWorkspace onCanvas={() => setShowCanvas(true)} />;
 
   return (
     <main className="h-full w-full relative board-canvas future-board touch-none" onPointerDownCapture={event => {
@@ -751,7 +823,9 @@ const Canvas = ({ boardId }: CanvasProps) => {
       {workspace === "todo" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open tasks</button>}
       {workspace === "retrospective" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open retrospective</button>}
       {workspace === "playground" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open AI Playground</button>}
+      {(workspace === "requirements" || (!workspace && legacyRequirements)) && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open product requirements</button>}
       {(workspace === "weekly" || (!workspace && legacyWeekly)) && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => setShowCanvas(false)}>Open weekly check-in</button>}
+      <FlowchartPicker open={flowPicker} onOpenChange={setFlowPicker} onChoose={(style, steps) => insertStarter("Flowchart", flowPrompt.current, style, steps)} />
       {workspace === "flowchart" && <button className="absolute left-1/2 top-5 z-30 rounded-lg border bg-background px-4 py-2 text-sm text-foreground shadow-sm" onClick={() => applyStarter("Flowchart")}>Add connected flowchart</button>}
       {workspace === "roadmap" && <aside className="absolute bottom-24 left-3 top-24 z-30 hidden w-48 overflow-auto rounded-xl border bg-background p-4 text-foreground shadow-sm lg:block">
         <h2 className="mb-5 text-sm font-semibold">Roadmap planning</h2>
@@ -764,9 +838,11 @@ const Canvas = ({ boardId }: CanvasProps) => {
         {roadmapCards.map(card => <button key={card.id} className="mb-2 flex w-full items-start gap-2 rounded p-2 text-left text-xs hover:bg-muted" onClick={() => setCamera({ x: window.innerWidth / 2 - (card.x + card.width / 2) * zoom, y: window.innerHeight / 2 - (card.y + card.height / 2) * zoom })}><span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${card.status === "done" ? "bg-green-500" : card.status === "in-progress" ? "bg-blue-500" : "bg-slate-400"}`} /><span>{card.value}</span></button>)}
       </aside>}
       <Participants />
-      <BoardFiles boardId={boardId} onImport={importLayers} />
+      <ConnectionStatus />
+      <BoardFiles boardId={boardId} onImport={importLayers} onExportState={setExporting} />
       {layerIds.length >= MAX_LAYERS && <p role="status" className="absolute bottom-20 left-1/2 z-30 -translate-x-1/2 rounded bg-amber-100 px-4 py-2 text-sm text-amber-950">Board limit reached ({MAX_LAYERS} objects). Delete objects to add more.</p>}
-      <Toolbar
+      {!canWrite && <p role="status" className="absolute left-1/2 top-20 z-30 -translate-x-1/2 rounded-lg border bg-background px-4 py-2 text-sm">Read-only guest access</p>}
+      {canWrite && <Toolbar
         commentsOpen={commentsOpen}
         onOpenComments={() => { setCommentsOpen(open => !open); setPlacingComment(false); }}
         canvasState={canvasState}
@@ -782,10 +858,10 @@ const Canvas = ({ boardId }: CanvasProps) => {
         onDrawingColorChange={setLastUsedColor}
         onInsertFrame={insertFrame}
         onInsertSticker={insertSticker}
-      />
-      <SelectionTools camera={camera} zoom={zoom} setLastUsedColor={setLastUsedColor} />
+      />}
+      {canWrite && <SelectionTools camera={camera} zoom={zoom} setLastUsedColor={setLastUsedColor} />}
       <CommentSidebar open={commentsOpen} onClose={() => { setCommentsOpen(false); setPlacingComment(false); }} camera={camera} zoom={zoom} point={commentPoint} placing={placingComment} onPlace={() => { setCanvasState({ mode: CanvasMode.None }); setCommentPoint(null); setPlacingComment(true); }} onSubmitted={() => setCommentPoint(null)} onOpen={() => setCommentsOpen(true)} />
-      {starterOpen && (
+      {canWrite && starterOpen && (
         <BoardStarter
           boardId={boardId}
           onGenerated={importLayers}
@@ -803,17 +879,20 @@ const Canvas = ({ boardId }: CanvasProps) => {
       <svg
         data-board-surface
         className={`h-[100vh] w-[100vw] ${isPanning ? "cursor-grabbing" : ""}`}
+        style={{ touchAction: "none" }}
         onWheel={onWheel}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={(event) => {
+          if (drawingPointer.current === event.pointerId) cancelDrawing();
           if (panPointer.current?.id === event.pointerId) {
             panPointer.current = null;
             setIsPanning(false);
           }
         }}
+        onLostPointerCapture={(event) => { if (drawingPointer.current === event.pointerId) cancelDrawing(); }}
       >
         <g
           style={{
@@ -821,8 +900,9 @@ const Canvas = ({ boardId }: CanvasProps) => {
             transformOrigin: "0 0",
           }}
         >
-          <g data-export-content>{layerIds.map((layerId) => (
-            <LayerPreview
+          <g data-export-content>{visibleIds.map((layerId) => (
+              <LayerPreview
+                readOnly={!canWrite}
               key={layerId}
               id={layerId}
               onLayerPointerDown={onLayerPointerDown}

@@ -1,6 +1,12 @@
 # Flowboard development setup
 
+See [Spatial design](Spatial-Design) for the animated website and branded authentication experience.
+
 Flowboard is a Turborepo. The Next.js application and its local environment file live in `apps/web`.
+
+See [Enterprise architecture](Enterprise-Architecture) for shared packages, role enforcement, export workers, monitoring and release prerequisites.
+
+See [Canvas 2D engine](Canvas-2D-Engine) for vector persistence, versioned commits, rendering controls and limits.
 
 ## Required services
 
@@ -44,7 +50,7 @@ The repository also runs these checks in `.github/workflows/quality.yml` for eve
 
 Production images use the Dockerfile's final non-root standalone server. Docker Compose selects the development target for hot reload. Only the two `NEXT_PUBLIC_*` values belong in Docker build arguments; provide Clerk and Liveblocks secrets when the container starts.
 
-Open `http://localhost:3000/sign-in`. Clerk development instances may first redirect through their account-domain handshake and then return to the local sign-in page.
+Open `http://localhost:3030/sign-in` for host development, or `http://localhost:3031/sign-in` for development Compose (unless FLOWBOARD_DOCKER_PORT overrides it). Clerk development instances may first redirect through their account-domain handshake and then return to the local sign-in page.
 
 ## Board workspace controls
 
@@ -78,6 +84,12 @@ Open `http://localhost:3000/sign-in`. Clerk development instances may first redi
 
 
 ## Production operations
+
+- [Games and documentation](Games-and-Guide)
+
+- [Workspace services and Blender visuals](Workspace-Services)
+
+- [Production readiness review](Production-Readiness)
 
 - [Production and Vercel automation](Production)
 - [Hermes Agent and AI generation](AI-Assistant)

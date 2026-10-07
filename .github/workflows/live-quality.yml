@@ -1,0 +1,47 @@
+name: Authenticated workspace verification
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  collaboration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FLOWBOARD_E2E_URL: ${{ vars.FLOWBOARD_E2E_URL }}
+      PRIMARY_STATE: ${{ secrets.FLOWBOARD_E2E_PRIMARY_STATE }}
+      PEER_STATE: ${{ secrets.FLOWBOARD_E2E_PEER_STATE }}
+      ADMIN_STATE: ${{ secrets.FLOWBOARD_E2E_ADMIN_STATE }}
+      MEMBER_STATE: ${{ secrets.FLOWBOARD_E2E_MEMBER_STATE }}
+      GUEST_STATE: ${{ secrets.FLOWBOARD_E2E_GUEST_STATE }}
+      OTHER_ORG_STATE: ${{ secrets.FLOWBOARD_E2E_OTHER_ORG_STATE }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Prepare dedicated test sessions
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          if (!process.env.FLOWBOARD_E2E_URL || new URL(process.env.FLOWBOARD_E2E_URL).protocol !== 'https:') throw new Error('Configure FLOWBOARD_E2E_URL as the HTTPS preview or staging deployment.');
+          if (!process.env.PRIMARY_STATE || !process.env.PEER_STATE) throw new Error('Configure two distinct dedicated test-user sessions in the same test organization.');
+          fs.mkdirSync('apps/web/.auth', {recursive:true, mode:0o700});
+          const names = {PRIMARY:'AUTH', PEER:'PEER', ADMIN:'ADMIN', MEMBER:'MEMBER', GUEST:'GUEST', OTHER_ORG:'OTHER_ORG'};
+          for (const [source,target] of Object.entries(names)) {
+            const value = process.env[`${source}_STATE`]; if (!value) continue;
+            const state = JSON.parse(value);
+            if (!Array.isArray(state.cookies) || !Array.isArray(state.origins)) throw new Error('Invalid Playwright storage state.');
+            const filename = `apps/web/.auth/${source.toLowerCase()}.json`;
+            fs.writeFileSync(filename, JSON.stringify(state), {mode:0o600});
+            fs.appendFileSync(process.env.GITHUB_ENV, `FLOWBOARD_E2E_${target}_STATE=${process.cwd()}/${filename}\n`);
+          }
+          NODE
+      - run: npm run test:e2e:live
+      - name: Remove local test-session files
+        if: always()
+        run: node -e "require('node:fs').rmSync('apps/web/.auth',{recursive:true,force:true})"
