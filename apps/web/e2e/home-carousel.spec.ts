@@ -3,11 +3,11 @@ import { build } from "esbuild";
 import path from "node:path";
 import fs from "node:fs";
 const compiledCss = fs.readdirSync(".next/static/chunks").filter(file => file.endsWith(".css")).map(file => fs.readFileSync(path.join(".next/static/chunks", file), "utf8")).join("\n");
-const carouselCss = compiledCss + fs.readFileSync("src/app/home-carousel.css", "utf8") + "body{display:block!important;place-items:normal!important;min-height:100vh;padding:12px;margin:0;background:hsl(var(--background))!important;color:hsl(var(--foreground))!important}#root{width:100%;max-width:none}*{box-sizing:border-box}";
+const carouselCss = compiledCss + fs.readFileSync("src/app/spatial-design.css", "utf8") + fs.readFileSync("src/app/home-carousel.css", "utf8") + "body{display:block!important;place-items:normal!important;min-height:100vh;padding:12px;margin:0;background:hsl(var(--background))!important;color:hsl(var(--foreground))!important}#root{width:100%;max-width:none}*{box-sizing:border-box}";
 
 const fixture = (await build({
   stdin: { contents: `import React from 'react';import {createRoot} from 'react-dom/client';import {HomeCarousel} from './src/app/(dashboard)/_components/home-carousel';import {WorkspacePreferencesProvider,useWorkspacePreferences} from './src/providers/workspace-preferences-provider';function Preferences(){const {preferences,updatePreference}=useWorkspacePreferences();return <button onClick={()=>updatePreference('showGrid',!preferences.showGrid)}>Grid: {String(preferences.showGrid)}</button>}createRoot(document.getElementById('root')).render(<React.StrictMode><WorkspacePreferencesProvider><HomeCarousel/><Preferences/></WorkspacePreferencesProvider></React.StrictMode>);`, loader: "tsx", resolveDir: path.resolve(".") },
-  plugins: [{ name: "next-link", setup(builder) { builder.onResolve({ filter: /^next\/(link|image)$/ }, args => ({ path: args.path, namespace: "mock" })); builder.onLoad({ filter: /.*/, namespace: "mock" }, args => ({ contents: args.path === "next/image" ? `import React from 'react';export default function Image({unoptimized,...props}){return <img {...props}/>}` : `import React from 'react';export default function Link(props){return <a {...props}/>}`, loader: "tsx", resolveDir: path.resolve(".") })); } }],
+  plugins: [{ name: "next-link", setup(builder) { builder.onResolve({ filter: /^next\/(link|image|dynamic)$/ }, args => ({ path: args.path, namespace: "mock" })); builder.onLoad({ filter: /.*/, namespace: "mock" }, args => ({ contents: args.path === "next/dynamic" ? `export default function dynamic(){return ()=>null}` : args.path === "next/image" ? `import React from 'react';export default function Image({unoptimized,...props}){return <img {...props}/>}` : `import React from 'react';export default function Link(props){return <a {...props}/>}`, loader: "tsx", resolveDir: path.resolve(".") })); } }],
   bundle: true, write: false, format: "iife", platform: "browser", jsx: "automatic", define: { "process.env.NODE_ENV": '"development"' },
 })).outputFiles[0].text;
 
@@ -23,6 +23,22 @@ test("carousel cycles, wraps and supports keyboard slide selection", async ({ pa
   await expect(page.getByRole("heading", { level: 1 })).toContainText("focused work");
   await expect(page.getByRole("button", { name: /Show slide 2/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("link", { name: "Explore task templates" })).toHaveAttribute("href", "/templates");
+});
+
+test("sculpture panels expand by keyboard and expose animation controls", async ({ page }) => {
+  const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/");
+  await page.evaluate(() => { document.body.removeAttribute("style"); document.body.innerHTML = '<div id="root"></div>'; });
+  await page.addStyleTag({ content: carouselCss }); await page.addScriptTag({ content: fixture });
+  await expect(page.locator(".home-carousel__panel.is-active")).toHaveCount(1);
+  await page.getByRole("button", { name: "Expand Focus panel" }).focus(); await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("focused work");
+  await expect(page.locator(".home-carousel__panel--1")).toHaveAttribute("data-active", "true");
+  await page.getByRole("button", { name: "Pause 3D animation" }).click();
+  await expect(page.locator("[data-scene-paused]")).toHaveAttribute("data-scene-paused", "true");
+  await page.getByRole("button", { name: "Play 3D animation" }).click();
+  await expect(page.locator("[data-scene-paused]")).toHaveAttribute("data-scene-paused", "false");
+  expect(errors).toEqual([]);
 });
 
 test("saved preferences survive Strict Mode and blocked storage remains usable", async ({ page }) => {

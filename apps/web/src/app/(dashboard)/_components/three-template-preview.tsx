@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ideas" | "tasks" | "roadmap" | "workspace" | "cloud" }) {
+export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ideas" | "tasks" | "roadmap" | "workspace" | "workflow" | "cloud" | "carousel-roadmap" | "carousel-tasks" | "carousel-ideas" }) {
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = host.current;
@@ -39,7 +39,16 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
     const collect = (object: THREE.Object3D) => object.traverse(child => {
       if (child instanceof THREE.Mesh) { child.castShadow = true; child.receiveShadow = true; geometries.add(child.geometry); for (const material of Array.isArray(child.material) ? child.material : [child.material]) materials.add(material); }
     });
-    const disposeModel = () => { geometries.forEach(value => value.dispose()); materials.forEach(value => value.dispose()); };
+    const disposeModel = () => {
+      const textures = new Set<THREE.Texture>();
+      for (const material of materials) {
+        for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value);
+        material.dispose();
+      }
+      textures.forEach(texture => { texture.dispose(); const data: unknown = texture.source.data; if (typeof ImageBitmap !== "undefined" && data instanceof ImageBitmap) data.close(); });
+      geometries.forEach(value => value.dispose());
+      materials.clear(); geometries.clear();
+    };
     const pauseControl = element.closest<HTMLElement>("[data-scene-paused]");
     const reduced = () => media.matches || document.documentElement.classList.contains("reduce-motion");
     const paused = () => pauseControl?.dataset.scenePaused === "true";
@@ -47,8 +56,8 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
       frame = 0;
       if (disposed || !visible || document.hidden || !loaded) return;
       if (!paused() || reduced()) {
-        pivot.rotation.y = reduced() || model === "workspace" || model === "cloud" ? 0 : Math.sin(time * 0.00035) * 0.12;
-        pivot.rotation.z = reduced() || model === "workspace" || model === "cloud" ? 0 : Math.sin(time * 0.00025) * 0.025;
+        pivot.rotation.y = reduced() || model === "workspace" || model === "workflow" || model === "cloud" || model.startsWith("carousel-") ? 0 : Math.sin(time * 0.00035) * 0.12;
+        pivot.rotation.z = reduced() || model === "workspace" || model === "workflow" || model === "cloud" || model.startsWith("carousel-") ? 0 : Math.sin(time * 0.00025) * 0.025;
       }
       if (reduced()) mixer?.setTime(2);
       else if (!paused()) mixer?.update(previousTime ? Math.min((time - previousTime) / 1000, 0.05) : 0);
@@ -59,8 +68,9 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
     const resume = () => { cancelAnimationFrame(frame); frame = 0; previousTime = 0; if (!disposed && visible && !document.hidden && loaded) frame = requestAnimationFrame(draw); };
     const resize = () => {
       const { width, height } = element.getBoundingClientRect();
-      renderer.setSize(Math.max(width, 1), Math.max(height, 1)); camera.aspect = width / Math.max(height, 1);
-      camera.position.copy(new THREE.Vector3(5.4, model === "cloud" ? 5.6 : 8.4, 7.3).normalize().multiplyScalar(radius * (model === "workspace" || model === "cloud" ? 3.3 : 2.4) / Math.min(camera.aspect, 1)));
+      renderer.setSize(Math.max(width, 1), Math.max(height, 1)); camera.aspect = Math.max(width, 1) / Math.max(height, 1);
+      const sculpture = model.startsWith("carousel-");
+      camera.position.copy((sculpture ? new THREE.Vector3(.65, 1.9, 10) : new THREE.Vector3(5.4, model === "cloud" ? 5.6 : 8.4, 7.3)).normalize().multiplyScalar(radius * (sculpture ? 3.0 : model === "workspace" || model === "workflow" || model === "cloud" ? 3.3 : 2.4) / Math.min(camera.aspect, 1)));
       camera.lookAt(0, 0, 0); camera.updateProjectionMatrix(); resume();
     };
     const controller = new AbortController();

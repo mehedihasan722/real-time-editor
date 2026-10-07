@@ -5,6 +5,7 @@ import { publicEnv, setupMessage } from "@/lib/public-env";
 import { serverEnv } from "@/lib/server-env";
 
 const isPublicPath = (pathname: string) =>
+  pathname === "/welcome" ||
   pathname === "/api/health" ||
   pathname === "/sign-in" ||
   pathname.startsWith("/sign-in/") ||
@@ -21,7 +22,7 @@ const authenticatedMiddleware = clerkMiddleware(
 
 // Fail closed before Clerk or a protected route can run without configuration.
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
-  if (request.nextUrl.pathname === "/api/health") {
+  if (request.nextUrl.pathname === "/api/health" || request.nextUrl.pathname === "/welcome") {
     return NextResponse.next();
   }
   if (!publicEnv.success || !serverEnv.success) {

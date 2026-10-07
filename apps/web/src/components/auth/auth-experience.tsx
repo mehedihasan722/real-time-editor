@@ -6,7 +6,7 @@ import { ArrowUpRight, Layers3, Sparkles, Users, LockKeyhole } from "lucide-reac
 import { SpatialScene } from "@/components/spatial-scene";
 
 const appearance = {
-  variables: { colorPrimary: "#6773ff", colorPrimaryForeground: "#ffffff", colorBackground: "#10162d", colorForeground: "#f0f3ff", colorMutedForeground: "#aebada", colorNeutral: "#f0f3ff", colorInput: "#090f24", colorInputForeground: "#f0f3ff", borderRadius: "0.75rem" },
+  variables: { colorPrimary: "#4654c5", colorPrimaryForeground: "#ffffff", colorBackground: "var(--auth-surface)", colorForeground: "var(--auth-foreground)", colorMutedForeground: "var(--auth-muted)", colorNeutral: "var(--auth-foreground)", colorInput: "var(--auth-input)", colorInputForeground: "var(--auth-foreground)", borderRadius: "0.75rem" },
   elements: { rootBox: "auth-clerk-root", cardBox: "auth-clerk-box", card: "auth-clerk-card", header: "auth-clerk-header", footer: "auth-clerk-footer", socialButtonsBlockButton: "auth-social-button", formButtonPrimary: "auth-primary-button", formFieldInput: "auth-field-input" },
 };
 

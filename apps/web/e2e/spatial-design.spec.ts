@@ -72,3 +72,24 @@ test("shared 3D banners cover every dashboard destination and preserve page cont
   await page.evaluate(() => document.documentElement.classList.add("dark"));
   await expect(page.locator(".spatial-route-banner h2")).toHaveCSS("color", "rgb(238, 241, 255)");
 });
+
+for (const dark of [false, true]) test(`${dark ? "dark" : "light"} authentication text meets normal-text contrast`, async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/sign-in");
+  await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), dark);
+  const failures = await page.evaluate(() => {
+    const rgb = (value: string) => (value.match(/[\d.]+/g) || []).map(Number);
+    const blend = (front: number[], back: number[]) => front.slice(0, 3).map((c, i) => c * (front[3] ?? 1) + back[i] * (1 - (front[3] ?? 1)));
+    const luminance = (color: number[]) => color.slice(0, 3).map(c => c / 255).map(c => c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4).reduce((sum, c, i) => sum + c * [.2126, .7152, .0722][i], 0);
+    return Array.from(document.querySelectorAll('.auth-experience__intro,.auth-experience__switch strong,.auth-experience__features>span,.auth-experience__security,.auth-experience__footer>span,.auth-experience__pending p,.auth-experience__form-heading>p,.auth-experience h2')).flatMap(element => {
+      const ancestors: Element[] = []; for (let node: Element | null = element; node; node = node.parentElement) ancestors.unshift(node);
+      let background = [255, 255, 255]; for (const node of ancestors) background = blend(rgb(getComputedStyle(node).backgroundColor), background);
+      const foreground = blend(rgb(getComputedStyle(element).color), background);
+      const a = luminance(foreground), b = luminance(background), ratio = (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+      return ratio < 4.5 ? [{ text: element.textContent, ratio }] : [];
+    });
+  });
+  expect(failures).toEqual([]);
+  await expect(page.locator('.auth-experience')).toHaveCSS('color-scheme', dark ? 'dark' : 'light');
+  await page.screenshot({ path: testInfo.outputPath(`auth-${dark ? 'dark' : 'light'}.png`), fullPage: true });
+});

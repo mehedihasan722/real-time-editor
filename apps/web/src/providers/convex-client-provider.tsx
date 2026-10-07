@@ -9,6 +9,7 @@ import {
   Unauthenticated,
 } from "convex/react";
 import Loading from "@/components/auth/loading";
+import ModalProvider from "@/providers/modal-provider";
 import { publicEnv, setupMessage } from "@/lib/public-env";
 import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
@@ -29,6 +30,7 @@ export const ConvexClientProvider = ({
   const { resolvedTheme } = useTheme();
   const pathname = usePathname();
   const dark = resolvedTheme === "dark";
+  if (pathname === "/welcome") return <>{children}</>;
   if (!authConfigured || !publicEnv.success || !convex) {
     if (/^\/sign-(in|up)(\/|$)/.test(pathname)) return <>{children}</>;
     return (
@@ -53,7 +55,7 @@ export const ConvexClientProvider = ({
       colorInputForeground: dark ? "#edf1ff" : "#0f172a",
     } }}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        <Authenticated>{children}</Authenticated>
+        <Authenticated><ModalProvider />{children}</Authenticated>
         <Unauthenticated>{children}</Unauthenticated>
         <AuthLoading>
           <Loading />

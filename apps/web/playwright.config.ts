@@ -14,7 +14,7 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
-    command: "npm run start -- --port 3100 --hostname 127.0.0.1",
+    command: "node ../../scripts/start-standalone.cjs --port 3100 --hostname 127.0.0.1",
     // Setup mode intentionally responds 503, so use an always-available static asset for startup.
     url: "http://127.0.0.1:3100/logo.svg",
     reuseExistingServer: false,

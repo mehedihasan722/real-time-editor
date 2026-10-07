@@ -11,3 +11,13 @@ Before public release, verify matching production service credentials, real mult
 Root AGENTS.md records the standing contribution workflow: gitmoji commits and PRs, issue updates, Wiki publishing, Actions result checks, and configured Project synchronization. Quality CI now audits production dependencies. Projects sync requires PROJECT_URL and PROJECT_TOKEN; automatic Wiki publishing requires WIKI_TOKEN. Missing configuration is reported rather than treated as successful synchronization.
 
 See the [full repository review](https://github.com/mehedihasan722/real-time-editor/blob/codex/enterprise-platform-upgrade-20261001/docs/Production-readiness-2026-10-04.md), [release testing](Testing), and [production operations](Production).
+
+
+## Editorial revision — 6 October 2026
+
+The new public `/welcome` route is independent of service provisioning. The existing deployment at `web-nine-sigma-mzqzd33yw2.vercel.app` and its `/api/health` endpoint still returned HTTP 503 during this review; the root showed the setup-required screen. No deployment configuration was changed or promoted. Production credentials, matching provider environments, credential rotation after prior exposure, and authenticated multi-user checks remain release requirements.
+
+The dependency audit found and patched the transitive `source-map-js` indexed-source-map advisory (GHSA-68fv-2mgg-jv7q) from 1.2.1 to 1.2.2. A fresh production-only audit reports zero known vulnerabilities. The existing development-only braces dependency advisory remains tracked separately.
+
+
+Validation on 7 October 2026: optimized build and TypeScript, ESLint, 138 unit regressions, and a production dependency audit passed. The complete local Chromium/WebKit/mobile matrix passed 158 checks with one expected Windows WebKit WebGL skip. Of these, 143 passing checks belong to this revision; 15 cover pre-existing review-section edits that remain outside the commit. Firefox is delegated to Linux CI. Live authenticated services and physical-device performance are not certified by fixture tests.

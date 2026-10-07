@@ -6,12 +6,12 @@ declare global {
   interface Window { FlowboardExport: typeof import("../src/lib/board-export"); }
 }
 
-const bundle = buildSync({ entryPoints: [path.resolve("src/lib/board-export.ts")], bundle: true, write: false, format: "iife", globalName: "FlowboardExport", platform: "browser", target: "es2022", define: { "import.meta.url": JSON.stringify("http://127.0.0.1:3100/fixture.js") } }).outputFiles[0].text;
+const bundle = buildSync({ entryPoints: [path.resolve("src/lib/board-export.ts")], bundle: true, write: false, format: "iife", globalName: "FlowboardExport", platform: "browser", target: "es2022", define: { "import.meta.url": "window.location.href" } }).outputFiles[0].text;
 const worker = buildSync({ entryPoints: [path.resolve("src/lib/export-worker.ts")], bundle: true, write: false, format: "esm", platform: "browser", target: "es2022" }).outputFiles[0].text;
 
-for (const dark of [false, true]) test(`${dark ? "dark" : "light"} PNG and PDF exports retain scoped note styling and omit selection overlays`, async ({ page }) => {
+for (const dark of [false, true]) test(`${dark ? "dark" : "light"} PNG and PDF exports retain scoped note styling and omit selection overlays`, async ({ page, context }) => {
   await page.goto("/offline.html");
-  await page.route("**/export-worker.ts", route => route.fulfill({ contentType: "text/javascript", body: worker }));
+  await context.route("**/export-worker.ts", route => route.fulfill({ contentType: "text/javascript", body: worker }));
   await page.setContent(`<style>.board-canvas{background:${dark ? "rgb(9,14,28)" : "white"}} .fixture .note{background:rgb(255,229,114);color:rgb(30,41,59);font:20px Arial;display:flex;width:100%;height:100%}</style><div class="fixture board-canvas"><svg width="400" height="300"><g id="content"><foreignObject x="20" y="20" width="200" height="180"><div xmlns="http://www.w3.org/1999/xhtml" class="note" contenteditable="true">Launch plan</div></foreignObject><rect data-export-selection="true" x="20" y="20" width="200" height="180" fill="red" /></g></svg></div>`);
   await page.addScriptTag({ content: bundle });
   const result = await page.evaluate(async () => {

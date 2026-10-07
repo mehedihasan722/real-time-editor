@@ -8,7 +8,13 @@ function files(directory) { return fs.readdirSync(directory, { withFileTypes: tr
 const sourceFiles = files(root);
 const routes = sourceFiles.filter(file => /[\\/](page|route)\.tsx?$/.test(file)).map(file => {
   const segments = path.relative(path.join(root, "app"), path.dirname(file)).split(path.sep).filter(segment => !segment.startsWith("("));
-  return new RegExp("^/" + segments.map(segment => segment.startsWith("[") ? "[^/]+" : segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("/") + "/?$");
+  const pattern = segments.map(segment => {
+    if (segment.startsWith("[[...")) return "(?:/[^/]+)*";
+    if (segment.startsWith("[...")) return "(?:/[^/]+)+";
+    if (segment.startsWith("[")) return "/[^/]+";
+    return "/" + segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }).join("");
+  return new RegExp("^" + pattern + "/?$");
 });
 test("literal internal links resolve to a route or public asset", () => {
   let checked = 0;

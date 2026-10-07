@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./spatial-design.css";
+import "./editorial-design.css";
 import { ConvexClientProvider } from "@/providers/convex-client-provider";
 import { Toaster } from "@/components/ui/sonner";
-import ModalProvider from "@/providers/modal-provider";
 import { Suspense } from "react";
 import Loading from "@/components/auth/loading";
 import PwaRegister from "@/components/pwa-register";
@@ -42,7 +42,6 @@ export default function RootLayout({
             <Suspense fallback={<Loading />}>
               <ConvexClientProvider authConfigured={authConfigured}>
                 <Toaster />
-                {authConfigured && <ModalProvider />}
                 <WorkspaceCommand />
                 <WorkspaceAnalytics />
                 {children}

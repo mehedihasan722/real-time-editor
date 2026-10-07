@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- 🔒 Patch transitive `source-map-js` to 1.2.2; production dependency audit is clean.
+- ✅ Correct optional catch-all route auditing and launch Playwright directly through the standalone server to preserve port arguments.
+
+- 🎨 Add an editorial public `/welcome` page with responsive typography, theme switching, template artwork, and a shared oversized footer.
+- ✨ Add an original animated Blender workflow factory before the footer, with editable source, GLB clips, and a rendered fallback.
+- ⚡ Load shared 3D previews near the viewport and keep authenticated modals inside the Convex authentication boundary.
+
+- ♿ Adapt authentication, Clerk controls, route banners, and carousel navigation to Light/Dark themes; strengthen muted and destructive text contrast.
+- 🐛 Release GLB textures and image bitmaps during preview cleanup and keep camera sizing finite in collapsed containers.
+
+- 🎨 Redesign the home carousel as expanding purple, blue, and green product panels with numbered selectors and vertical titles.
+- ✨ Add original Blender roadmap-rocket, task-card, and idea-bulb sculptures with exported animation clips, editable scenes, and transparent fallbacks.
+- ♿ Preserve keyboard selection, responsive fixed height, explicit pause, reduced motion, and one active GPU scene.
+
 - 🎨 Add an original electric-blue Blender cloud scene and a navy, illuminated sign-in/sign-up experience inspired by the supplied motion reference.
 - ✨ Extend shared 3D banners, depth styling, and interaction motion across dashboard routes and board controls while preserving flat editing hit planes.
 - ♿ Add explicit scene pause/play controls and retain reduced-motion, hidden-tab/off-screen pause, image fallbacks, and GPU cleanup.

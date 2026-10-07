@@ -11,3 +11,6 @@
 - Rebuild website 3D assets through scripts/create-workspace-models.py with Blender. Commit editable .blend sources, GLB assets, and fallback PNGs; preserve reduced-motion, off-screen pause, and GPU cleanup behavior.
 - Rebuild the animated isometric home studio with scripts/create-workspace-studio.py. Preserve exported Blender animation clips, a reduced-motion still frame, and mixer cleanup in the shared preview.
 - Rebuild the blue cloud scene with scripts/create-cloud-scene.py. Use shared SpatialScene for public/authentication and dashboard artwork, preserve pause controls and reduced motion, and keep 3D transforms off editable canvas hit planes. Authentication previews may render before setup; protected pages and APIs must keep failing closed.
+- Rebuild the expanding home carousel sculptures with scripts/create-carousel-models.py. Keep one active WebGL scene, static posters in collapsed panels, keyboard panel selection, fixed responsive height, and explicit scene pause controls.
+
+- Rebuild the pre-footer workflow factory with `scripts/create-workflow-factory.py`; commit `assets/blender/workflow.blend` and its GLB/PNG exports. Keep `/welcome` public without mounting authenticated workspace dialogs; protected routes and APIs must remain fail-closed.

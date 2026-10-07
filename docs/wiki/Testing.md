@@ -54,3 +54,18 @@ Responsive carousel tests establish reduced-motion media before navigation so Wi
 The studio fixture checks changing canvas pixels during Blender clip playback, stable pixels under reduced motion, model switching, and cleanup. When a headless browser cannot create WebGL2 (as observed in Linux CI Firefox), it asserts the rendered-poster fallback instead; GLB animation channels are checked independently. This keeps software-rendered playback checks separate from unavailable-GPU behavior.
 
 The spatial-design suite tests real unconfigured sign-in/sign-up pages across mobile, tablet, and desktop widths, mobile form ordering, scene controls, navigation, and protected-route/API refusal. A mock Clerk form checks keyboard input access; shared dashboard fixtures cover all five destination banners while retaining page content. The complete local Chromium/WebKit/mobile run passed 107 checks with one Windows WebKit GLB skip. Live Clerk authentication and actual-device performance remain launch requirements.
+
+## Carousel design
+
+The home carousel layout fixtures use rendered Blender posters, keeping keyboard and responsive checks independent of GPU availability. The dedicated GLB fixture checks real studio and carousel-sculpture playback, reduced-motion pixels, model switching, and GPU removal. It allows 60 seconds for shader compilation, screenshots, and multiple GPU cleanups on software renderers.
+
+
+
+## Editorial landing and workflow validation
+
+`editorial-design.spec.ts` tests the real `/welcome` route at 320, 768, and 1440 pixels in both themes: no horizontal overflow, appearance controls, anchors, footer destinations, sampled 4.5:1 text contrast, reduced-motion skip-link focus, and protected-page/API refusal. The GLB fixture also verifies the workflow factory changes pixels during playback, stays still under reduced motion, and falls back to its PNG after GPU context loss.
+
+Playwright starts `scripts/start-standalone.cjs` directly so npm workspace forwarding cannot consume the port and hostname flags. Build first; use one worker on memory-constrained Windows hosts. Fixture tests do not establish live Clerk, Convex, Liveblocks, AI, or email behavior.
+
+
+Validation on 7 October 2026: optimized build and TypeScript, ESLint, 138 unit regressions, and a production dependency audit passed. The complete local Chromium/WebKit/mobile matrix passed 158 checks with one expected Windows WebKit WebGL skip. Of these, 143 passing checks belong to this revision; 15 cover pre-existing review-section edits that remain outside the commit. Firefox is delegated to Linux CI. Live authenticated services and physical-device performance are not certified by fixture tests.
