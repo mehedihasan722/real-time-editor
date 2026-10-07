@@ -8,9 +8,9 @@
 - 🔀 Integrate dependency branches; retain TypeScript 6 and ESLint 9 after incompatible major-version checks.
 
 - 🔒 Patch transitive `source-map-js` to 1.2.2; production dependency audit is clean.
-- ✅ Correct optional catch-all route auditing and launch Playwright directly through the standalone server to preserve port arguments.
+- ✅ Correct optional catch-all route auditing and launch Playwright directly through the standalone server to preserve port arguments. Verify the arcade fallback on headless runners without WebGL2.
 
-- 🎨 Add an editorial public `/welcome` page with responsive typography, theme switching, template artwork, and a shared oversized footer.
+- 🎨 Add shared editorial typography, template artwork, and an oversized workspace footer.
 - ✨ Add an original animated Blender workflow factory before the footer, with editable source, GLB clips, and a rendered fallback.
 - ⚡ Load shared 3D previews near the viewport and keep authenticated modals inside the Convex authentication boundary.
 

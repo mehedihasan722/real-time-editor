@@ -70,3 +70,5 @@ Playwright starts `scripts/start-standalone.cjs` directly so npm workspace forwa
 
 
 Validation on 7 October 2026: optimized build, TypeScript, ESLint, 138 unit regressions, and the production dependency audit passed (zero production vulnerabilities). The complete Chromium/WebKit/mobile integration matrix passed 142 checks, with two expected Windows WebKit skips for unavailable GPU fixtures. All 22 game launch/restart/library flows, both themes, documentation search, board controls, exports, and navigation passed. Linux CI includes Firefox. Live authenticated services and physical-device performance are not certified by fixture tests.
+
+The game GPU test probes WebGL2 before requiring renderer focus. On headless runners without WebGL2, it checks the explicit engine-unavailable notice, Restart, and return-to-library cleanup instead. Capable runners still exercise keyboard scope and graphics-context loss.

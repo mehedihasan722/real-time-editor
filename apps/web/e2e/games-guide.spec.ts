@@ -43,7 +43,24 @@ test('every game opens, restarts and releases its playfield',async({page})=>{
 });
 test('game keys only act within the focused playfield and recover from GPU loss',async({page,browserName})=>{
  test.skip(browserName==='webkit' && process.platform==='win32','Windows WebKit GPU recovery is covered by graceful engine fallback and library lifecycle checks.');
- await mount(page);await page.locator('.arcade-card').filter({has:page.getByRole('heading',{name:'Night Circuit',exact:true})}).click();
+ await mount(page);
+ const supportsWebGL = await page.evaluate(() => {
+  const probe = document.createElement('canvas');
+  const context = probe.getContext('webgl2');
+  if (!context) return false;
+  context.getExtension('WEBGL_lose_context')?.loseContext();
+  return true;
+ });
+ await page.locator('.arcade-card').filter({has:page.getByRole('heading',{name:'Night Circuit',exact:true})}).click();
+ if (!supportsWebGL) {
+  await expect(page.getByRole('alert')).toContainText('3D engine could not start');
+  await page.getByRole('button',{name:'Restart',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('3D engine could not start');
+  await page.getByRole('button',{name:'Library',exact:true}).click();
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('.arcade-card')).toHaveCount(22);
+  return;
+ }
  const canvas=page.locator('canvas');await expect(canvas).toBeFocused();await page.keyboard.press('p');await expect(page.getByRole('heading',{name:'Paused',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Resume',exact:true}).click();await page.keyboard.press('p');await expect(page.getByRole('heading',{name:'Paused',exact:true})).toHaveCount(0);
  await canvas.evaluate(element=>(element as HTMLCanvasElement).dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
