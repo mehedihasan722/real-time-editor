@@ -19,7 +19,7 @@
     "@flowboard/ui": "0.0.0",
     "@flowboard/utils": "0.0.0",
     "@liveblocks/client": "^3.24.2",
-    "@liveblocks/node": "^3.24.2",
+    "@liveblocks/node": "^3.24.3",
     "@liveblocks/react": "^3.24.2",
     "@liveblocks/react-ui": "^3.24.2",
     "@radix-ui/react-alert-dialog": "^1.1.23",
