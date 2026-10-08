@@ -25,6 +25,17 @@ function route({ user = "user_1", org = "org_1", boardOrg = "org_1", fetcher = a
 }
 const request = (mode = "generate") => new Request("https://flowboard.example/api/assist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ boardId: "board_1", mode, messages: [{ role: "user", content: "Make a launch plan" }] }) });
 
+test("custom local chat works without a key when Hermes is not configured", async () => {
+  const env = { NODE_ENV: "development", HERMES_BASE_URL: "", HERMES_API_KEY: "", AI_BASE_URL: "http://127.0.0.1:11434/v1" };
+  let sent;
+  const response = await route({ env, fetcher: async (url, options) => { sent = { url: String(url), ...options }; return Response.json({ choices: [{ message: { content: "Ready" } }] }); } })(request("chat"));
+  assert.equal(response.status, 200);
+  assert.equal(sent.url, "http://127.0.0.1:11434/v1/chat/completions");
+  assert.equal(sent.headers.Authorization, undefined);
+  const capabilities = await (await route({ env, method: "GET", fetcher: async () => Response.json({ data: [] }) })()).json();
+  assert.equal(capabilities.chat, true);
+});
+
 test("AI route cancels oversized upstream JSON before parsing it", async () => {
   for (const declared of [false, true]) {
     let cancelled = false;

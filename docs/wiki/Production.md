@@ -1,5 +1,7 @@
 # Production and Vercel automation
 
+Authentication redirects default explicitly to `/sign-in` and `/sign-up` in the middleware and Clerk provider, so missing URL environment variables cannot send visitors to an undecorated hosted portal. Existing Clerk and Convex tenant credentials remain paired; do not replace a production tenant with local development credentials to change the artwork.
+
 Flowboard supports the existing Vercel Git integration and an optional CI-gated Actions deployment. Choose one production deployment owner to avoid duplicate deployments.
 
 ## Existing Vercel integration
