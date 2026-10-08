@@ -3,13 +3,13 @@ import { build } from "esbuild";
 import path from "node:path";
 
 const fixture = (await build({
-  stdin: { contents: `import React from 'react';import {createRoot} from 'react-dom/client';import Preview from './src/app/(dashboard)/_components/three-template-preview';function App(){const [model,setModel]=React.useState('workspace');const [visible,setVisible]=React.useState(true);return <><button onClick={()=>setModel('tasks')}>Tasks</button><button onClick={()=>setModel('roadmap')}>Roadmap</button><button onClick={()=>setModel('carousel-roadmap')}>Sculpture</button><button onClick={()=>setModel('workflow')}>Workflow</button><button onClick={()=>setVisible(false)}>Remove preview</button>{visible&&<div style={{width:'100%',height:280}}><Preview model={model}/></div>}</>}createRoot(document.getElementById('root')).render(<App/>);`, loader: "tsx", resolveDir: path.resolve(".") },
+  stdin: { contents: `import React from 'react';import {createRoot} from 'react-dom/client';import Preview from './src/app/(dashboard)/_components/three-template-preview';function App(){const [model,setModel]=React.useState('workspace');const [visible,setVisible]=React.useState(true);const [paused,setPaused]=React.useState(false);return <><button onClick={()=>setModel('tasks')}>Tasks</button><button onClick={()=>setModel('roadmap')}>Roadmap</button><button onClick={()=>setModel('carousel-roadmap')}>Sculpture</button><button onClick={()=>setModel('workflow')}>Workflow</button><button onClick={()=>setPaused(!paused)}>{paused?'Resume':'Pause'}</button><button onClick={()=>setVisible(false)}>Remove preview</button>{visible&&<div data-scene-paused={paused} style={{width:'100%',height:480}}><Preview model={model}/></div>}</>}createRoot(document.getElementById('root')).render(<App/>);`, loader: "tsx", resolveDir: path.resolve(".") },
   bundle: true, write: false, format: "iife", platform: "browser", jsx: "automatic", define: { "process.env.NODE_ENV": '"production"' },
 })).outputFiles[0].text;
 
 test("Blender models animate with WebGL or use their rendered fallback", async ({ page, browserName }, testInfo) => {
   // Real GLB loading, shader compilation, screenshots and multiple GPU cleanups can exceed 30s on software renderers.
-  test.setTimeout(60000);
+  test.setTimeout(120000);
   test.skip(browserName === "webkit" && process.platform === "win32", "Windows WebKit does not consistently support the WebGL fixture; image fallbacks are checked separately.");
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
@@ -18,7 +18,7 @@ test("Blender models animate with WebGL or use their rendered fallback", async (
     context?.getExtension("WEBGL_lose_context")?.loseContext();
     return Boolean(context);
   });
-  await page.setContent('<div id="root"></div>'); await page.addScriptTag({ content: fixture });
+  await page.setContent('<style>.h-full{height:100%}.w-full{width:100%}body{margin:0;background:#f7f7f7}</style><div id="root"></div>'); await page.addScriptTag({ content: fixture });
   const canvas = page.locator("canvas");
   if (!supportsWebGL) {
     await expect(page.locator("#root div[aria-hidden='true']")).toHaveCSS("background-image", /workspace\.png/);
@@ -63,6 +63,20 @@ test("Blender models animate with WebGL or use their rendered fallback", async (
   const workflowStill = await canvas.screenshot();
   await page.waitForTimeout(250);
   expect((await canvas.screenshot()).equals(workflowStill)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("workflow-desktop.png") });
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.waitForTimeout(200);
+  await expect(canvas).toHaveJSProperty("clientWidth", 375);
+  await page.screenshot({ path: testInfo.outputPath("workflow-mobile.png") });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  await page.waitForTimeout(200);
+  const pausedWorkflow = await canvas.screenshot();
+  await page.waitForTimeout(300);
+  expect((await canvas.screenshot()).equals(pausedWorkflow)).toBe(true);
+  await page.getByRole("button", { name: "Resume", exact: true }).click();
+  await page.waitForTimeout(300);
+  expect((await canvas.screenshot()).equals(pausedWorkflow)).toBe(false);
   await expect(canvas).toHaveCount(1);
   await canvas.evaluate(element => (element as HTMLCanvasElement).getContext("webgl2")?.getExtension("WEBGL_lose_context")?.loseContext());
   await expect(canvas).toHaveCSS("opacity", "0");

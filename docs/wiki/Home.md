@@ -2,6 +2,8 @@
 
 See [Spatial design](Spatial-Design) for the animated website and branded authentication experience.
 
+See [Workflow animation](Workflow-Animation) for the 24 fps reference study, carrying-worker rig, warehouse vehicles, and Blender rebuild/validation procedure.
+
 Flowboard is a Turborepo. The Next.js application and its local environment file live in `apps/web`.
 
 See [Enterprise architecture](Enterprise-Architecture) for shared packages, role enforcement, export workers, monitoring and release prerequisites.

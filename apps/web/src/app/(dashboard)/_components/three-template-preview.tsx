@@ -25,15 +25,17 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
     renderer.domElement.style.opacity = "0";
     element.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+    const camera = model === "workflow" ? new THREE.OrthographicCamera(-10, 10, 8, -8, 0.1, 100) : new THREE.PerspectiveCamera(36, 1, 0.1, 100);
     scene.add(new THREE.HemisphereLight(0xffffff, 0x8797ba, 1.0));
     const light = new THREE.DirectionalLight(0xffffff, 2.4); light.position.set(3, 7, 5);
-    light.castShadow = true; light.shadow.mapSize.set(512, 512);
-    Object.assign(light.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, far: 30 });
+    light.castShadow = true; light.shadow.mapSize.set(model === "workflow" ? 1024 : 512, model === "workflow" ? 1024 : 512);
+    const shadowExtent = model === "workflow" ? 10 : 5;
+    Object.assign(light.shadow.camera, { left: -shadowExtent, right: shadowExtent, top: shadowExtent, bottom: -shadowExtent, far: 40 });
     light.shadow.bias = -0.001; scene.add(light);
     const pivot = new THREE.Group(); scene.add(pivot);
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0, disposed = false, visible = true, radius = 3, loaded = false, previousTime = 0;
+    let workflowFrame: { x: number; y: number; width: number; height: number } | undefined;
     let mixer: THREE.AnimationMixer | undefined;
     const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
     const collect = (object: THREE.Object3D) => object.traverse(child => {
@@ -68,9 +70,17 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
     const resume = () => { cancelAnimationFrame(frame); frame = 0; previousTime = 0; if (!disposed && visible && !document.hidden && loaded) frame = requestAnimationFrame(draw); };
     const resize = () => {
       const { width, height } = element.getBoundingClientRect();
-      renderer.setSize(Math.max(width, 1), Math.max(height, 1)); camera.aspect = Math.max(width, 1) / Math.max(height, 1);
+      renderer.setSize(Math.max(width, 1), Math.max(height, 1));
+      const aspect = Math.max(width, 1) / Math.max(height, 1);
+      if (camera instanceof THREE.PerspectiveCamera) camera.aspect = aspect;
+      else {
+        const halfHeight = workflowFrame ? Math.max(workflowFrame.height, workflowFrame.width / aspect) * .56 : radius / Math.min(aspect, 1);
+        const x = workflowFrame?.x ?? 0, y = workflowFrame?.y ?? 0;
+        camera.left = x - halfHeight * aspect; camera.right = x + halfHeight * aspect;
+        camera.top = y + halfHeight; camera.bottom = y - halfHeight;
+      }
       const sculpture = model.startsWith("carousel-");
-      camera.position.copy((sculpture ? new THREE.Vector3(.65, 1.9, 10) : new THREE.Vector3(5.4, model === "cloud" ? 5.6 : 8.4, 7.3)).normalize().multiplyScalar(radius * (sculpture ? 3.0 : model === "workspace" || model === "workflow" || model === "cloud" ? 3.3 : 2.4) / Math.min(camera.aspect, 1)));
+      camera.position.copy((model === "workflow" ? new THREE.Vector3(12.75, 11.55, 17.35) : sculpture ? new THREE.Vector3(.65, 1.9, 10) : new THREE.Vector3(5.4, model === "cloud" ? 5.6 : 8.4, 7.3)).normalize().multiplyScalar(radius * (sculpture ? 3.0 : model === "workspace" || model === "workflow" || model === "cloud" ? 3.3 : 2.4) / Math.min(aspect, 1)));
       camera.lookAt(0, 0, 0); camera.updateProjectionMatrix(); resume();
     };
     const controller = new AbortController();
@@ -80,6 +90,25 @@ export default function ThreeTemplatePreview({ model = "ideas" }: { model?: "ide
       const bounds = new THREE.Box3().setFromObject(gltf.scene);
       gltf.scene.position.sub(bounds.getCenter(new THREE.Vector3())); radius = bounds.getBoundingSphere(new THREE.Sphere()).radius;
       pivot.add(gltf.scene); loaded = true; resize(); renderer.domElement.style.opacity = "1";
+      if (model === "workflow") {
+        // Measure in camera space: a world-space sphere crops wide mobile scenes
+        // or leaves excessive space above a shallow isometric warehouse.
+        scene.updateMatrixWorld(true); camera.updateMatrixWorld(true);
+        const viewBounds = new THREE.Box3(), point = new THREE.Vector3();
+        gltf.scene.traverse(object => {
+          if (!(object instanceof THREE.Mesh)) return;
+          object.geometry.computeBoundingBox();
+          const box = object.geometry.boundingBox;
+          if (!box) return;
+          for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
+            point.set(x, y, z).applyMatrix4(object.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
+            viewBounds.expandByPoint(point);
+          }
+        });
+        const center = viewBounds.getCenter(new THREE.Vector3()), size = viewBounds.getSize(new THREE.Vector3());
+        workflowFrame = { x: center.x, y: center.y, width: size.x, height: size.y };
+        resize();
+      }
       if (gltf.animations.length) {
         mixer = new THREE.AnimationMixer(gltf.scene);
         gltf.animations.forEach(clip => mixer!.clipAction(clip).play());

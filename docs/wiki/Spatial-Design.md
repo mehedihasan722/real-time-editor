@@ -1,6 +1,6 @@
 # Spatial design and authentication
 
-The workflow factory contains four walking collaborators carrying parcels with both hands. Each worker's package, hands and body share a moving parent, with alternating hip motion and continuous looped turns. Regenerate the `.blend`, GLB and PNG together using `scripts/create-workflow-factory.py`; the shared viewer retains pause, reduced-motion and off-screen handling.
+The workflow factory contains four walking collaborators carrying parcels with both hands, curved conveyors, loaded warehouse racks, trucks, a lifting forklift, a parcel drone and a delivery robot. Each worker's package and hands share a moving torso parent, with articulated knees and looped turns. The workflow camera uses orthographic projection and fits camera-space bounds at desktop/mobile widths. See [Workflow animation](Workflow-Animation) for the 316-frame reference study, motion differences and validation. Regenerate the `.blend`, GLB and PNG together using `scripts/create-workflow-factory.py`; the shared viewer retains pause, reduced-motion and off-screen handling.
 
 Flowboard uses original Blender assets, a navy/electric-blue visual system, and raised surfaces inspired by the owner's supplied motion references. The videos are reference material; their brands, screenshots, audio, and clips are not bundled into the website.
 
