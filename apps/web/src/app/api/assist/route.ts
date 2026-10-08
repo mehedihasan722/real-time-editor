@@ -33,7 +33,7 @@ export async function GET() {
     } catch { providers[name] = false; status[name] = "unreachable; start Docker Desktop and the AI services"; }
   }));
   const external = providers.gemini || providers.grok || providers.deepseek;
-  return Response.json({ generate: providers.custom || external, chat: providers.hermes || external, image: Boolean(process.env.GEMINI_API_KEY), providers, status }, { headers: { "Cache-Control": "no-store" } });
+  return Response.json({ generate: providers.custom || external, chat: providers.hermes || providers.custom || external, image: Boolean(process.env.GEMINI_API_KEY), providers, status }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: Request) {
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   const providers = assistProviders();
   const configured = configuredProviders();
   const preferred = mode === "chat" ? "hermes" : "custom";
-  const provider = mode === "image" ? "gemini" : parsed.data.provider && parsed.data.provider !== "auto" ? parsed.data.provider : configured[preferred] ? preferred : (["gemini", "grok", "deepseek"] as const).find(name => configured[name]) as keyof typeof providers | undefined;
+  const provider = mode === "image" ? "gemini" : parsed.data.provider && parsed.data.provider !== "auto" ? parsed.data.provider : configured[preferred] ? preferred : (["gemini", "grok", "deepseek", "custom"] as const).find(name => configured[name]) as keyof typeof providers | undefined;
   const settings = provider ? providers[provider] : undefined;
   if (!provider || !configured[provider]) return Response.json({ error: "This AI provider is not connected. Configure its API key and model in the server environment." }, { status: 503 });
   const attachments = parsed.data.attachments || [];
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
   const baseUrl = settings?.base;
   const key = settings?.key;
   const model = mode === "image" ? process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image" : settings?.model;
-  if (!baseUrl || !model || (mode === "chat" && !key)) return Response.json({ error: mode === "chat" ? "Hermes Agent is not connected yet. Ask your workspace administrator to configure it." : "AI generation is not connected yet. Use a starter template or ask your administrator to connect a model." }, { status: 503 });
+  if (!baseUrl || !model || (provider !== "custom" && !key)) return Response.json({ error: "AI is not connected yet. Ask your workspace administrator to configure a provider." }, { status: 503 });
   let url: URL;
   try {
     if (mode === "image" && !/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error();

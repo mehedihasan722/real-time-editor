@@ -43,7 +43,7 @@ export const ConvexClientProvider = ({
   }
 
   return (
-    <ClerkProvider publishableKey={publicEnv.data.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} appearance={{ variables: {
+    <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up" signInFallbackRedirectUrl="/" signUpFallbackRedirectUrl="/" publishableKey={publicEnv.data.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} appearance={{ variables: {
       colorPrimary: dark ? "#a5b4fc" : "#4262ff",
       colorPrimaryForeground: dark ? "#11182e" : "#ffffff",
       colorBackground: dark ? "#11182e" : "#ffffff",

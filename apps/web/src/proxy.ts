@@ -16,7 +16,8 @@ const authenticatedMiddleware = clerkMiddleware(
     if (!isPublicPath(request.nextUrl.pathname)) {
       await auth.protect();
     }
-  }
+  },
+  { signInUrl: "/sign-in", signUpUrl: "/sign-up" }
 );
 
 // Fail closed before Clerk or a protected route can run without configuration.

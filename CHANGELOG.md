@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- 🐛 Default Gemini chat to the live-verified 3.8 Flash model; Google rejects 2.5 Flash for newly provisioned accounts. Preserve the `GEMINI_MODEL` override.
+
+- 🐛 Keep sign-in and sign-up inside the decorated Flowboard pages even when deployment URL variables are absent; allow configured custom models to serve chat without a Hermes key.
+- 🎨 Animate four factory workers walking with parcels held by both hands; rebuild the editable Blender scene, GLB and still image.
+
 - ✅ Initialize authentication contrast fixtures through saved theme preferences before hydration.
 
 - 🎮 Redesign the arcade with 22 real game previews, distinct SVG icons, improved vehicles and environments, isolated input, stopped idle animation loops, and restartable errors.

@@ -1,5 +1,7 @@
 # Spatial design and authentication
 
+The workflow factory contains four walking collaborators carrying parcels with both hands. Each worker's package, hands and body share a moving parent, with alternating hip motion and continuous looped turns. Regenerate the `.blend`, GLB and PNG together using `scripts/create-workflow-factory.py`; the shared viewer retains pause, reduced-motion and off-screen handling.
+
 Flowboard uses original Blender assets, a navy/electric-blue visual system, and raised surfaces inspired by the owner's supplied motion references. The videos are reference material; their brands, screenshots, audio, and clips are not bundled into the website.
 
 ## Where the design appears

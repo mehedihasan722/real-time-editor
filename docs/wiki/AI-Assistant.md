@@ -1,8 +1,12 @@
 # Hermes Agent and AI board generation
 
+Gemini setup: add `GEMINI_API_KEY` as a server-only Vercel Secret for Production and Preview, then redeploy. The same key enables Gemini chat, board generation and Nano Banana image requests, subject to model access and quota. Never use a `NEXT_PUBLIC_` prefix. Rotate any key shared in screenshots or chat. Local loopback endpoints cannot serve a Vercel deployment. Custom models also support chat without an API key where the configured service permits it; automatic chat selection falls back to a configured custom model when Hermes and hosted providers are absent.
+
 Assist has three modes: AI board generation, Hermes chat, and starter templates. AI board generation returns a title and up to 40 notes. Users review the result and explicitly add it to the board. Starter templates work without an AI service.
 
 ## Hermes chat
+
+The default Gemini chat model is `gemini-3.8-flash`, verified with a live response on October 8, 2026. `GEMINI_MODEL` overrides it. Google rejected 2.5 Flash for the newly configured account, despite listing it in model discovery. Model discovery alone does not prove generation access; provider capacity can still return 503 errors.
 
 Run a dedicated Hermes Agent API server and configure its model provider. Enable the API server and set a strong `API_SERVER_KEY` in the Hermes environment. Start `hermes gateway`. Hermes exposes an OpenAI-compatible `/v1/chat/completions` endpoint.
 

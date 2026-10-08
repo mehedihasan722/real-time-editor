@@ -132,18 +132,39 @@ for x in (4.25,):
             box("Template archive", (x-.55+j*.53,2,z+.28),(.42,.73,.46),("orange","blue","yellow")[j])
     for dx in (-.82,.82): box("Rack column",(x+dx,2,1.35),(.08,1.13,2.8),"silver",.012)
 
-def worker(x,y,color,skin):
+def worker(index,x,y,rx,ry,color,skin):
+    # Everything, including the parcel and hands, travels in one local frame.
+    root=group("Worker %02d carrying parcel"%index)
+    legs=[]
     for dx in (-.09,.09):
-        box("Boot",(x+dx,y-.06,.18),(.15,.28,.12),"ink")
-        box("Trouser leg",(x+dx,y,.42),(.13,.18,.42),"blue")
-    box("Work jacket",(x,y,.8),(.4,.28,.43),color,.1)
-    sphere("Collaborator",(x,y,1.16),.17,skin)
-    helmet=sphere("Safety helmet",(x,y,1.28),.18,"yellow");helmet.scale=(1.08,1.08,.62)
-    box("Sleeve",(x-.26,y,.8),(.13,.18,.36),color)
-    hand=sphere("Wave",(x+.28,y-.09,.95),.075,skin)
-    animate(hand,[(1,(x+.28,y-.09,.95)),(97,(x+.33,y-.09,1.2)),(193,(x+.28,y-.09,.95))])
-    box("Sleeve",(x+.23,y,.9),(.14,.18,.35),color)
-for args in [(-4.6,-2.1,"orange","skin"),(.35,-3.0,"orange","skin2"),(4.6,.0,"blue","skin"),(-.8,.0,"mint","skin2")]: worker(*args)
+        leg=group("Worker %02d hip"%index);leg.parent=root;leg.location=(dx,0,.61)
+        box("Boot",(0,-.06,-.43),(.15,.28,.12),"ink",parent=leg)
+        box("Trouser leg",(0,0,-.19),(.13,.18,.42),"blue",parent=leg)
+        legs.append(leg)
+    box("Work jacket",(0,0,.8),(.4,.28,.43),color,.1,root)
+    sphere("Collaborator",(0,0,1.16),.17,skin,root)
+    helmet=sphere("Safety helmet",(0,0,1.28),.18,"yellow",root);helmet.scale=(1.08,1.08,.62)
+    box("Carried parcel",(0,-.31,.83),(.43,.35,.34),"orange",parent=root)
+    box("Parcel tape",(0,-.31,1.01),(.07,.36,.018),"white",.005,root)
+    box("Delivery label",(0,-.49,.83),(.24,.012,.13),"white",.008,root)
+    for dx in (-.26,.26):
+        box("Supporting sleeve",(dx,-.13,.86),(.14,.32,.16),color,parent=root)
+        sphere("Holding hand",(dx,-.29,.83),.075,skin,root)
+    heading=None
+    for frame in range(1,194,2):
+        phase=(frame-1)/192*2*math.pi
+        stride=phase*8
+        root.location=(x+rx*math.cos(phase),y+ry*math.sin(phase),.018*(1-math.cos(stride*2)))
+        angle=math.atan2(ry*math.cos(phase),-rx*math.sin(phase))+math.pi/2
+        if heading is not None: angle=heading+(angle-heading+math.pi)%(2*math.pi)-math.pi
+        heading=angle
+        root.rotation_euler=(0,0,angle)
+        root.keyframe_insert(data_path="location",frame=frame)
+        root.keyframe_insert(data_path="rotation_euler",frame=frame)
+        for side,leg in enumerate(legs):
+            leg.rotation_euler=(.38*math.sin(stride+side*math.pi),0,0)
+            leg.keyframe_insert(data_path="rotation_euler",frame=frame)
+for i,args in enumerate([(-4.65,-.7,.12,1.25,"orange","skin"),(-1,-2.95,1.15,.16,"orange","skin2"),(4.65,-.4,.12,.72,"blue","skin"),(-.8,-.57,1.0,.12,"mint","skin2")]): worker(i,*args)
 box("Dispatch chassis",(2,-3.35,.28),(1.65,.65,.18),"yellow")
 for x in (1.4,2.6):
     for y in (-3.68,-3.05):
