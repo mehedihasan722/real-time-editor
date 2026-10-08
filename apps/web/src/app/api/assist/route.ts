@@ -12,6 +12,14 @@ import { boundedJson } from "@/lib/bounded-json";
 
 export const maxDuration = 60;
 
+function providerError(status: number) {
+  const error = status === 429 ? "AI quota is exhausted. Check your provider's quota or try again later."
+    : status === 401 || status === 403 ? "The AI connection was rejected. Ask your workspace administrator to check provider access."
+    : status === 404 ? "This AI model is no longer available. Ask your workspace administrator to update it."
+    : "The AI provider is temporarily unavailable. Your message is saved—try again shortly.";
+  return Response.json({ error }, { status: status === 429 ? 429 : status >= 500 ? 503 : 502 });
+}
+
 export async function GET() {
   if (!publicEnv.success || !serverEnv.success) return Response.json({ generate: false, chat: false }, { headers: { "Cache-Control": "no-store" } });
   const authorization = await auth();
@@ -97,15 +105,17 @@ export async function POST(request: Request) {
       const last = submittedMessages.at(-1)!.content;
       const parts = typeof last === "string" ? [{ text: last }] : last.map(part => part.type === "text" && "text" in part ? { text: part.text } : "image_url" in part ? { inlineData: { mimeType: part.image_url.url.split(";")[0].slice(5), data: part.image_url.url.split(",")[1] } } : { text: "" });
       const response = await fetch(url, { method: "POST", redirect: "error", signal: AbortSignal.any([request.signal, AbortSignal.timeout(50000)]), headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { responseModalities: ["TEXT", "IMAGE"] } }) });
-      if (!response.ok || !response.body) throw new Error("Image generation unavailable");
+      if (!response.ok) return providerError(response.status);
+      if (!response.body) throw new Error("Image generation unavailable");
       const result = await boundedJson(response, 14_000_000) as { candidates?: { content?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] } }[] };
       const image = result.candidates?.[0]?.content?.parts?.find(part => part.inlineData)?.inlineData;
       if (!image?.data || !["image/png", "image/jpeg", "image/webp"].includes(image.mimeType || "") || !/^[A-Za-z0-9+/=]+$/.test(image.data)) throw new Error("No valid generated image");
       return Response.json({ image: `data:${image.mimeType};base64,${image.data}`, message: "Generated with Nano Banana" }, { headers: { "Cache-Control": "no-store" } });
     }
     // Only the user's submitted messages leave the app. No board contents, IDs, or Clerk tokens are sent.
-    const response = await fetch(url, {
-      method: "POST", redirect: "error", signal: AbortSignal.any([request.signal, AbortSignal.timeout(50000)]),
+    const signal = AbortSignal.any([request.signal, AbortSignal.timeout(50000)]);
+    const options = {
+      method: "POST", redirect: "error", signal,
       headers: { "Content-Type": "application/json", ...(key ? { Authorization: `Bearer ${key}` } : {}) },
       body: JSON.stringify({ model, stream: streaming, max_tokens: 1024, ...(mode === "generate" ? { response_format: { type: "json_object" } } : {}), ...(provider === "hermes" ? { model_options: { reasoning: { enabled: false } } } : {}), ...(mode === "generate" && process.env.AI_REASONING_EFFORT ? { reasoning_effort: process.env.AI_REASONING_EFFORT } : {}), messages: [
         { role: "system", content: mode === "generate"
@@ -113,8 +123,14 @@ export async function POST(request: Request) {
           : "You are the Flowboard workspace assistant. Help with planning and brainstorming. You cannot change boards or execute external actions. Answer in plain text. Do not use tools." },
         ...submittedMessages,
       ] }),
-    });
-    if (!response.ok) return Response.json({ error: response.status === 429 ? "The AI provider is busy. Try again shortly." : "The AI service could not complete the request. Try again." }, { status: response.status === 429 ? 429 : 502 });
+    } satisfies RequestInit;
+    let response = await fetch(url, options);
+    // Retry only a rejected request, before any response has been streamed.
+    if ([502, 503, 504].includes(response.status) && !signal.aborted) {
+      await response.body?.cancel();
+      response = await fetch(url, options);
+    }
+    if (!response.ok) return providerError(response.status);
     if (streaming) {
       if (!response.body || !response.headers.get("content-type")?.includes("text/event-stream")) throw new Error("Streaming is unavailable");
       let bytes = 0;

@@ -37,6 +37,7 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"generate" | "chat" | "templates">("templates");
   const [provider, setProvider] = useState("auto");
+  const [providers, setProviders] = useState<Record<string, boolean>>({});
   const [available, setAvailable] = useState({ generate: false, chat: false });
   const [attachments, setAttachments] = useState<AssistAttachment[]>([]);
   const [readingFiles, setReadingFiles] = useState(false);
@@ -49,7 +50,7 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
     fetch("/api/assist", { signal: controller.signal }).then(response => response.ok ? response.json() : null).then(configuration => {
       if (!configuration || controller.signal.aborted) return;
       const capabilities = { generate: configuration.generate === true, chat: configuration.chat === true };
-      setAvailable(capabilities);
+      setAvailable(capabilities); setProviders(configuration.providers || {});
       if (capabilities.generate) setMode("generate");
     }).catch(() => {});
     return () => controller.abort();
@@ -89,12 +90,12 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
           <h1 id="board-starter-title">Hey {name?.split(" ")[0] || "there"}, what are we working on?</h1>
         </div>
       </div>
-      <label className="block text-sm">AI provider <select aria-label="AI provider" className="rounded-md border bg-background p-2" value={provider} disabled={busy} onChange={event => setProvider(event.target.value)}><option value="auto">Automatic</option><option value="hermes">Hermes</option><option value="gemini">Gemini</option><option value="grok">Grok</option><option value="deepseek">DeepSeek</option><option value="custom">Custom model</option></select></label><div className="board-starter__suggestions" aria-label="Assistant mode">
-        {(["generate", "chat", "templates"] as const).map(value => <button key={value} aria-pressed={mode === value} disabled={busy || (value !== "templates" && !available[value])} title={value !== "templates" && !available[value] ? "This AI service is not configured yet" : undefined} onClick={() => { setMode(value); setError(""); setGenerated(null); }}>{value === "generate" ? "AI board" : value === "chat" ? "Hermes chat" : "Starter templates"}</button>)}
+      {mode !== "templates" && <label className="block text-sm">AI provider <select aria-label="AI provider" className="max-w-full rounded-md border bg-background p-2" value={provider} disabled={busy} onChange={event => setProvider(event.target.value)}>{[["auto", "Automatic"], ["gemini", "Gemini"], ["hermes", "Hermes"], ["grok", "Grok"], ["deepseek", "DeepSeek"], ["custom", "Custom model"]].filter(([value]) => value === "auto" || providers[value]).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>}<div className="board-starter__suggestions" aria-label="Assistant mode">
+        {(["generate", "chat", "templates"] as const).map(value => <button key={value} aria-pressed={mode === value} disabled={busy || (value !== "templates" && !available[value])} title={value !== "templates" && !available[value] ? "This AI service is not configured yet" : undefined} onClick={() => { setMode(value); setError(""); setGenerated(null); }}>{value === "generate" ? "AI board" : value === "chat" ? "AI chat" : "Starter templates"}</button>)}
       </div>
       {!available.generate && !available.chat && <p className="board-starter__availability" role="status">Starter templates are ready. AI services are not configured yet.</p>}
-      {mode === "chat" && messages.length > 0 && <div className="max-h-48 overflow-auto text-sm" role="log" aria-label="Hermes conversation">{messages.map((message, index) => <p className="mb-3 whitespace-pre-wrap" key={index}><strong>{message.role === "user" ? "You" : "Hermes"}: </strong>{message.content}</p>)}</div>}
-      <AssistConnections onRefresh={result => setAvailable({ chat: result.chat === true, generate: result.generate === true })} /><AssistUpload onReading={setReadingFiles} attachments={attachments} onChange={setAttachments} disabled={busy || mode === "templates"} /><form className="board-starter__composer" onSubmit={submit}>
+      {mode === "chat" && messages.length > 0 && <div className="max-h-48 overflow-auto text-sm" role="log" aria-label="AI conversation">{messages.map((message, index) => <p className="mb-3 whitespace-pre-wrap" key={index}><strong>{message.role === "user" ? "You" : "Assist"}: </strong>{message.content}</p>)}</div>}
+      {!available.chat && !available.generate && <AssistConnections onRefresh={result => { setAvailable({ chat: result.chat === true, generate: result.generate === true }); setProviders(result.providers || {}); }} />}{mode !== "templates" && <AssistUpload onReading={setReadingFiles} attachments={attachments} onChange={setAttachments} disabled={busy} />}<form className="board-starter__composer" onSubmit={submit}>
         <textarea
           value={prompt}
           onChange={(event) => { setPrompt(event.target.value); if (error) setError(""); }}
@@ -104,8 +105,8 @@ export const BoardStarter = ({ boardId, onGenerated, name, onClose, onStart }: B
           aria-label="Describe your board"
         />
         <div>
-          <span><Bot className="size-4" /> {busy ? "Working…" : mode === "chat" ? "Hermes Agent" : mode === "generate" ? "AI board generator" : "Guided workspace generator"}</span>
-          <button type="submit" disabled={busy || readingFiles} aria-label={mode === "chat" ? "Send message to Hermes" : "Create workspace from prompt"}>
+          <span><Bot className="size-4" /> {busy ? "Working…" : mode === "chat" ? "Flowboard Assist" : mode === "generate" ? "AI board generator" : "Guided workspace generator"}</span>
+          <button type="submit" disabled={busy || readingFiles} aria-label={mode === "chat" ? "Send message to assistant" : "Create workspace from prompt"}>
             <ArrowUp className="size-4" />
           </button>
         </div>

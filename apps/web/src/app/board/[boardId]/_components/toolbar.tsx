@@ -147,7 +147,7 @@ const Toolbar = ({
   };
 
   return (
-    <div ref={toolbarRef} className="absolute z-20 top-[50%] -translate-y-[50%] left-2 flex flex-col gap-y-3">
+    <div ref={toolbarRef} className="board-tool-rail absolute z-20 top-[50%] -translate-y-[50%] left-2 flex flex-col gap-y-3">
       <div className="board-toolbar flex gap-y-1 flex-col items-center">
         <ToolButton
           label="Flowboard Assist"

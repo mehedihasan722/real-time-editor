@@ -1,5 +1,8 @@
 # Changelog
 
+- 🐛 Recover once from temporary AI provider failures and explain quota/access errors without exposing upstream responses. Use Gemini 3.1 Flash-Lite for reliable streamed chat.
+- 📱 Separate mobile board controls from the starter, constrain panels to the viewport, and simplify Assist to configured providers and concise availability controls.
+
 ## Unreleased
 
 - ⬆️ Update Turborepo to 2.11.7 to match the requested development-tool update.

@@ -11,7 +11,7 @@ import Link from "next/link";
 import Hint from "@/components/hint";
 import { useRenameModal } from "@/store/use-rename-modal";
 import Actions from "@/components/actions";
-import { Menu, Star } from "lucide-react";
+import { Menu, Star, PanelsTopLeft } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,7 +21,7 @@ interface InfoProps {
 
 
 const TabSepartor = () => {
-  return <div className="text-neutral-300 px-1.5">|</div>;
+  return <div className="hidden sm:block text-neutral-300 px-1.5">|</div>;
 };
 
 const Info = ({ boardId }: InfoProps) => {
@@ -49,14 +49,14 @@ const Info = ({ boardId }: InfoProps) => {
     }
   };
   return (
-    <div className="board-top-panel absolute z-20 top-2 left-2 bg-white rounded-xl border border-slate-200/70 px-1.5 h-12 flex items-center shadow-md">
+    <div className="board-top-panel board-info absolute z-20 top-2 left-2 bg-white rounded-xl border border-slate-200/70 px-1.5 h-12 flex items-center shadow-md">
       <Hint label="Go to boards" side="bottom" sideOffset={10}>
         <Button className="px-2" variant="board" asChild>
           <Link href="/">
             <Image src="/logo.svg" alt="Flowboard Logo" height={60} width={60} className="h-8 w-auto" />
             <span
               className={cn(
-                "font-semibold text-xl ml-2 text-black",
+                "board-brand-label font-semibold text-xl ml-2 text-black",
                 "font-display"
               )}
             >
@@ -69,7 +69,7 @@ const Info = ({ boardId }: InfoProps) => {
       <Hint label="Edit title" side="bottom" sideOffset={10}>
         <Button
           variant="board"
-          className="text-base font-normal px-2"
+          className="board-title min-w-0 max-w-48 truncate text-base font-normal px-2"
           onClick={() => onOpen(data._id, data.title)}
         >
           {data.title}
@@ -77,7 +77,7 @@ const Info = ({ boardId }: InfoProps) => {
       </Hint>
       <TabSepartor />
       <Hint label="Open Canvas 2D workspace" side="bottom" sideOffset={10}>
-        <Button variant="board" asChild><Link href={`/board/${boardId}/engine`}>Canvas 2D</Link></Button>
+        <Button variant="board" asChild><Link href={`/board/${boardId}/engine`} aria-label="Canvas 2D"><PanelsTopLeft className="size-4 sm:hidden" /><span className="hidden sm:inline">Canvas 2D</span></Link></Button>
       </Hint>
       <Hint label={data.isFavourite ? "Remove from favourites" : "Mark as favourite"} side="bottom" sideOffset={10}>
         <Button size="icon" variant="board" disabled={favouritePending} onClick={toggleFavourite} aria-label={data.isFavourite ? "Remove from favourites" : "Mark as favourite"}>
