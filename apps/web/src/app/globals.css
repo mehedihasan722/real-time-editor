@@ -483,3 +483,31 @@ html,body{max-width:100%;overflow-x:clip}
 .board-starter__suggestions button[aria-pressed=true] { color:#3730a3; border-color:#6366f1; background:#eef2ff; }
 .dark .board-starter__suggestions button[aria-pressed=true] { color:#c7d2fe; border-color:#818cf8; background:#273254; }
 .board-starter button:disabled { cursor:not-allowed; opacity:.55; }
+
+/* Reserve separate space for board chrome and scroll the starter on short screens. */
+.board-info { max-width:calc(100% - 240px); overflow-x:auto; }
+.board-info>* { flex-shrink:0; }
+.board-info>.board-title { flex-shrink:1; }
+.board-people>div:first-child { max-width:120px; overflow:hidden; }
+.board-starter { max-height:calc(100dvh - 160px); overflow-y:auto; overscroll-behavior:contain; }
+.board-starter__title-row { padding-right:24px; }
+@media(max-width:900px) { .board-brand-label { display:none; } }
+@media(max-width:640px) {
+ .board-info { left:8px; right:8px; max-width:none; }
+ .board-info>a:first-child { padding:0 4px; }
+ .board-info>a:first-child img { width:48px; object-fit:contain; }
+ .board-info>.board-title { flex:1; display:block; text-align:left; }
+  .board-people { top:64px; height:40px; }
+  .board-file-actions { top:112px; left:72px; right:8px; display:flex; gap:6px; align-items:center; }
+  .board-file-actions>button { margin:0; width:auto; flex:1; min-width:0; padding:0 8px; font-size:12px; }
+  .board-tool-rail { top:120px; bottom:72px; transform:none; max-height:calc(100dvh - 192px); overflow-y:auto; scrollbar-width:thin; }
+  .board-starter { top:160px; bottom:auto; left:72px; width:calc(100% - 80px); max-height:calc(100dvh - 232px); transform:none; padding:16px 12px; border-radius:14px; }
+  .board-starter__title-row { gap:8px; padding-right:18px; }
+  .board-starter__title-row>span { width:28px; height:28px; }
+  .board-starter__title-row h1 { font-size:17px; }
+  .board-starter__close { top:4px; right:4px; width:28px; height:28px; }
+  .board-starter__suggestions { gap:6px; margin-top:12px; }
+  .board-starter__suggestions button { padding:7px 9px; font-size:11px; }
+  .board-starter__composer { margin-top:14px; }
+  .board-starter__composer textarea { padding:12px; }
+}

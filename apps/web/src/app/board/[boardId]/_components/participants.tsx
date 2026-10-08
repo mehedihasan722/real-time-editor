@@ -17,7 +17,7 @@ const Participants = () => {
   const hasMoreUsers = users.length > MAX_SHOWN_USERS;
 
   return (
-    <div className="board-top-panel absolute z-20 h-12 top-2 right-2 bg-white rounded-xl p-1.5 pl-3 flex items-center gap-2 shadow-md border border-slate-200/70">
+    <div className="board-top-panel board-people absolute z-20 h-12 top-2 right-2 bg-white rounded-xl p-1.5 pl-3 flex items-center gap-2 shadow-md border border-slate-200/70">
       <div className="flex gap-x-2">
         {users.slice(0, MAX_SHOWN_USERS).map(({ connectionId, info }) => {
           return (

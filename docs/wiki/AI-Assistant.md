@@ -6,7 +6,9 @@ Assist has three modes: AI board generation, Hermes chat, and starter templates.
 
 ## Hermes chat
 
-The default Gemini chat model is `gemini-3.8-flash`, verified with a live response on October 8, 2026. `GEMINI_MODEL` overrides it. Google rejected 2.5 Flash for the newly configured account, despite listing it in model discovery. Model discovery alone does not prove generation access; provider capacity can still return 503 errors.
+The default Gemini chat model is `gemini-3.1-flash-lite`, verified with a complete streamed multi-turn response on October 8, 2026. `GEMINI_MODEL` overrides it. The previous 3.8 Flash default timed out in streaming checks. Model discovery alone does not prove generation access. Assist retries temporary 502/503/504 failures once before streaming starts; quota and credential errors are not retried. Image generation still requires its own available quota.
+
+The provider selector lists configured services. Setup instructions stay in this documentation; unavailable chat shows a compact availability check. Mobile chat hides the conversation sidebar and provides a New chat button. The board starter scrolls within the available viewport, below the mobile header and file controls.
 
 Run a dedicated Hermes Agent API server and configure its model provider. Enable the API server and set a strong `API_SERVER_KEY` in the Hermes environment. Start `hermes gateway`. Hermes exposes an OpenAI-compatible `/v1/chat/completions` endpoint.
 

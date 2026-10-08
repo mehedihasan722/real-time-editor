@@ -75,7 +75,7 @@ export function BoardFiles({ boardId, onImport, onExportState }: { boardId: stri
     } catch (error) { toast.error(error instanceof Error ? error.message : "Image could not be uploaded."); }
   };
 
-  return <div className="absolute right-4 top-20 z-30">
+  return <div className="board-file-actions absolute right-4 top-20 z-30">
     <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" disabled={busy || !permitted}>{busy ? "Exporting…" : "Board files"}</Button></DropdownMenuTrigger>
       <DropdownMenuContent><DropdownMenuItem onClick={() => void exportBoard("png")}>Export PNG</DropdownMenuItem><DropdownMenuItem onClick={() => void exportBoard("pdf")}>Export PDF</DropdownMenuItem><DropdownMenuItem onClick={() => void exportBoard("json")}>Export editable board</DropdownMenuItem><DropdownMenuItem onClick={() => boardInput.current?.click()}>Import editable board</DropdownMenuItem><DropdownMenuItem onClick={() => imageInput.current?.click()}>Upload image</DropdownMenuItem></DropdownMenuContent>
     </DropdownMenu>

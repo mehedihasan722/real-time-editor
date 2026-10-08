@@ -78,6 +78,35 @@ test("Hermes chat uses the dedicated server and returns plain text", async () =>
   assert.equal(JSON.parse(sent.body).model, "hermes-agent");
 });
 
+test("a temporary provider rejection retries once before streaming starts", async () => {
+  let calls = 0;
+  const handler = route({ fetcher: async () => ++calls === 1
+    ? Response.json({}, { status: 503 })
+    : Response.json({ choices: [{ message: { content: "Recovered" } }] }) });
+  const response = await handler(request("chat"));
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).message, "Recovered");
+  assert.equal(calls, 2);
+});
+
+test("capacity failures stay bounded and quota failures are not retried", async () => {
+  for (const status of [503, 429, 401]) {
+    let calls = 0;
+    const response = await route({ fetcher: async () => { calls++; return Response.json({ secret: "do not expose" }, { status }); } })(request("chat"));
+    assert.equal(calls, status === 503 ? 2 : 1);
+    assert.equal(response.status, status === 503 ? 503 : status === 429 ? 429 : 502);
+    const message = (await response.json()).error;
+    assert.match(message, status === 503 ? /temporarily unavailable/ : status === 429 ? /quota/ : /access/);
+    assert.ok(!message.includes("do not expose"));
+  }
+});
+
+test("Nano Banana preserves quota errors instead of disguising them as a bad response", async () => {
+  const response = await route({ env: { GEMINI_API_KEY: "image-secret" }, fetcher: async () => Response.json({}, { status: 429 }) })(request("image"));
+  assert.equal(response.status, 429);
+  assert.match((await response.json()).error, /quota/);
+});
+
 test("Hermes SSE remains streaming and propagates a cancellation signal upstream", async () => {
   let sent;
   const frames = 'data: {"choices":[{"delta":{"content":"Plan"}}]}\n\ndata: [DONE]\n\n';
