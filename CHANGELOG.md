@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- ⬆️ Update Turborepo to 2.11.7 to match the requested development-tool update.
+
+- 🔒 Patch Next.js and its ESLint configuration to 16.3.8 after the release audit flagged 16.3.7.
+
 - 🐛 Default Gemini chat to the live-verified 3.8 Flash model; Google rejects 2.5 Flash for newly provisioned accounts. Preserve the `GEMINI_MODEL` override.
 
 - 🐛 Keep sign-in and sign-up inside the decorated Flowboard pages even when deployment URL variables are absent; allow configured custom models to serve chat without a Hermes key.
