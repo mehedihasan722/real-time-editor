@@ -27,6 +27,8 @@ NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/
 
 The Clerk publishable and secret keys must come from the same Clerk application. Activate Clerk's Convex integration for the development instance so its normal session token includes the `aud: "convex"` claim.
 
+Vercel Preview must use a Convex deployment whose `CLERK_FRONTEND_API_URL` trusts that same Clerk application. Production's `convex deploy --cmd` can override `NEXT_PUBLIC_CONVEX_URL` during the build, while Preview uses the saved variable directly. A stale Preview URL can therefore reject sessions even when Production works. Keep `CONVEX_DEPLOY_KEY` scoped to Production, set Preview's public URL to the intended existing backend, and rebuild after changing it. Do not disable authentication to resolve an issuer mismatch. Protected children remain unmounted until Convex accepts the session.
+
 From `apps/web`, store Clerk's Frontend API URL on the Convex deployment and push the functions:
 
 ```powershell

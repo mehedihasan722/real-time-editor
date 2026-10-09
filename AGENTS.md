@@ -1,6 +1,7 @@
 # Repository workflow
 
 - For every completed change, update GitHub with a gitmoji-prefixed commit and PR title. Push the working branch after the relevant checks pass; do not merge or deploy unless the user requests it.
+- `main` requires a pull request, a passing up-to-date `verify` check, and resolved review conversations. Protection applies to admins; force pushes and branch deletion are disabled. Do not bypass these checks when releasing.
 - Maintain the relevant GitHub issue with the problem, result, validation, and remaining work. Link issues and PRs without closing unresolved launch requirements.
 - Update CHANGELOG.md and affected docs/wiki pages when behavior or operations change, and publish maintained Wiki pages when authenticated access is available.
 - Keep AGENTS.md instructions current when development procedures change. Preserve the generated Next.js rules in apps/web/AGENTS.md.
