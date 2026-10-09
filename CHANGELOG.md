@@ -5,6 +5,10 @@
 
 ## Unreleased
 
+- 🐛 Keep protected workspace queries unmounted when backend authentication is rejected; show a reconnect state instead of a route crash. Align Vercel Preview with the production backend trusted by the configured Clerk application.
+
+- 🎨 Rebuild the pre-footer warehouse with curved conveyors, carrying workers, detailed dispatch trucks, loaded racks, a lifting forklift, parcel drone and delivery robot. Add responsive orthographic framing and exported-animation regression checks; retain pause, reduced-motion and fallback behavior.
+
 - ⬆️ Update Turborepo to 2.11.7 to match the requested development-tool update.
 
 - 🔒 Patch Next.js and its ESLint configuration to 16.3.8 after the release audit flagged 16.3.7.

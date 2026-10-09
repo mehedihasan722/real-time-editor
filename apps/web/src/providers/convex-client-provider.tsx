@@ -30,8 +30,9 @@ export const ConvexClientProvider = ({
   const { resolvedTheme } = useTheme();
   const pathname = usePathname();
   const dark = resolvedTheme === "dark";
+  const isAuthenticationPage = /^\/sign-(in|up)(\/|$)/.test(pathname);
   if (!authConfigured || !publicEnv.success || !convex) {
-    if (/^\/sign-(in|up)(\/|$)/.test(pathname)) return <>{children}</>;
+    if (isAuthenticationPage) return <>{children}</>;
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 p-8 text-slate-100">
         <section className="max-w-xl space-y-4 rounded-2xl border border-cyan-400/30 p-8">
@@ -55,7 +56,15 @@ export const ConvexClientProvider = ({
     } }}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <Authenticated><ModalProvider />{children}</Authenticated>
-        <Unauthenticated>{children}</Unauthenticated>
+        <Unauthenticated>{isAuthenticationPage ? children : (
+          <main className="grid min-h-screen place-items-center bg-slate-50 p-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+            <section className="max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+              <h1 className="text-2xl font-semibold">Workspace connection unavailable</h1>
+              <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">Your sign-in could not connect to this workspace. Reconnect to try again. If this continues, contact your workspace administrator.</p>
+              <button type="button" onClick={() => window.location.reload()} className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">Reconnect</button>
+            </section>
+          </main>
+        )}</Unauthenticated>
         <AuthLoading>
           <Loading />
         </AuthLoading>
