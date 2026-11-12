@@ -26,7 +26,7 @@ jobs:
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "Configure PROJECT_TOKEN with Projects write access and PROJECT_URL to enable issue/PR project sync." >> "$GITHUB_STEP_SUMMARY"
           fi
-      - uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
+      - uses: actions/add-to-project@f2c1f1fa649a891be84948ea89b5dfba1526ef05 # v2.0.1
         if: steps.configuration.outputs.ready == 'true' && github.event_name != 'workflow_dispatch'
         with:
           project-url: ${{ vars.PROJECT_URL }}
